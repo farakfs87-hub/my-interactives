@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Алгоритм ретімен</title>
+<style>
+:root{--bg:#f7f7f5;--fg:#1f2328;--mut:#6b7280;--card:#fff;--bd:#d8d8d2;--ac:#2563eb;--ok:#16a34a;--bad:#dc2626;--okbg:#dcfce7;--badbg:#fee2e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa;--ok:#4ade80;--bad:#f87171;--okbg:#14532d;--badbg:#7f1d1d}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa;--ok:#4ade80;--bad:#f87171;--okbg:#14532d;--badbg:#7f1d1d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;background:var(--bg);color:var(--fg);font:17px/1.35 system-ui,sans-serif;padding:14px;max-width:480px}
+h1{font-size:23px;margin:0 0 4px}
+.s{margin:0 0 10px;color:var(--mut);font-size:15px}
+button{font:inherit;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--fg);padding:10px 14px;cursor:pointer}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+button.on{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.sc{font-size:26px;padding:8px 12px;position:relative}
+.sc i{position:absolute;right:-4px;top:-8px;font-size:16px;font-style:normal}
+h2{font-size:18px;margin:14px 0 6px}
+.slot{display:flex;align-items:center;gap:10px;border:2px dashed var(--bd);border-radius:12px;padding:8px 10px;margin-bottom:6px;min-height:46px;box-sizing:border-box}
+.slot .n{width:28px;height:28px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.slot.f{border-style:solid;background:var(--card);cursor:pointer}
+.slot.ok{background:var(--okbg);border-color:var(--ok)}
+.slot.bad{background:var(--badbg);border-color:var(--bad)}
+.slot .e{font-size:26px}
+.card{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--bd);border-radius:12px;padding:10px;margin-bottom:6px;cursor:pointer;width:100%;text-align:left}
+.card .e{font-size:28px}
+#msg{min-height:28px;font-weight:700;font-size:18px;margin:8px 0}
+</style>
+</head>
+<body>
+<h1>Алгоритм ретімен</h1>
+<p class="s">Алгоритм — бұл рет-ретімен орындалуы тиіс қадамдар. Карточкаларды дұрыс орналастыр.</p>
+<div class="row" id="sc"></div>
+<h2 id="ttl"></h2>
+<div id="slots"></div>
+<div class="s" id="poolh">Карточкаларды ретімен бас:</div>
+<div id="pool"></div>
+<div id="msg"></div>
+<div class="row">
+  <button class="p" id="chk" style="flex:2">Тексеру</button>
+  <button id="rs">🔀 Қайтадан</button>
+  <button id="nx" style="display:none" class="p">Келесі ➜</button>
+</div>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+var SC=[
+ {i:"🍵",t:"Шай демдеу",s:[["🔥","Суды қайнату"],["🫖","Шыныаяққа шай қалташығын салу"],["♨️","Қалташыққа қайнаған су құю"],["⏳","3 минут күту"],["🥄","Қалташықты шығарып, қант қосып араластыру"]]},
+ {i:"🪥",t:"Тісті тазалау",s:[["🧴","Тіс щеткасы мен пастасын алу"],["🪥","Щеткаға паста сығып шығару"],["😁","Тісті 2 минут бойы тазалау"],["💧","Ауызды сумен шаю"],["🧼","Щетканы орнына қою"]]},
+ {i:"🪴",t:"Гүл отырғызу",s:[["🟤","Түпқоймаға (құмыраға) топырақ салу"],["🕳️","Шұңқыр жасау"],["🌰","Тұқым салу"],["⛏️","Тұқымды топырақпен көму"],["🚿","Суғару"]]},
+ {i:"🚦",t:"Жолдан өту",s:[["🛑","Жол шетінде тоқтау"],["👈","Сол жаққа қарау"],["👉","Оң жаққа қарау"],["✅","Көлік жоқ екеніне көз жеткізу"],["🚶","Жолдан сабырмен өту"]]},
+ {i:"🥪",t:"Бутерброд жасау",s:[["🍞","Наннан бір тілік кесу"],["🧈","Нанға май жағу"],["🧀","Үстіне ірімшік қою"],["🍽️","Тәрелкеге салу"],["😋","Жеу"]]}
+];
+var cur=0,pool=[],slots=[],done={},checked=false;
+function shuffle(n){
+  var a=[];for(var i=0;i<n;i++)a.push(i);
+  do{for(var k=n-1;k>0;k--){var j=Math.floor(Math.random()*(k+1)),t=a[k];a[k]=a[j];a[j]=t}}
+  while(a.every(function(v,i){return v===i}));
+  return a;
+}
+function bar(){
+  var h="";SC.forEach(function(s,k){h+='<button class="sc'+(k===cur?" on":"")+'" data-k="'+k+'" title="'+s.t+'">'+s.i+(done[k]?"<i>⭐</i>":"")+"</button>"});
+  $("sc").innerHTML=h;
+  [].forEach.call($("sc").children,function(b){b.onclick=function(){load(+b.getAttribute("data-k"))}});
+}
+function load(k){
+  cur=k;pool=shuffle(SC[k].s.length);slots=[];checked=false;
+  $("ttl").textContent=SC[k].i+" "+SC[k].t;$("msg").textContent="";$("nx").style.display="none";$("chk").style.display="block";
+  bar();render();
+}
+function render(res){
+  var s=SC[cur].s,h="";
+  for(var i=0;i<s.length;i++){
+    if(i<slots.length){
+      var v=slots[i],c=res?(v===i?" ok":" bad"):"";
+      h+='<div class="slot f'+c+'" data-s="'+i+'"><span class="n">'+(i+1)+'</span><span class="e">'+s[v][0]+'</span><span>'+s[v][1]+'</span></div>';
+    }else h+='<div class="slot"><span class="n">'+(i+1)+'</span></div>';
+  }
+  $("slots").innerHTML=h;
+  var p="";
+  pool.forEach(function(v){if(slots.indexOf(v)<0)p+='<button class="card" data-v="'+v+'"><span class="e">'+s[v][0]+'</span><span>'+s[v][1]+'</span></button>'});
+  $("pool").innerHTML=p;$("poolh").style.display=p?"block":"none";
+}
+$("pool").onclick=function(e){
+  var b=e.target.closest("[data-v]");if(!b||checked)return;
+  slots.push(+b.getAttribute("data-v"));$("msg").textContent="";render();
+};
+$("slots").onclick=function(e){
+  var b=e.target.closest("[data-s]");if(!b||checked)return;
+  slots.splice(+b.getAttribute("data-s"),1);$("msg").textContent="";render();
+};
+$("chk").onclick=function(){
+  var n=SC[cur].s.length,m=$("msg");
+  if(slots.length<n){m.style.color="var(--mut)";m.textContent="Алдымен барлық карточкаларды орналастыр.";return}
+  render(true);
+  var bad=slots.filter(function(v,i){return v!==i}).length;
+  if(!bad){
+    m.style.color="var(--ok)";m.textContent="Жарайсың! Бәрі дұрыс! 🎉";done[cur]=1;checked=true;bar();
+    $("chk").style.display="none";$("nx").style.display="block";
+  }else{
+    m.style.color="var(--bad)";m.textContent="Бәрі дұрыс емес. Қызыл карточканы алып тастау үшін оны бас.";
+  }
+};
+$("rs").onclick=function(){load(cur)};
+$("nx").onclick=function(){load((cur+1)%SC.length)};
+load(0);
+</script>
+</body>
+</html>
