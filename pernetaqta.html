@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пернетақта Шебері - Қазақша Пернетақта Тренажеры</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        
+        /* Key Styling */
+        .key {
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 0 #334155;
+        }
+        .key.active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #334155;
+            background-color: #6366f1 !important;
+            color: #ffffff !important;
+            border-color: #818cf8 !important;
+        }
+        .key.target-key {
+            animation: pulse-target 1.2s infinite alternate;
+            border-color: #38bdf8 !important;
+        }
+        @keyframes pulse-target {
+            0% {
+                background-color: #1e293b;
+                box-shadow: 0 4px 0 #334155, 0 0 12px rgba(56, 189, 248, 0.4);
+            }
+            100% {
+                background-color: #0369a1;
+                box-shadow: 0 4px 0 #0284c7, 0 0 20px rgba(56, 189, 248, 0.8);
+            }
+        }
+
+        .kz-special-key {
+            border-color: #f59e0b !important;
+            color: #fbbf24 !important;
+        }
+
+        /* Char Display Statuses */
+        .char-pending {
+            color: #94a3b8;
+        }
+        .char-correct {
+            color: #10b981;
+            background-color: rgba(16, 185, 129, 0.15);
+            border-radius: 2px;
+        }
+        .char-wrong {
+            color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.25);
+            border-radius: 2px;
+            text-decoration: underline;
+        }
+        .char-current {
+            background-color: #4f46e5;
+            color: #ffffff;
+            border-radius: 3px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="bg-slate-800/90 border-b border-slate-700 sticky top-0 z-50 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-keyboard text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-none">Пернетақта Шебері</h1>
+                    <span class="text-xs text-indigo-400 font-medium">Қазақша тез теру тренажеры</span>
+                </div>
+            </div>
+
+            <!-- Header Controls & Status -->
+            <div class="flex items-center space-x-4">
+                <button id="sound-toggle" class="bg-slate-700/60 hover:bg-slate-700 text-slate-300 p-2 rounded-xl border border-slate-600 transition">
+                    <i class="fa-solid fa-volume-high text-lg" id="sound-icon"></i>
+                </button>
+                <div class="bg-slate-700/60 px-3.5 py-1.5 rounded-xl border border-slate-600 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span>Үздік жылдамдық: <strong id="best-speed" class="text-amber-400">0</strong> С/М</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-grow flex flex-col gap-6">
+
+        <!-- Top Section: Mode Selector & Live Stats -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            
+            <!-- Category & Lesson Selection -->
+            <div class="lg:col-span-3 bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Жаттығу режимін таңдаңыз</h2>
+                        <span id="lesson-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold border border-amber-500/30">
+                            Қазақша ерекше әріптер
+                        </span>
+                    </div>
+                    <div id="mode-buttons" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <!-- Modes generated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Sub-lessons dropdown or buttons -->
+                <div class="mt-3 pt-3 border-t border-slate-700 flex items-center justify-between text-xs">
+                    <span class="text-slate-400">Мәтін түрі:</span>
+                    <select id="lesson-select" class="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+                        <!-- Options generated dynamically -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Live Dashboard Panel -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl grid grid-cols-2 gap-3">
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/60 flex flex-col justify-center items-center">
+                    <span class="text-[11px] text-slate-400 font-semibold uppercase">Жылдамдық</span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="stat-wpm" class="text-2xl font-bold text-indigo-400">0</span>
+                        <span class="text-xs text-slate-500">С/М</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/60 flex flex-col justify-center items-center">
+                    <span class="text-[11px] text-slate-400 font-semibold uppercase">Дәлдік</span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="stat-acc" class="text-2xl font-bold text-emerald-400">100</span>
+                        <span class="text-xs text-slate-500">%</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/60 flex flex-col justify-center items-center">
+                    <span class="text-[11px] text-slate-400 font-semibold uppercase">Уақыт</span>
+                    <span id="stat-time" class="text-xl font-bold text-slate-200 mt-1">00:00</span>
+                </div>
+
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/60 flex flex-col justify-center items-center">
+                    <span class="text-[11px] text-slate-400 font-semibold uppercase">Қателер</span>
+                    <span id="stat-errors" class="text-xl font-bold text-rose-400 mt-1">0</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Practice Workspace Screen -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl relative flex flex-col items-center justify-between min-h-[180px] overflow-hidden">
+            
+            <!-- Focus overlay button if unfocused -->
+            <div id="focus-overlay" class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm z-20 flex flex-col items-center justify-center cursor-pointer transition">
+                <div class="bg-indigo-600/30 border border-indigo-500/50 p-4 rounded-2xl text-center shadow-xl hover:scale-105 transition">
+                    <i class="fa-solid fa-arrow-pointer text-3xl text-indigo-400 mb-2 animate-bounce"></i>
+                    <h3 class="font-bold text-white text-base">Бастау үшін осы жерді басыңыз</h3>
+                    <p class="text-xs text-slate-400 mt-1">Немесе пернетақтада кез келген пернені басыңыз</p>
+                </div>
+            </div>
+
+            <!-- Text Prompt Header Controls -->
+            <div class="w-full flex justify-between items-center mb-4 text-xs text-slate-400 border-b border-slate-700/80 pb-2">
+                <span>Мәтінді пернетақтада теріңіз:</span>
+                <button id="restart-btn" class="hover:text-white transition flex items-center gap-1.5 bg-slate-700/50 px-2.5 py-1 rounded-lg border border-slate-600">
+                    <i class="fa-solid fa-rotate-right"></i> Қайта бастау
+                </button>
+            </div>
+
+            <!-- Main Typing Display Box -->
+            <div id="text-display" class="code-font text-xl md:text-2xl leading-relaxed tracking-wider w-full py-4 px-6 bg-slate-900/90 rounded-xl border border-slate-700/80 min-h-[100px] flex flex-wrap items-center justify-start gap-y-2 select-none overflow-hidden max-h-[160px]">
+                <!-- Dynamic letters inserted here -->
+            </div>
+
+            <!-- Bottom Hint -->
+            <div class="mt-3 text-xs text-slate-400 flex items-center justify-between w-full">
+                <span id="key-hint">Келесі перне: <strong id="next-char" class="text-amber-400 code-font font-bold">Ә</strong></span>
+                <span class="text-slate-500"><i class="fa-solid fa-keyboard mr-1"></i> Қазақша пернетақта жайылымын (Kazakh layout) қосыңыз</span>
+            </div>
+
+        </div>
+
+        <!-- Virtual Interactive Kazakh Keyboard -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 md:p-5 shadow-2xl">
+            
+            <div class="flex justify-between items-center mb-3 px-1 text-xs text-slate-400">
+                <span class="font-semibold text-slate-300">Визуалды Қазақша Пернетақта</span>
+                <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Қазақша әріптер</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400 inline-block"></span> Басу керек перне</span>
+                </div>
+            </div>
+
+            <div id="keyboard" class="flex flex-col gap-1.5 w-full max-w-4xl mx-auto code-font text-xs sm:text-sm font-semibold">
+                <!-- Keyboard Rows generated dynamically -->
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Completion Modal -->
+    <div id="result-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 max-w-md w-full rounded-2xl p-6 shadow-2xl text-center space-y-5">
+            <div class="w-16 h-16 bg-indigo-600/20 border border-indigo-500/40 rounded-2xl flex items-center justify-center mx-auto text-indigo-400 text-3xl">
+                <i class="fa-solid fa-award"></i>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-bold text-white">Керемет нәтиже! 🎉</h3>
+                <p class="text-xs text-slate-400 mt-1" id="result-subtitle">Сіз жаттығуды сәтті аяқтадыңыз.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 bg-slate-900/80 p-4 rounded-xl border border-slate-700/60">
+                <div class="text-center">
+                    <span class="text-xs text-slate-400">Жылдамдық</span>
+                    <p class="text-2xl font-bold text-indigo-400 mt-0.5"><span id="modal-wpm">0</span> <span class="text-xs text-slate-500">С/М</span></p>
+                </div>
+                <div class="text-center">
+                    <span class="text-xs text-slate-400">Дәлдік</span>
+                    <p class="text-2xl font-bold text-emerald-400 mt-0.5"><span id="modal-acc">0</span>%</p>
+                </div>
+                <div class="text-center">
+                    <span class="text-xs text-slate-400">Кеткен уақыт</span>
+                    <p class="text-lg font-bold text-slate-200 mt-0.5" id="modal-time">00:00</p>
+                </div>
+                <div class="text-center">
+                    <span class="text-xs text-slate-400">Қателер</span>
+                    <p class="text-lg font-bold text-rose-400 mt-0.5" id="modal-errors">0</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="modal-repeat-btn" class="flex-1 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold text-xs transition">
+                    Қайталау
+                </button>
+                <button id="modal-next-btn" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition">
+                    Келесі жаттығу
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Effects (Web Audio API synthesis) -->
+    <script>
+        // Sound Generator using Web Audio API (No external assets required)
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playKeyClick() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.04);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.04);
+            }
+
+            playError() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            playSuccess() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.35);
+            }
+        }
+
+        const soundFX = new SoundFX();
+    </script>
+
+    <!-- Main Logic Script -->
+    <script>
+        // Kazakh Lessons & Texts Corpus
+        const lessonCategories = [
+            {
+                id: "special_kz",
+                title: "Қазақша әріптер",
+                badge: "Базалық",
+                badgeClass: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+                texts: [
+                    { name: "1. Ә, І, Ң әріптері", content: "әні іні ң әні іні ң әңі іңі әңі іңі әні іні әңі іңі әдемі інісі ң әңі" },
+                    { name: "2. Ғ, Ү, Ұ әріптері", content: "ғарыш үлкен ұл ғарыш үлкен ұл ұлы үні ғалым ғарыш үлкен ұл ғалым" },
+                    { name: "3. Қ, Ө, Һ әріптері", content: "қала өмір қаһарман қала өмір қаһарман өнер қайрат өмір өлең қала" },
+                    { name: "4. Барлық 9 ерекше әріп", content: "ә і ң ға ү ұ қа ө һ әдемі інісі ғарыш үлкен ұлы өнер қаһарман" }
+                ]
+            },
+            {
+                id: "words",
+                title: "Сөздер мен сөз тіркестері",
+                badge: "Орташа",
+                badgeClass: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+                texts: [
+                    { name: "1. Күнделікті сөздер", content: "сәлем рақмет қайырлы таң жақсы бала мектеп білім достық Отан кітап" },
+                    { name: "2. Табиғат пен әлем", content: "күн бұлт жаңбыр тау өзен дала гүл аспан орман теңіз жел жарық" },
+                    { name: "3. Тәрбие мен ғылым", content: "ақыл еңбек талап абырой құрмет отбасы балалық шақ бақыт береке" }
+                ]
+            },
+            {
+                id: "proverbs",
+                title: "Мақал-мәтелдер",
+                badge: "Жоғары",
+                badgeClass: "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
+                texts: [
+                    { name: "1. Еңбек және оқу", content: "Еңбек етсең ерінбей, тояды қарның тіленбей. Білекті бірді жығар, білімді мыңды жығар." },
+                    { name: "2. Достық пен Отан", content: "Отан – отбасынан басталады. Ағаш тамырымен, адам достарымен мықты." },
+                    { name: "3. Тіл мен өнер", content: "Өнер алды – қызыл тіл. Тіл тас жарады, тас жармаса бас жарады." }
+                ]
+            },
+            {
+                id: "texts",
+                title: "Күрделі мәтіндер",
+                badge: "Шебер",
+                badgeClass: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+                texts: [
+                    { name: "1. Абайдың қара сөздерінен", content: "Ғылым таппай мақтанба, орын таппай баптанба. Құмарланып жиған қазынаңды, білімдіге жұмса." },
+                    { name: "2. Қазақстан табиғаты", content: "Қазақстан – кең-байтақ, табиғаты әсем әрі бай өлке. Көгілдір Көлсай, асқар таулы Алатау және ұлан-ғайыр сарыарқа даласы." }
+                ]
+            }
+        ];
+
+        // Standard Kazakh Keyboard Layout Structure (Visual)
+        const kazakhKeyboardLayout = [
+            [
+                { char: 'Ә', code: 'Digit1', kz: true }, { char: 'І', code: 'Digit2', kz: true },
+                { char: 'Ң', code: 'Digit3', kz: true }, { char: 'Ғ', code: 'Digit4', kz: true },
+                { char: 'Ү', code: 'Digit5', kz: true }, { char: 'Ұ', code: 'Digit6', kz: true },
+                { char: 'Қ', code: 'Digit7', kz: true }, { char: 'Ө', code: 'Digit8', kz: true },
+                { char: 'Һ', code: 'Digit9', kz: true }, { char: '0', code: 'Digit0' },
+                { char: '-', code: 'Minus' }, { char: '=', code: 'Equal' },
+                { char: '←', code: 'Backspace', width: 'w-16' }
+            ],
+            [
+                { char: 'Tab', code: 'Tab', width: 'w-12' },
+                { char: 'Й', code: 'KeyQ' }, { char: 'Ц', code: 'KeyW' }, { char: 'У', code: 'KeyE' },
+                { char: 'К', code: 'KeyR' }, { char: 'Е', code: 'KeyT' }, { char: 'Н', code: 'KeyY' },
+                { char: 'Г', code: 'KeyU' }, { char: 'Ш', code: 'KeyI' }, { char: 'Щ', code: 'KeyO' },
+                { char: 'З', code: 'KeyP' }, { char: 'Х', code: 'BracketLeft' }, { char: 'Ъ', code: 'BracketRight' }
+            ],
+            [
+                { char: 'Caps', code: 'CapsLock', width: 'w-14' },
+                { char: 'Ф', code: 'KeyA' }, { char: 'Ы', code: 'KeyS' }, { char: 'В', code: 'KeyD' },
+                { char: 'А', code: 'KeyF' }, { char: 'П', code: 'KeyG' }, { char: 'Р', code: 'KeyH' },
+                { char: 'О', code: 'KeyJ' }, { char: 'Л', code: 'KeyK' }, { char: 'Д', code: 'KeyL' },
+                { char: 'Ж', code: 'Semicolon' }, { char: 'Э', code: 'Quote' },
+                { char: 'Enter ↵', code: 'Enter', width: 'w-16' }
+            ],
+            [
+                { char: 'Shift ⇧', code: 'ShiftLeft', width: 'w-20' },
+                { char: 'Я', code: 'KeyZ' }, { char: 'Ч', code: 'KeyX' }, { char: 'С', code: 'KeyC' },
+                { char: 'М', code: 'KeyV' }, { char: 'И', code: 'KeyB' }, { char: 'Т', code: 'KeyN' },
+                { char: 'Ь', code: 'KeyM' }, { char: 'Б', code: 'Comma' }, { char: 'Ю', code: 'Period' },
+                { char: 'Shift ⇧', code: 'ShiftRight', width: 'w-20' }
+            ],
+            [
+                { char: 'Бос орын (Spacebar)', code: 'Space', width: 'flex-grow max-w-md' }
+            ]
+        ];
+
+        // Global State Variables
+        let currentCategoryIdx = 0;
+        let currentTextIdx = 0;
+        let targetText = "";
+        let currentCharIdx = 0;
+        let startTime = null;
+        let timerInterval = null;
+        let errorsCount = 0;
+        let totalTypedChars = 0;
+        let isFocused = false;
+        let bestWPM = localStorage.getItem('kz_typing_best_wpm') || 0;
+
+        // DOM Elements
+        const textDisplay = document.getElementById('text-display');
+        const keyboardEl = document.getElementById('keyboard');
+        const modeButtons = document.getElementById('mode-buttons');
+        const lessonSelect = document.getElementById('lesson-select');
+        const lessonBadge = document.getElementById('lesson-badge');
+        const focusOverlay = document.getElementById('focus-overlay');
+        const nextCharEl = document.getElementById('next-char');
+        const bestSpeedEl = document.getElementById('best-speed');
+        
+        // Stats Elements
+        const statWpm = document.getElementById('stat-wpm');
+        const statAcc = document.getElementById('stat-acc');
+        const statTime = document.getElementById('stat-time');
+        const statErrors = document.getElementById('stat-errors');
+
+        // Modal Elements
+        const resultModal = document.getElementById('result-modal');
+        const modalWpm = document.getElementById('modal-wpm');
+        const modalAcc = document.getElementById('modal-acc');
+        const modalTime = document.getElementById('modal-time');
+        const modalErrors = document.getElementById('modal-errors');
+        const modalRepeatBtn = document.getElementById('modal-repeat-btn');
+        const modalNextBtn = document.getElementById('modal-next-btn');
+
+        // Sound Toggle
+        const soundToggle = document.getElementById('sound-toggle');
+        const soundIcon = document.getElementById('sound-icon');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Initialize App
+        window.onload = function() {
+            bestSpeedEl.innerText = bestWPM;
+            renderKeyboard();
+            renderCategoryButtons();
+            loadCategory(0);
+            setupEventListeners();
+        };
+
+        function setupEventListeners() {
+            // Focus overlay click
+            focusOverlay.addEventListener('click', () => {
+                isFocused = true;
+                focusOverlay.classList.add('hidden');
+            });
+
+            // Keyboard key listener
+            window.addEventListener('keydown', handleKeyPress);
+            window.addEventListener('keyup', handleKeyUp);
+
+            // Restart button
+            restartBtn.addEventListener('click', resetSession);
+
+            // Modal action buttons
+            modalRepeatBtn.addEventListener('click', () => {
+                resultModal.classList.add('hidden');
+                resetSession();
+            });
+
+            modalNextBtn.addEventListener('click', () => {
+                resultModal.classList.add('hidden');
+                const cat = lessonCategories[currentCategoryIdx];
+                if (currentTextIdx < cat.texts.length - 1) {
+                    currentTextIdx++;
+                } else if (currentCategoryIdx < lessonCategories.length - 1) {
+                    currentCategoryIdx++;
+                    currentTextIdx = 0;
+                }
+                loadCategory(currentCategoryIdx);
+            });
+
+            // Sound toggle
+            soundToggle.addEventListener('click', () => {
+                soundFX.muted = !soundFX.muted;
+                soundIcon.className = soundFX.muted ? 'fa-solid fa-volume-xmark text-lg text-rose-400' : 'fa-solid fa-volume-high text-lg';
+            });
+
+            // Lesson select change
+            lessonSelect.addEventListener('change', (e) => {
+                currentTextIdx = parseInt(e.target.value);
+                resetSession();
+            });
+        }
+
+        function renderCategoryButtons() {
+            modeButtons.innerHTML = '';
+            lessonCategories.forEach((cat, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `p-2.5 rounded-xl font-medium text-xs transition border text-left flex flex-col justify-between ${
+                    idx === currentCategoryIdx 
+                        ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md' 
+                        : 'bg-slate-900/60 border-slate-700/80 text-slate-300 hover:bg-slate-700'
+                }`;
+                btn.innerHTML = `
+                    <span class="font-bold text-slate-200">${cat.title}</span>
+                    <span class="text-[10px] opacity-75 mt-1">${cat.texts.length} жаттығу</span>
+                `;
+                btn.addEventListener('click', () => loadCategory(idx));
+                modeButtons.appendChild(btn);
+            });
+        }
+
+        function loadCategory(idx) {
+            currentCategoryIdx = idx;
+            currentTextIdx = 0;
+            renderCategoryButtons();
+
+            const cat = lessonCategories[currentCategoryIdx];
+            lessonBadge.innerText = cat.badge;
+            lessonBadge.className = `text-xs px-2.5 py-0.5 rounded-full font-semibold border ${cat.badgeClass}`;
+
+            // Populate Sub-lessons dropdown
+            lessonSelect.innerHTML = '';
+            cat.texts.forEach((txt, tIdx) => {
+                const opt = document.createElement('option');
+                opt.value = tIdx;
+                opt.innerText = txt.name;
+                lessonSelect.appendChild(opt);
+            });
+
+            resetSession();
+        }
+
+        function resetSession() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            startTime = null;
+
+            const cat = lessonCategories[currentCategoryIdx];
+            targetText = cat.texts[currentTextIdx].content;
+            currentCharIdx = 0;
+            errorsCount = 0;
+            totalTypedChars = 0;
+
+            // Reset UI Stats
+            statWpm.innerText = '0';
+            statAcc.innerText = '100';
+            statTime.innerText = '00:00';
+            statErrors.innerText = '0';
+
+            renderTextDisplay();
+            highlightTargetKeyOnKeyboard();
+        }
+
+        function renderTextDisplay() {
+            textDisplay.innerHTML = '';
+            for (let i = 0; i < targetText.length; i++) {
+                const span = document.createElement('span');
+                span.innerText = targetText[i] === ' ' ? '␣' : targetText[i];
+                
+                if (i === currentCharIdx) {
+                    span.className = 'char-current px-0.5';
+                } else if (i < currentCharIdx) {
+                    span.className = 'char-correct';
+                } else {
+                    span.className = 'char-pending';
+                }
+
+                textDisplay.appendChild(span);
+            }
+
+            // Scroll display smoothly as user types
+            const activeChar = textDisplay.children[currentCharIdx];
+            if (activeChar) {
+                activeChar.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+
+            // Update next key hint
+            const nextChar = targetText[currentCharIdx];
+            nextCharEl.innerText = nextChar === ' ' ? 'Бос орын (Space)' : (nextChar || 'Соңы');
+        }
+
+        function renderKeyboard() {
+            keyboardEl.innerHTML = '';
+            kazakhKeyboardLayout.forEach(row => {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'flex justify-center gap-1 sm:gap-1.5 w-full';
+
+                row.forEach(keyObj => {
+                    const keyBtn = document.createElement('div');
+                    const keyWidth = keyObj.width ? keyObj.width : 'flex-1 max-w-[48px]';
+                    const isKzSpecial = keyObj.kz ? 'kz-special-key border-amber-500/50' : 'border-slate-700 text-slate-200';
+
+                    keyBtn.className = `key h-10 sm:h-12 bg-slate-900 border rounded-lg flex items-center justify-center cursor-pointer select-none ${keyWidth} ${isKzSpecial}`;
+                    keyBtn.dataset.char = keyObj.char.toUpperCase();
+                    keyBtn.dataset.code = keyObj.code;
+                    keyBtn.innerText = keyObj.char;
+
+                    rowEl.appendChild(keyBtn);
+                });
+
+                keyboardEl.appendChild(rowEl);
+            });
+        }
+
+        function highlightTargetKeyOnKeyboard() {
+            // Clear previous target highlights
+            document.querySelectorAll('.key').forEach(k => k.classList.remove('target-key'));
+
+            if (currentCharIdx >= targetText.length) return;
+
+            let charToFind = targetText[currentCharIdx].toUpperCase();
+            if (charToFind === ' ') charToFind = 'БОС ОРЫН (SPACEBAR)';
+
+            const keyEls = document.querySelectorAll('.key');
+            keyEls.forEach(keyEl => {
+                if (keyEl.dataset.char === charToFind) {
+                    keyEl.classList.add('target-key');
+                }
+            });
+        }
+
+        function handleKeyPress(e) {
+            // Hide overlay if active
+            if (!isFocused) {
+                isFocused = true;
+                focusOverlay.classList.add('hidden');
+            }
+
+            // Prevent scroll on Space key
+            if (e.code === 'Space') {
+                e.preventDefault();
+            }
+
+            // Visual Key Press Effect
+            const pressedKeyEl = document.querySelector(`.key[data-code="${e.code}"]`) || 
+                                 Array.from(document.querySelectorAll('.key')).find(k => k.dataset.char === e.key.toUpperCase());
+            if (pressedKeyEl) {
+                pressedKeyEl.classList.add('active');
+            }
+
+            // Ignore system hotkeys or keys like Shift/Alt/Control by themselves
+            if (e.key.length > 1 && e.key !== 'Enter' && e.code !== 'Space') return;
+
+            if (currentCharIdx >= targetText.length) return;
+
+            // Start timer on first character typed
+            if (!startTime) {
+                startTime = new Date();
+                timerInterval = setInterval(updateStats, 1000);
+            }
+
+            const expectedChar = targetText[currentCharIdx];
+            const typedChar = e.key;
+
+            totalTypedChars++;
+
+            if (typedChar === expectedChar) {
+                // Correct Key
+                soundFX.playKeyClick();
+                textDisplay.children[currentCharIdx].className = 'char-correct';
+                currentCharIdx++;
+            } else {
+                // Wrong Key
+                soundFX.playError();
+                errorsCount++;
+                statErrors.innerText = errorsCount;
+                textDisplay.children[currentCharIdx].className = 'char-wrong';
+            }
+
+            // Update UI & target highlights
+            if (currentCharIdx < targetText.length) {
+                textDisplay.children[currentCharIdx].className = 'char-current px-0.5';
+                highlightTargetKeyOnKeyboard();
+                nextCharEl.innerText = targetText[currentCharIdx] === ' ' ? 'Бос орын (Space)' : targetText[currentCharIdx];
+            } else {
+                finishSession();
+            }
+
+            updateStats();
+        }
+
+        function handleKeyUp(e) {
+            document.querySelectorAll('.key').forEach(k => k.classList.remove('active'));
+        }
+
+        function updateStats() {
+            if (!startTime) return;
+
+            const elapsedTimeSec = Math.max(1, Math.floor((new Date() - startTime) / 1000));
+            const minutes = elapsedTimeSec / 60;
+
+            // Words per minute (Standard: 5 chars = 1 word)
+            const wordsTyped = (currentCharIdx) / 5;
+            const wpm = Math.round(wordsTyped / minutes) || 0;
+
+            // Accuracy %
+            const accuracy = totalTypedChars > 0 
+                ? Math.max(0, Math.round(((totalTypedChars - errorsCount) / totalTypedChars) * 100)) 
+                : 100;
+
+            // Format Timer (MM:SS)
+            const minsFormatted = String(Math.floor(elapsedTimeSec / 60)).padStart(2, '0');
+            const secsFormatted = String(elapsedTimeSec % 60).padStart(2, '0');
+
+            // Render Live Stats
+            statWpm.innerText = wpm;
+            statAcc.innerText = accuracy;
+            statTime.innerText = `${minsFormatted}:${secsFormatted}`;
+        }
+
+        function finishSession() {
+            clearInterval(timerInterval);
+            soundFX.playSuccess();
+
+            const finalWpm = parseInt(statWpm.innerText);
+            const finalAcc = parseInt(statAcc.innerText);
+            const finalTime = statTime.innerText;
+
+            // Check Best Speed Record
+            if (finalWpm > bestWPM) {
+                bestWPM = finalWpm;
+                localStorage.setItem('kz_typing_best_wpm', bestWPM);
+                bestSpeedEl.innerText = bestWPM;
+            }
+
+            // Confetti effect
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            // Show Result Modal
+            modalWpm.innerText = finalWpm;
+            modalAcc.innerText = finalAcc;
+            modalTime.innerText = finalTime;
+            modalErrors.innerText = errorsCount;
+
+            resultModal.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
