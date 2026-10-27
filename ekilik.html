@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Екілік карточкалар</title>
+<style>
+:root{--bg:#f7f7f5;--fg:#1f2328;--mut:#6b7280;--card:#fff;--bd:#d8d8d2;--ac:#2563eb;--on:#facc15;--ok:#16a34a;--bad:#dc2626;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa;--on:#eab308;--ok:#4ade80;--bad:#f87171}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa;--on:#eab308;--ok:#4ade80;--bad:#f87171}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,sans-serif;padding:16px;max-width:560px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+.s{margin:0 0 14px;color:var(--mut);font-size:14px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+button{font:inherit;padding:10px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--fg);cursor:pointer}
+.tabs button{flex:1}
+.tabs button.on,button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+#cards{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:6px}
+.c{display:flex;flex-direction:column;align-items:center;padding:8px 0;border-radius:10px;border:2px solid var(--bd);background:var(--card);cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.c .w{font-size:12px;color:var(--mut)}
+.c .b{font-size:26px;font-weight:700;margin:4px 0}
+.c.on{background:var(--on);border-color:var(--on);color:#1f2328}
+.c.on .w{color:#1f2328}
+.res{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:12px 0;text-align:center}
+.res .big{font-size:40px;font-weight:700}
+.res .sum{color:var(--mut);font-size:14px;word-break:break-word}
+.bin{font-family:ui-monospace,monospace;font-size:18px;letter-spacing:2px}
+#task{display:none;text-align:center;margin:12px 0}
+#task .t{font-size:18px}
+#task .t b{font-size:36px;color:var(--ac)}
+#msg{min-height:24px;font-weight:600;margin:8px 0}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<h1>Екілік карточкалар</h1>
+<p class="s">Карточкаларды бас: қосылған карточка (сары) өз мәнін жалпы қосындыға қосады.</p>
+<div class="tabs"><button id="t1" class="on">Зерттеу</button><button id="t2">Тапсырма</button></div>
+
+<div id="task">
+  <div class="t"><b id="target">0</b> санын құрастыр</div>
+  <div class="s">Ұпай: <span id="score">0</span></div>
+</div>
+
+<div id="cards"></div>
+
+<div class="res">
+  <div class="s">Қосылған карточкалардың қосындысы</div>
+  <div class="big" id="dec">0</div>
+  <div class="sum" id="sum">ештеңе қосылмаған</div>
+  <div class="s" style="margin-top:8px">Екілік жазылуы</div>
+  <div class="bin" id="bin">00000000</div>
+</div>
+
+<div id="msg"></div>
+<div class="row">
+  <button id="check" class="p" style="display:none">Тексеру</button>
+  <button id="reset">Қалпына келтіру</button>
+</div>
+
+<script>
+var W=[128,64,32,16,8,4,2,1],st=[0,0,0,0,0,0,0,0],mode=1,target=0,score=0;
+var $=function(i){return document.getElementById(i)};
+function build(){
+  var h="";
+  W.forEach(function(w,i){h+='<div class="c" data-i="'+i+'"><span class="w">'+w+'</span><span class="b">0</span></div>'});
+  $("cards").innerHTML=h;
+  var cs=document.querySelectorAll(".c");
+  for(var k=0;k<cs.length;k++)cs[k].onclick=function(){
+    var i=+this.getAttribute("data-i");st[i]=1-st[i];upd();$("msg").textContent=""};
+}
+function val(){var s=0;st.forEach(function(b,i){s+=b*W[i]});return s}
+function upd(){
+  var cs=document.querySelectorAll(".c"),parts=[];
+  st.forEach(function(b,i){
+    cs[i].className="c"+(b?" on":"");cs[i].querySelector(".b").textContent=b;
+    if(b)parts.push(W[i]);
+  });
+  var v=val();
+  $("dec").textContent=v;
+  $("sum").textContent=parts.length?parts.join(" + ")+" = "+v:"ештеңе қосылмаған";
+  $("bin").textContent=st.join("");
+}
+function newTask(){
+  target=1+Math.floor(Math.random()*(score<3?15:score<6?63:255));
+  $("target").textContent=target;
+}
+function setMode(m){
+  mode=m;$("t1").className=m===1?"on":"";$("t2").className=m===2?"on":"";
+  $("task").style.display=m===2?"block":"none";
+  $("check").style.display=m===2?"inline-block":"none";
+  $("msg").textContent="";
+  st=[0,0,0,0,0,0,0,0];upd();
+  if(m===2){score=0;$("score").textContent=0;newTask()}
+}
+$("t1").onclick=function(){setMode(1)};
+$("t2").onclick=function(){setMode(2)};
+$("reset").onclick=function(){st=[0,0,0,0,0,0,0,0];upd();$("msg").textContent=""};
+$("check").onclick=function(){
+  var v=val(),m=$("msg");
+  if(v===target){
+    score++;$("score").textContent=score;
+    m.style.color="var(--ok)";m.textContent="Дұрыс! 🎉 Екілік жазылуы: "+st.join("");
+    st=[0,0,0,0,0,0,0,0];
+    setTimeout(function(){upd();newTask();m.textContent=""},1400);
+  }else{
+    m.style.color="var(--bad)";
+    m.textContent=v<target?v+" қосындысы аз. Карточка қосыңыз.":v+" қосындысы көп. Карточканы алып тастаңыз.";
+  }
+};
+build();upd();
+</script>
+</body>
+</html>
