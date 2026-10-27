@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Кескінді кодтау</title>
+<style>
+:root{--bg:#f7f7f5;--fg:#1f2328;--mut:#6b7280;--card:#fff;--bd:#d8d8d2;--ac:#2563eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,sans-serif;padding:16px;max-width:520px}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:17px;margin:22px 0 8px}
+.s{margin:0 0 10px;color:var(--mut);font-size:14px}
+button,input{font:inherit;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--fg)}
+button{padding:8px 12px;cursor:pointer}
+button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+#grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;background:var(--bd);border:2px solid var(--bd);border-radius:6px;touch-action:none;user-select:none}
+.px{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font:600 11px ui-monospace,monospace}
+#pal{display:flex;gap:6px;flex-wrap:wrap}
+.sw{width:36px;height:36px;border-radius:8px;border:3px solid var(--bd);cursor:pointer;display:flex;align-items:flex-end;justify-content:center;font:10px ui-monospace,monospace;box-sizing:border-box}
+.sw.sel{border-color:var(--ac);box-shadow:0 0 0 2px var(--ac)}
+.res{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-top:10px;font-size:15px}
+.res b{font-size:20px}
+.calc input{width:80px;padding:8px}
+.f{font-family:ui-monospace,monospace;font-size:14px;line-height:1.7;word-break:break-word}
+</style>
+</head>
+<body>
+<h1>Кескінді кодтау</h1>
+<p class="s">Пиксельдермен сурет сал. Түс неғұрлым көп болса, әр пиксельге соғұрлым көп бит қажет болады.</p>
+
+<div class="row" id="depth"></div>
+<div id="pal"></div>
+<div class="row" style="margin-top:10px">
+  <button id="codes">Кодтарды көрсету</button>
+  <button id="clear">Тазалау</button>
+</div>
+<div id="grid"></div>
+<div class="res" id="r1"></div>
+
+<h2>Файл өлшемінің калькуляторы</h2>
+<div class="row calc">
+  <input type="number" id="w" value="1920" min="1"> ×
+  <input type="number" id="h" value="1080" min="1">
+  пиксель
+</div>
+<div class="row">Түс тереңдігі:
+  <button data-d="1">1</button><button data-d="8">8</button><button data-d="24" class="on">24</button> бит
+</div>
+<div class="res f" id="r2"></div>
+
+<script>
+var PAL=["#ffffff","#000000","#ef4444","#3b82f6","#22c55e","#facc15","#f97316","#a855f7"],
+    D=1,cur=1,showCodes=false,cells=new Array(64).fill(0),paint=false,cd=24;
+var $=function(i){return document.getElementById(i)};
+function pad(n,l){var s=n.toString(2);while(s.length<l)s="0"+s;return s}
+function lum(c){var r=parseInt(c.substr(1,2),16),g=parseInt(c.substr(3,2),16),b=parseInt(c.substr(5,2),16);return(r*299+g*587+b*114)/1000}
+function depthBtns(){
+  var h="Пиксельге шаққандағы бит:";
+  [1,2,3].forEach(function(d){h+=' <button data-k="'+d+'" class="'+(d===D?"on":"")+'">'+d+' ('+(1<<d)+' түс)</button>'});
+  $("depth").innerHTML=h;
+  [].forEach.call($("depth").querySelectorAll("button"),function(b){b.onclick=function(){
+    D=+b.getAttribute("data-k");for(var i=0;i<64;i++)if(cells[i]>=(1<<D))cells[i]=0;
+    if(cur>=(1<<D))cur=1;all()}});
+}
+function palette(){
+  var h="";
+  for(var i=0;i<(1<<D);i++)h+='<div class="sw'+(i===cur?" sel":"")+'" data-i="'+i+'" style="background:'+PAL[i]+';color:'+(lum(PAL[i])>128?"#000":"#fff")+'">'+pad(i,D)+'</div>';
+  $("pal").innerHTML=h;
+  [].forEach.call($("pal").children,function(s){s.onclick=function(){cur=+s.getAttribute("data-i");palette()}});
+}
+function grid(){
+  var h="";
+  for(var i=0;i<64;i++){var c=PAL[cells[i]];
+    h+='<div class="px" data-i="'+i+'" style="background:'+c+';color:'+(lum(c)>128?"#000":"#fff")+'">'+(showCodes?pad(cells[i],D):"")+'</div>'}
+  $("grid").innerHTML=h;
+}
+function info(){
+  var bits=64*D;
+  $("r1").innerHTML='Пиксельдер саны: 8 × 8 = <b>64</b><br>Пиксельге шаққандағы бит: <b>'+D+'</b> (түстер: 2<sup>'+D+'</sup> = '+(1<<D)+')<br>Өлшемі: 64 × '+D+' = <b>'+bits+' бит</b> = <b>'+bits/8+' байт</b>';
+}
+function all(){depthBtns();palette();grid();info()}
+function setPx(e){
+  var t=document.elementFromPoint(e.clientX,e.clientY);
+  if(t&&t.className==="px"){var i=+t.getAttribute("data-i");if(cells[i]!==cur){cells[i]=cur;grid();info()}}
+}
+$("grid").addEventListener("pointerdown",function(e){paint=true;setPx(e)});
+window.addEventListener("pointermove",function(e){if(paint)setPx(e)});
+window.addEventListener("pointerup",function(){paint=false});
+$("codes").onclick=function(){showCodes=!showCodes;$("codes").className=showCodes?"on":"";grid()};
+$("clear").onclick=function(){cells.fill(0);grid()};
+
+function fmt(x){return Number(x.toFixed(2)).toLocaleString("kk-KZ")}
+function calc(){
+  var w=Math.max(1,+$("w").value||1),h=Math.max(1,+$("h").value||1),px=w*h,bits=px*cd,by=bits/8;
+  $("r2").innerHTML="1) Пиксельдер: "+w+" × "+h+" = "+fmt(px)+"<br>2) Барлық бит: "+fmt(px)+" × "+cd+" = "+fmt(bits)+"<br>3) Байт: "+fmt(bits)+" / 8 = "+fmt(by)+"<br>4) Килобайт: "+fmt(by)+" / 1024 = "+fmt(by/1024)+"<br>5) Мегабайт: "+fmt(by/1048576);
+}
+[].forEach.call(document.querySelectorAll("[data-d]"),function(b){b.onclick=function(){
+  cd=+b.getAttribute("data-d");[].forEach.call(document.querySelectorAll("[data-d]"),function(x){x.className=x===b?"on":""});calc()}});
+$("w").oninput=calc;$("h").oninput=calc;
+all();calc();
+</script>
+</body>
+</html>
