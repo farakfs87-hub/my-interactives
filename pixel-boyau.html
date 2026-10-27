@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пиксельдік бояу | Информатика</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Pixelated font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+            user-select: none;
+        }
+        .font-pixel {
+            font-family: 'Press Start 2P', cursive;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+        /* Grid styling */
+        .pixel-cell {
+            transition: transform 0.1s ease, background-color 0.15s ease;
+        }
+        .pixel-cell:hover {
+            filter: brightness(1.15);
+            outline: 2px solid #3b82f6;
+            z-index: 10;
+        }
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col overflow-hidden">
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 px-4 py-3 flex justify-between items-center z-20">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-indigo-500 to-purple-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-border-all text-xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400">
+                    Пиксельдік Бояу
+                </h1>
+                <p class="text-xs text-slate-400 hidden sm:block">Информатика: Графика және Сандық Кескіндеме</p>
+            </div>
+        </div>
+
+        <!-- Middle Info / Game Progress -->
+        <div class="flex items-center gap-4 bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-700/50">
+            <div class="text-xs sm:text-sm">
+                <span class="text-slate-400">Прогресс: </span>
+                <span id="progress-text" class="font-bold text-emerald-400">0%</span>
+            </div>
+            <div class="w-24 sm:w-36 bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full w-0 transition-all duration-300"></div>
+            </div>
+        </div>
+
+        <!-- Header Controls -->
+        <div class="flex items-center gap-2">
+            <button id="btn-theory" class="bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span class="hidden md:inline">Информатика Теориясы</span>
+            </button>
+            <button id="btn-sound" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg transition">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+
+        <!-- Left Sidebar: Templates & Tools -->
+        <aside class="w-full md:w-80 bg-slate-800/50 border-r border-slate-700/80 p-4 flex flex-col gap-4 overflow-y-auto z-10">
+            
+            <!-- Template Selector -->
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-400 mb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-palette text-indigo-400 mr-1.5"></i>Үлгіні Таңдаңыз</span>
+                </label>
+                <div class="grid grid-cols-2 gap-2" id="templates-grid">
+                    <!-- Dynamic template buttons injected here -->
+                </div>
+            </div>
+
+            <hr class="border-slate-700/60">
+
+            <!-- Tools Section -->
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-400 mb-2">
+                    <i class="fa-solid fa-wrench text-indigo-400 mr-1.5"></i>Құралдар
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="tool-brush" class="tool-btn bg-indigo-600 text-white p-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition shadow">
+                        <i class="fa-solid fa-paint-brush"></i> Бояу
+                    </button>
+                    <button id="tool-eraser" class="tool-btn bg-slate-700 text-slate-300 hover:bg-slate-600 p-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-eraser"></i> Өшіргіш
+                    </button>
+                </div>
+                <div class="mt-2 flex items-center gap-2">
+                    <label class="inline-flex items-center cursor-pointer text-xs text-slate-300">
+                        <input type="checkbox" id="toggle-numbers" class="sr-only peer" checked>
+                        <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span class="ml-2 font-medium">Сандарды көрсету</span>
+                    </label>
+                </div>
+            </div>
+
+            <hr class="border-slate-700/60">
+
+            <!-- Color Palette Selection -->
+            <div class="flex-1 flex flex-col min-h-[160px]">
+                <label class="block text-xs font-semibold uppercase text-slate-400 mb-2 flex justify-between items-center">
+                    <span><i class="fa-solid fa-swatchbook text-indigo-400 mr-1.5"></i>Түстер Палитрасы</span>
+                    <span id="palette-hint" class="text-[10px] text-indigo-300 font-normal">Санды таңдаңыз</span>
+                </label>
+                <div id="palette-container" class="space-y-2 overflow-y-auto max-h-[220px] pr-1">
+                    <!-- Palette items generated by JS -->
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 flex flex-col gap-2">
+                <button id="btn-reset" class="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> Өрісті тазалау
+                </button>
+                <button id="btn-download" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-medium transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <i class="fa-solid fa-download"></i> Суретті жүктеп алу (PNG)
+                </button>
+            </div>
+        </aside>
+
+        <!-- Canvas Workspace Area -->
+        <main class="flex-1 bg-slate-950 p-4 flex flex-col items-center justify-center relative overflow-hidden">
+            
+            <!-- Canvas Zoom Controls Overlay -->
+            <div class="absolute top-4 right-4 bg-slate-800/90 backdrop-blur border border-slate-700 rounded-lg flex gap-1 p-1 z-10 shadow-lg">
+                <button id="btn-zoom-in" class="w-8 h-8 flex items-center justify-center hover:bg-slate-700 rounded text-slate-300" title="Үлкейту">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <button id="btn-zoom-out" class="w-8 h-8 flex items-center justify-center hover:bg-slate-700 rounded text-slate-300" title="Кішірейту">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <button id="btn-zoom-reset" class="w-8 h-8 flex items-center justify-center hover:bg-slate-700 rounded text-slate-300 text-xs font-bold" title="Бастапқы күй">
+                    100%
+                </button>
+            </div>
+
+            <!-- Scrollable Workspace wrapper -->
+            <div id="canvas-viewport" class="w-full h-full flex items-center justify-center overflow-auto p-8 cursor-crosshair">
+                <div id="pixel-grid-container" class="bg-slate-800 p-2 rounded-xl shadow-2xl border border-slate-700/80 transition-transform duration-150 origin-center">
+                    <div id="pixel-grid" class="grid gap-[1px] bg-slate-700/50 p-[1px] rounded-lg">
+                        <!-- Pixel Cells Dynamic Generation -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Floating Prompt / Status -->
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-800/90 backdrop-blur px-4 py-2 rounded-full border border-slate-700 shadow-xl text-xs text-slate-300 flex items-center gap-2 z-10">
+                <i class="fa-solid fa-mouse-pointer text-indigo-400"></i>
+                <span>Тінтуірді басып тұрып сызуға болады</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- Theory Modal (Информатика Теориясы) -->
+    <div id="modal-theory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-indigo-400"></i>
+                    Информатика: Растрлық графика деген не?
+                </h2>
+                <button class="btn-close-modal text-slate-400 hover:text-white text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-300 leading-relaxed">
+                <div class="bg-indigo-950/40 border border-indigo-500/30 p-4 rounded-xl">
+                    <h3 class="text-indigo-300 font-bold mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-cube"></i> Пиксель дегеніміз не?
+                    </h3>
+                    <p>
+                        <strong>Пиксель (Pixel - Picture Element)</strong> — монитор экранындағы кескіннің (суреттің) ең кішкентай минималды элементі. Әрбір пиксель белгілі бір түсті, координатты және жарықтықты сипаттайды.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-emerald-400 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-palette"></i> RGB Түстік моделі
+                        </h4>
+                        <p class="text-xs">
+                            Компьютерде түстер үш негізгі түстің қосындысынан тұрады:
+                            <br><span class="text-red-400 font-semibold">R (Red)</span> — Қызыл
+                            <br><span class="text-green-400 font-semibold">G (Green)</span> — Жасыл
+                            <br><span class="text-blue-400 font-semibold">B (Blue)</span> — Көк
+                        </p>
+                    </div>
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+                        <h4 class="font-bold text-amber-400 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-border-none"></i> Растрлық кодтау
+                        </h4>
+                        <p class="text-xs">
+                            Суреттер тордағы әрбір пиксельге белгілі бір сандық кодты (түс индексін) меншіктеу арқылы сақталады. Бұл тапсырмада сіз кодталған сандарды түске айналдырасыз!
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/40 p-4 rounded-xl border border-slate-700">
+                    <h4 class="font-bold text-indigo-300 mb-2">💡 Растрлық графиканың ерекшеліктері:</h4>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-slate-300">
+                        <li>Шынайы фотосуреттерді сақтауға өте қолайлы.</li>
+                        <li>Кескін масштабын үлкейткенде пиксельдер (клеткалар) көрініп, сапасы төмендейді.</li>
+                        <li>Пішімдері: PNG, JPEG, GIF, BMP.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-700 text-right">
+                <button class="btn-close-modal bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition">
+                    Түсінікті, бастау!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="modal-victory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl relative overflow-hidden">
+            <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-yellow-500/30">
+                <i class="fa-solid fa-trophy text-4xl text-slate-900"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2 font-pixel text-yellow-400">ЖАРАЙСЫҢ!</h2>
+            <p class="text-slate-300 text-sm mb-6">
+                Сіз пиксельдік суретті толық әрі қатесіз бояп шықтыңыз! Графикалық кескін сәтті кодсыздандырылды.
+            </p>
+            <div class="flex flex-col gap-2">
+                <button id="btn-victory-download" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-medium transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> Суретті сақтау
+                </button>
+                <button class="btn-close-victory w-full bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl font-medium transition">
+                    Жабу
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Templates Configuration
+         * Maps integer IDs to colors and grid arrays (16x16 or 12x12)
+         */
+        const TEMPLATES = {
+            apple: {
+                name: 'Алма',
+                icon: 'fa-apple-whole',
+                width: 12,
+                height: 12,
+                colors: {
+                    1: { hex: '#ef4444', name: 'Қызыл' },
+                    2: { hex: '#b91c1c', name: 'Қою қызыл' },
+                    3: { hex: '#22c55e', name: 'Жасыл' },
+                    4: { hex: '#78350f', name: 'Қоңыр' },
+                    5: { hex: '#ffffff', name: 'Ақ' }
+                },
+                grid: [
+                    0,0,0,0,0,0,3,3,0,0,0,0,
+                    0,0,0,0,0,4,3,3,0,0,0,0,
+                    0,0,0,0,4,4,0,0,0,0,0,0,
+                    0,0,1,1,1,1,1,1,1,1,0,0,
+                    0,1,5,5,1,1,1,1,1,1,2,0,
+                    1,5,5,1,1,1,1,1,1,1,2,2,
+                    1,5,1,1,1,1,1,1,1,1,2,2,
+                    1,1,1,1,1,1,1,1,1,1,2,2,
+                    1,1,1,1,1,1,1,1,1,1,2,2,
+                    0,1,1,1,1,1,1,1,1,1,2,0,
+                    0,0,1,1,1,0,0,1,1,1,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0
+                ]
+            },
+            heart: {
+                name: 'Жүрекше',
+                icon: 'fa-heart',
+                width: 12,
+                height: 12,
+                colors: {
+                    1: { hex: '#f43f5e', name: 'Қызғылт қызыл' },
+                    2: { hex: '#be123c', name: 'Қою қызыл' },
+                    3: { hex: '#ffffff', name: 'Жылтыр (Ақ)' }
+                },
+                grid: [
+                    0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,1,1,1,0,0,0,1,1,1,0,0,
+                    1,3,3,1,1,0,1,1,1,1,1,0,
+                    1,3,1,1,1,1,1,1,1,1,2,0,
+                    1,1,1,1,1,1,1,1,1,1,2,0,
+                    1,1,1,1,1,1,1,1,1,2,2,0,
+                    0,1,1,1,1,1,1,1,1,2,0,0,
+                    0,0,1,1,1,1,1,1,2,0,0,0,
+                    0,0,0,1,1,1,1,2,0,0,0,0,
+                    0,0,0,0,1,1,2,0,0,0,0,0,
+                    0,0,0,0,0,1,0,0,0,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0
+                ]
+            },
+            shanyrak: {
+                name: 'Шаңырақ',
+                icon: 'fa-sun',
+                width: 12,
+                height: 12,
+                colors: {
+                    1: { hex: '#f59e0b', name: 'Алтын сары' },
+                    2: { hex: '#06b6d4', name: 'Көгілдір' },
+                    3: { hex: '#b45309', name: 'Қою сары' }
+                },
+                grid: [
+                    2,2,2,2,2,1,1,2,2,2,2,2,
+                    2,2,2,1,1,3,3,1,1,2,2,2,
+                    2,2,1,3,2,1,1,2,3,1,2,2,
+                    2,1,3,2,1,3,3,1,2,3,1,2,
+                    2,1,2,1,3,1,1,3,1,2,1,2,
+                    1,3,1,3,1,3,3,1,3,1,3,1,
+                    1,3,1,3,1,3,3,1,3,1,3,1,
+                    2,1,2,1,3,1,1,3,1,2,1,2,
+                    2,1,3,2,1,3,3,1,2,3,1,2,
+                    2,2,1,3,2,1,1,2,3,1,2,2,
+                    2,2,2,1,1,3,3,1,1,2,2,2,
+                    2,2,2,2,2,1,1,2,2,2,2,2
+                ]
+            },
+            computer: {
+                name: 'Монитор',
+                icon: 'fa-desktop',
+                width: 12,
+                height: 12,
+                colors: {
+                    1: { hex: '#3b82f6', name: 'Көк экран' },
+                    2: { hex: '#64748b', name: 'Сұр корпус' },
+                    3: { hex: '#1e293b', name: 'Қара рама' },
+                    4: { hex: '#38bdf8', name: 'Ашық экран' }
+                },
+                grid: [
+                    0,0,0,0,0,0,0,0,0,0,0,0,
+                    0,3,3,3,3,3,3,3,3,3,3,0,
+                    0,3,4,4,1,1,1,1,1,1,3,0,
+                    0,3,4,4,1,1,1,1,1,1,3,0,
+                    0,3,1,1,1,1,1,1,1,1,3,0,
+                    0,3,1,1,1,1,1,1,1,1,3,0,
+                    0,3,3,3,3,3,3,3,3,3,3,0,
+                    0,0,0,0,2,2,2,2,0,0,0,0,
+                    0,0,0,0,0,2,2,0,0,0,0,0,
+                    0,0,0,2,2,2,2,2,2,0,0,0,
+                    0,0,0,2,2,2,2,2,2,0,0,0,
+                    0,0,0,0,0,0,0,0,0,0,0,0
+                ]
+            }
+        };
+
+        // Game State Variables
+        let currentTemplateKey = 'apple';
+        let activeColorId = 1;
+        let isEraserActive = false;
+        let showNumbers = true;
+        let soundEnabled = true;
+        let userGrid = [];
+        let isMouseDown = false;
+        let zoomScale = 1;
+
+        // Web Audio API Synth for Interactive Sounds
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'paint') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400 + Math.random() * 200, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.08);
+                } else if (type === 'victory') {
+                    const now = audioCtx.currentTime;
+                    const notes = [261.63, 329.63, 392.00, 523.25];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.15, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.25);
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.start(now + idx * 0.12);
+                        noteOsc.stop(now + idx * 0.12 + 0.25);
+                    });
+                }
+            } catch (e) {
+                console.log('Audio error:', e);
+            }
+        }
+
+        // Initialize UI Elements
+        document.addEventListener('DOMContentLoaded', () => {
+            initTemplatesUI();
+            loadTemplate('apple');
+            setupEventListeners();
+        });
+
+        // Initialize template selector sidebar
+        function initTemplatesUI() {
+            const container = document.getElementById('templates-grid');
+            container.innerHTML = '';
+
+            Object.keys(TEMPLATES).forEach(key => {
+                const tpl = TEMPLATES[key];
+                const btn = document.createElement('button');
+                btn.className = `template-btn p-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-left transition flex flex-col items-center justify-center gap-1.5 ${key === currentTemplateKey ? 'ring-2 ring-indigo-500 bg-slate-700' : ''}`;
+                btn.dataset.key = key;
+                btn.innerHTML = `
+                    <i class="fa-solid ${tpl.icon} text-lg text-indigo-400"></i>
+                    <span class="text-xs font-medium text-slate-200">${tpl.name}</span>
+                `;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('ring-2', 'ring-indigo-500', 'bg-slate-700'));
+                    btn.classList.add('ring-2', 'ring-indigo-500', 'bg-slate-700');
+                    loadTemplate(key);
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        // Load specific template into grid
+        function loadTemplate(key) {
+            currentTemplateKey = key;
+            const tpl = TEMPLATES[key];
+            userGrid = new Array(tpl.grid.length).fill(0);
+            activeColorId = 1;
+            isEraserActive = false;
+            updateToolUI();
+
+            renderPalette();
+            renderGrid();
+            updateProgress();
+        }
+
+        // Render color selector palette
+        function renderPalette() {
+            const tpl = TEMPLATES[currentTemplateKey];
+            const container = document.getElementById('palette-container');
+            container.innerHTML = '';
+
+            Object.keys(tpl.colors).forEach(idStr => {
+                const id = parseInt(idStr);
+                const color = tpl.colors[id];
+
+                const item = document.createElement('div');
+                item.className = `palette-item p-2 rounded-xl border border-slate-700 bg-slate-900/80 hover:bg-slate-700/80 cursor-pointer flex items-center justify-between transition ${id === activeColorId && !isEraserActive ? 'ring-2 ring-indigo-400 bg-slate-800' : ''}`;
+                item.dataset.id = id;
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg shadow-inner flex items-center justify-center text-xs font-bold text-white/90 border border-white/20" style="background-color: ${color.hex}">
+                            ${id}
+                        </div>
+                        <span class="text-xs font-medium text-slate-200">${color.name}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700/50">№ ${id}</span>
+                `;
+
+                item.addEventListener('click', () => {
+                    activeColorId = id;
+                    isEraserActive = false;
+                    updateToolUI();
+                    renderPalette();
+                });
+
+                container.appendChild(item);
+            });
+        }
+
+        // Render the Grid
+        function renderGrid() {
+            const tpl = TEMPLATES[currentTemplateKey];
+            const gridContainer = document.getElementById('pixel-grid');
+
+            gridContainer.style.gridTemplateColumns = `repeat(${tpl.width}, minmax(0, 1fr))`;
+            gridContainer.innerHTML = '';
+
+            // Adjust overall grid cell sizing based on screen / width
+            const cellSizeClass = tpl.width > 12 ? 'w-6 h-6 sm:w-8 sm:h-8' : 'w-7 h-7 sm:w-10 sm:h-10';
+
+            tpl.grid.forEach((targetColorId, index) => {
+                const cell = document.createElement('div');
+                cell.className = `pixel-cell ${cellSizeClass} flex items-center justify-center text-xs font-bold cursor-pointer rounded-sm select-none relative`;
+                cell.dataset.index = index;
+
+                updateCellVisual(cell, index);
+
+                // Mouse Event Listeners for Painting
+                cell.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    isMouseDown = true;
+                    paintCell(index);
+                });
+
+                cell.addEventListener('mouseenter', () => {
+                    if (isMouseDown) {
+                        paintCell(index);
+                    }
+                });
+
+                gridContainer.appendChild(cell);
+            });
+        }
+
+        // Paint/Erase cell logic
+        function paintCell(index) {
+            const tpl = TEMPLATES[currentTemplateKey];
+            const targetColorId = tpl.grid[index];
+
+            // Ignore unfillable background pixels if target is 0
+            if (targetColorId === 0 && !isEraserActive) return;
+
+            const newColor = isEraserActive ? 0 : activeColorId;
+
+            if (userGrid[index] !== newColor) {
+                userGrid[index] = newColor;
+                const cell = document.querySelectorAll('.pixel-cell')[index];
+                updateCellVisual(cell, index);
+                playSound('paint');
+                updateProgress();
+            }
+        }
+
+        // Update single cell visual state
+        function updateCellVisual(cell, index) {
+            const tpl = TEMPLATES[currentTemplateKey];
+            const targetColorId = tpl.grid[index];
+            const userColorId = userGrid[index];
+
+            if (userColorId === 0) {
+                // Uncolored cell
+                if (targetColorId === 0) {
+                    cell.style.backgroundColor = '#0f172a'; // Empty bg
+                    cell.innerText = '';
+                } else {
+                    cell.style.backgroundColor = '#1e293b'; // Unfilled pixel
+                    cell.style.color = '#94a3b8';
+                    cell.innerText = showNumbers ? targetColorId : '';
+                }
+            } else {
+                // Colored cell
+                const colorObj = tpl.colors[userColorId];
+                cell.style.backgroundColor = colorObj ? colorObj.hex : '#1e293b';
+                cell.innerText = '';
+            }
+        }
+
+        // Calculate progress percentage and handle completion
+        function updateProgress() {
+            const tpl = TEMPLATES[currentTemplateKey];
+            let totalFillable = 0;
+            let correctFilled = 0;
+
+            tpl.grid.forEach((targetId, i) => {
+                if (targetId !== 0) {
+                    totalFillable++;
+                    if (userGrid[i] === targetId) {
+                        correctFilled++;
+                    }
+                }
+            });
+
+            const percent = totalFillable > 0 ? Math.round((correctFilled / totalFillable) * 100) : 0;
+            
+            document.getElementById('progress-text').innerText = `${percent}%`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+
+            if (percent === 100 && totalFillable > 0) {
+                triggerVictory();
+            }
+        }
+
+        // UI state toggles for tools
+        function updateToolUI() {
+            const brushBtn = document.getElementById('tool-brush');
+            const eraserBtn = document.getElementById('tool-eraser');
+
+            if (isEraserActive) {
+                eraserBtn.className = 'tool-btn bg-indigo-600 text-white p-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition shadow';
+                brushBtn.className = 'tool-btn bg-slate-700 text-slate-300 hover:bg-slate-600 p-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition';
+            } else {
+                brushBtn.className = 'tool-btn bg-indigo-600 text-white p-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition shadow';
+                eraserBtn.className = 'tool-btn bg-slate-700 text-slate-300 hover:bg-slate-600 p-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 transition';
+            }
+        }
+
+        // Victory Handlers
+        function triggerVictory() {
+            playSound('victory');
+            startConfetti();
+            const modal = document.getElementById('modal-victory');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // Setup All Event Handlers
+        function setupEventListeners() {
+            // Mouseup global check
+            window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+            // Tool Switchers
+            document.getElementById('tool-brush').addEventListener('click', () => {
+                isEraserActive = false;
+                updateToolUI();
+                renderPalette();
+            });
+
+            document.getElementById('tool-eraser').addEventListener('click', () => {
+                isEraserActive = true;
+                updateToolUI();
+                renderPalette();
+            });
+
+            // Toggle Numbers
+            document.getElementById('toggle-numbers').addEventListener('change', (e) => {
+                showNumbers = e.target.checked;
+                renderGrid();
+            });
+
+            // Reset Grid
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                const tpl = TEMPLATES[currentTemplateKey];
+                userGrid = new Array(tpl.grid.length).fill(0);
+                renderGrid();
+                updateProgress();
+            });
+
+            // Sound Toggle
+            document.getElementById('btn-sound').addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                const icon = document.getElementById('sound-icon');
+                icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-rose-400';
+            });
+
+            // Theory Modal Controls
+            const theoryModal = document.getElementById('modal-theory');
+            document.getElementById('btn-theory').addEventListener('click', () => {
+                theoryModal.classList.remove('opacity-0', 'pointer-events-none');
+            });
+
+            document.querySelectorAll('.btn-close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    theoryModal.classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+
+            // Victory Modal Close
+            document.querySelectorAll('.btn-close-victory').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('modal-victory').classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+
+            // Zoom Controls
+            const gridContainer = document.getElementById('pixel-grid-container');
+            document.getElementById('btn-zoom-in').addEventListener('click', () => {
+                if (zoomScale < 2.0) {
+                    zoomScale += 0.2;
+                    gridContainer.style.transform = `scale(${zoomScale})`;
+                }
+            });
+            document.getElementById('btn-zoom-out').addEventListener('click', () => {
+                if (zoomScale > 0.6) {
+                    zoomScale -= 0.2;
+                    gridContainer.style.transform = `scale(${zoomScale})`;
+                }
+            });
+            document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+                zoomScale = 1;
+                gridContainer.style.transform = `scale(1)`;
+            });
+
+            // Download PNG Image
+            const downloadHandler = () => exportToPNG();
+            document.getElementById('btn-download').addEventListener('click', downloadHandler);
+            document.getElementById('btn-victory-download').addEventListener('click', downloadHandler);
+        }
+
+        // Render current painted state to high-res PNG file download
+        function exportToPNG() {
+            const tpl = TEMPLATES[currentTemplateKey];
+            const canvas = document.createElement('canvas');
+            const scale = 32; // Export pixel resolution scale factor
+            canvas.width = tpl.width * scale;
+            canvas.height = tpl.height * scale;
+            const ctx = canvas.getContext('2d');
+
+            tpl.grid.forEach((targetId, i) => {
+                const x = (i % tpl.width) * scale;
+                const y = Math.floor(i / tpl.width) * scale;
+                const userColorId = userGrid[i];
+
+                if (userColorId !== 0 && tpl.colors[userColorId]) {
+                    ctx.fillStyle = tpl.colors[userColorId].hex;
+                    ctx.fillRect(x, y, scale, scale);
+                } else {
+                    // Transparent or background
+                    ctx.clearRect(x, y, scale, scale);
+                }
+            });
+
+            // Trigger Download
+            const link = document.createElement('a');
+            link.download = `pixel_art_${currentTemplateKey}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Lightweight Confetti Particle Animation
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: Math.random() * 2 - 1
+                });
+            }
+
+            let animationFrame;
+            let startTime = Date.now();
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+
+                if (Date.now() - startTime < 3500) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+            render();
+        }
+    </script>
+</body>
+</html>
