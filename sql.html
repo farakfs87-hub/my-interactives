@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Сұраныстар Интерактивті Тренажёры</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- AlaSQL for Client-side SQL Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/alasql@1.7.3/dist/alasql.min.js"></script>
+    <!-- Canvas Confetti for celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .code-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-slate-950 text-slate-100">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20 font-bold">
+                <i class="fa-solid fa-database text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400">
+                    SQL Тренажёр & Оқыту Платформасы
+                </h1>
+                <p class="text-xs text-slate-400 hidden sm:block">Деректер базасы бойынша интерактивті жаттықтырушы</p>
+            </div>
+        </div>
+
+        <!-- Mode Selector -->
+        <div class="flex p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+            <button id="mode-tasks-btn" onclick="switchMode('tasks')" class="px-3 py-1.5 rounded-lg font-medium transition-all bg-cyan-600 text-white shadow-md flex items-center gap-1.5">
+                <i class="fa-solid fa-list-check"></i> Тапсырмалар
+            </button>
+            <button id="mode-sandbox-btn" onclick="switchMode('sandbox')" class="px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-code"></i> SQL Эркін Режим
+            </button>
+        </div>
+
+        <!-- Right DB Switcher -->
+        <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-400 hidden md:block">Деректер базасы:</label>
+            <select id="db-selector" onchange="changeDatabase(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium">
+                <option value="ecommerce">🛒 Онлайн Дүкен</option>
+                <option value="company">🏢 Компания жəне Қызметкерлер</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="flex-grow flex overflow-hidden">
+        
+        <!-- Left Sidebar: Schema Inspector / Task Info -->
+        <aside class="w-80 border-r border-slate-800 bg-slate-900/60 flex flex-col shrink-0 overflow-hidden">
+            <!-- Sidebar Header Tabs -->
+            <div class="flex border-b border-slate-800 bg-slate-900 text-xs font-semibold">
+                <button id="tab-btn-task" onclick="switchSidebarTab('task')" class="flex-1 py-2.5 px-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-bullseye"></i> Тапсырма
+                </button>
+                <button id="tab-btn-schema" onclick="switchSidebarTab('schema')" class="flex-1 py-2.5 px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-table"></i> ДБ Схемасы
+                </button>
+            </div>
+
+            <!-- Tab 1: Tasks Panel -->
+            <div id="sidebar-task-panel" class="flex-grow flex flex-col overflow-hidden p-4 space-y-4">
+                <!-- Task Level Progress -->
+                <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400 font-medium">Тапсырмалар прогресі:</span>
+                        <span id="task-progress-text" class="text-cyan-400 font-bold font-mono">1/10</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div id="task-progress-bar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-10 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- Task Selector Dropdown -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1.5">Тапсырманы таңдаңыз:</label>
+                    <select id="task-select" onchange="selectTask(parseInt(this.value))" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl p-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </select>
+                </div>
+
+                <!-- Active Task Card -->
+                <div class="flex-grow overflow-y-auto custom-scroll space-y-3 pr-1">
+                    <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/60 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span id="task-difficulty-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide bg-emerald-950 text-emerald-400 border border-emerald-800">
+                                Жеңіл
+                            </span>
+                            <span id="task-id-badge" class="text-xs font-mono text-slate-500">#1</span>
+                        </div>
+                        <h3 id="task-title" class="font-bold text-sm text-slate-100">Тапсырма жүктелуде...</h3>
+                        <p id="task-desc" class="text-xs text-slate-300 leading-relaxed">...</p>
+                    </div>
+
+                    <!-- Expected Output Info -->
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+                        <span class="text-slate-400 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb text-amber-400"></i> Кеңес / Підказка:
+                        </span>
+                        <p id="task-hint" class="text-slate-400 text-xs leading-normal italic">
+                            Қажет болса "Кеңесті көрсету" батырмасын басыңыз.
+                        </p>
+                        <button onclick="toggleHint()" class="text-cyan-400 hover:text-cyan-300 text-[11px] font-medium pt-1 block">
+                            <i class="fa-regular fa-eye"></i> Кеңесті көрсету / жасыру
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Prev / Next Navigation -->
+                <div class="pt-2 flex gap-2 border-t border-slate-800 shrink-0">
+                    <button onclick="prevTask()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-300 transition-all flex justify-center items-center gap-1">
+                        <i class="fa-solid fa-chevron-left"></i> Артқа
+                    </button>
+                    <button onclick="nextTask()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-300 transition-all flex justify-center items-center gap-1">
+                        Алға <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Database Schema Explorer -->
+            <div id="sidebar-schema-panel" class="flex-grow flex flex-col overflow-hidden p-4 hidden space-y-3">
+                <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Ағымдағы ДБ кестелері</span>
+                <div id="tables-accordion" class="flex-grow overflow-y-auto custom-scroll space-y-2 pr-1">
+                    <!-- Dynamic Tables Schema Injected Here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Code & Results View -->
+        <main class="flex-grow flex flex-col overflow-hidden bg-slate-950">
+            
+            <!-- SQL Editor Header Toolbar -->
+            <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-400">
+                    <i class="fa-solid fa-terminal text-cyan-400"></i>
+                    <span>SQL Редактор</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="formatQuery()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-all" title="SQL форматын түзеу">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </button>
+                    <button onclick="clearQuery()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-all">
+                        Тазалау
+                    </button>
+                    <button onclick="runQuery()" class="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-lg text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-play text-xs"></i> Орындау (Ctrl+Enter)
+                    </button>
+                </div>
+            </div>
+
+            <!-- SQL Text Area Input -->
+            <div class="h-56 relative border-b border-slate-800 bg-slate-900/40">
+                <textarea id="sql-input" spellcheck="false" placeholder="Мұнда SQL сұранысын жазыңыз... (мысалы: SELECT * FROM customers;)" 
+                    class="w-full h-full p-4 bg-transparent code-font text-slate-100 text-sm focus:outline-none resize-none custom-scroll leading-relaxed"
+                    onkeydown="handleKeyDown(event)"></textarea>
+            </div>
+
+            <!-- Status Banner & Verification -->
+            <div id="status-banner" class="px-4 py-2 bg-slate-900/90 border-b border-slate-800 text-xs font-medium flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                    <span id="status-text" class="text-slate-400">Сұранысты орындауға дайын</span>
+                </div>
+                <div id="execution-time" class="font-mono text-slate-500 text-[11px]"></div>
+            </div>
+
+            <!-- Execution Results View -->
+            <div class="flex-grow flex flex-col overflow-hidden p-4 space-y-2">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-table-cells"></i> Орындау нәтижесі
+                    </h4>
+                    <span id="row-count-badge" class="text-xs text-slate-500 font-mono">Жолдар: 0</span>
+                </div>
+
+                <!-- Table Wrapper -->
+                <div id="result-table-container" class="flex-grow overflow-auto border border-slate-800 rounded-xl bg-slate-900/60 custom-scroll relative">
+                    <div id="empty-result-msg" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 text-xs space-y-2">
+                        <i class="fa-solid fa-code text-3xl opacity-40"></i>
+                        <p>SQL сұранысын жазып, "Орындау" батырмасын басыңыз</p>
+                    </div>
+                    <table id="result-table" class="w-full text-left text-xs text-slate-200 border-collapse hidden">
+                        <thead id="result-thead" class="bg-slate-800/90 text-slate-300 font-mono sticky top-0 border-b border-slate-700">
+                            <!-- Headers -->
+                        </thead>
+                        <tbody id="result-tbody" class="divide-y divide-slate-800 font-mono">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // State Management
+        let currentMode = 'tasks'; // 'tasks' or 'sandbox'
+        let currentDbKey = 'ecommerce';
+        let currentTaskIndex = 0;
+        let hintVisible = false;
+
+        // Databases Definitions with Schema and Initial Data
+        const DATABASES = {
+            ecommerce: {
+                name: 'Онлайн Дүкен',
+                tables: {
+                    customers: {
+                        columns: [
+                            { name: 'id', type: 'INT', pk: true },
+                            { name: 'name', type: 'VARCHAR(50)' },
+                            { name: 'city', type: 'VARCHAR(50)' },
+                            { name: 'rating', type: 'INT' }
+                        ],
+                        data: [
+                            [1, 'Арман Сүлейменов', 'Алматы', 100],
+                            [2, 'Айгерім Қасымова', 'Астана', 200],
+                            [3, 'Дәулет Серіков', 'Шымкент', 150],
+                            [4, 'Динара Оспанова', 'Алматы', 300],
+                            [5, 'Ержан Бақытов', 'Қарағанды', 120]
+                        ]
+                    },
+                    orders: {
+                        columns: [
+                            { name: 'id', type: 'INT', pk: true },
+                            { name: 'customer_id', type: 'INT', fk: 'customers.id' },
+                            { name: 'amount', type: 'DECIMAL(10,2)' },
+                            { name: 'order_date', type: 'DATE' }
+                        ],
+                        data: [
+                            [101, 1, 4500.00, '2026-01-15'],
+                            [102, 2, 12000.50, '2026-01-18'],
+                            [103, 1, 2300.00, '2026-02-01'],
+                            [104, 4, 8900.00, '2026-02-10'],
+                            [105, 3, 500.00, '2026-02-14'],
+                            [106, 2, 3400.00, '2026-02-20']
+                        ]
+                    },
+                    products: {
+                        columns: [
+                            { name: 'id', type: 'INT', pk: true },
+                            { name: 'title', type: 'VARCHAR(100)' },
+                            { name: 'category', type: 'VARCHAR(50)' },
+                            { name: 'price', type: 'DECIMAL(10,2)' }
+                        ],
+                        data: [
+                            [1, 'Ноутбук', 'Электроника', 350000.00],
+                            [2, 'Смартфон', 'Электроника', 210000.00],
+                            [3, 'Кофеқайнатқыш', 'Тұрмыстық техника', 45000.00],
+                            [4, 'Құлаққап', 'Электроника', 25000.00],
+                            [5, 'Микротолқынды пеш', 'Тұрмыстық техника', 55000.00]
+                        ]
+                    }
+                }
+            },
+            company: {
+                name: 'Компания жəне Қызметкерлер',
+                tables: {
+                    employees: {
+                        columns: [
+                            { name: 'id', type: 'INT', pk: true },
+                            { name: 'first_name', type: 'VARCHAR(50)' },
+                            { name: 'last_name', type: 'VARCHAR(50)' },
+                            { name: 'department_id', type: 'INT' },
+                            { name: 'salary', type: 'INT' }
+                        ],
+                        data: [
+                            [1, 'Нұрлан', 'Ахметов', 1, 450000],
+                            [2, 'Әлия', 'Жұмабаева', 2, 520000],
+                            [3, 'Бекзат', 'Нұрғалиев', 1, 380000],
+                            [4, 'Мадина', 'Сәдуақасова', 3, 490000],
+                            [5, 'Қайрат', 'Ермеков', 2, 600000]
+                        ]
+                    },
+                    departments: {
+                        columns: [
+                            { name: 'id', type: 'INT', pk: true },
+                            { name: 'dept_name', type: 'VARCHAR(50)' },
+                            { name: 'location', type: 'VARCHAR(50)' }
+                        ],
+                        data: [
+                            [1, 'Бағдарламалау', 'Алматы'],
+                            [2, 'Маркетинг', 'Астана'],
+                            [3, 'Қаржы бөлімі', 'Алматы']
+                        ]
+                    }
+                }
+            }
+        };
+
+        // Learning Tasks List
+        const TASKS = [
+            {
+                id: 1,
+                db: 'ecommerce',
+                title: '1. Барлық деректерді таңдау',
+                difficulty: 'Жеңіл',
+                desc: 'Клиенттердің (`customers`) кестесіндегі БАРЛЫҚ бағандар мен жазбаларды таңдайтын сұраныс жазыңыз.',
+                hint: 'SELECT * FROM customers; түйінді сөздерін пайдаланыңыз.',
+                solution: 'SELECT * FROM customers;',
+                defaultCode: 'SELECT * FROM customers;'
+            },
+            {
+                id: 2,
+                db: 'ecommerce',
+                title: '2. Деректерді сүзгілеу (WHERE)',
+                difficulty: 'Жеңіл',
+                desc: 'Рейтингі (`rating`) 140-тан жоғары клиенттердің аты (`name`) мен рейтингін (`rating`) шығарыңыз.',
+                hint: 'Бағандарды үтір арқылы көрсетіп, WHERE rating > 140 шартын қосыңыз.',
+                solution: 'SELECT name, rating FROM customers WHERE rating > 140;',
+                defaultCode: 'SELECT name, rating FROM customers WHERE rating > ...'
+            },
+            {
+                id: 3,
+                db: 'ecommerce',
+                title: '3. Нәтижелерді сұрыптау (ORDER BY)',
+                difficulty: 'Жеңіл',
+                desc: 'Тауарлар (`products`) кестесінен барлық бағандарды бағасы (`price`) бойынша ең қымбаттан ең арзанға қарай сұрыптап шығарыңыз.',
+                hint: 'ORDER BY price DESC форматын қолданыңыз.',
+                solution: 'SELECT * FROM products ORDER BY price DESC;',
+                defaultCode: 'SELECT * FROM products ORDER BY price ...'
+            },
+            {
+                id: 4,
+                db: 'ecommerce',
+                title: '4. Агрегаттық функциялар (SUM)',
+                difficulty: 'Орташа',
+                desc: 'Тапсырыстар (`orders`) кестесіндегі барлық тапсырыстардың жалпы суммасын (`SUM(amount)`) есептеңіз. Баған атауын `total_sum` деп атаңыз.',
+                hint: 'SELECT SUM(amount) AS total_sum FROM orders;',
+                solution: 'SELECT SUM(amount) AS total_sum FROM orders;',
+                defaultCode: 'SELECT SUM(amount) AS total_sum FROM orders;'
+            },
+            {
+                id: 5,
+                db: 'ecommerce',
+                title: '5. Кестелерді біріктіру (INNER JOIN)',
+                difficulty: 'Орташа',
+                desc: '`customers` жəне `orders` кестелерін біріктіріп, клиенттің атын (`name`) және оның тапсырыс суммасын (`amount`) шығарыңыз.',
+                hint: 'SELECT customers.name, orders.amount FROM customers JOIN orders ON customers.id = orders.customer_id;',
+                solution: 'SELECT customers.name, orders.amount FROM customers JOIN orders ON customers.id = orders.customer_id;',
+                defaultCode: 'SELECT customers.name, orders.amount \nFROM customers \nJOIN orders ON ...'
+            },
+            {
+                id: 6,
+                db: 'company',
+                title: '6. Деректерді топтау (GROUP BY)',
+                difficulty: 'Күрделі',
+                desc: '"Компания" базасында: әр бөлім бойынша (`department_id`) орташа жалақыны (`AVG(salary)`) есептеңіз.',
+                hint: 'SELECT department_id, AVG(salary) AS avg_salary FROM employees GROUP BY department_id;',
+                solution: 'SELECT department_id, AVG(salary) AS avg_salary FROM employees GROUP BY department_id;',
+                defaultCode: 'SELECT department_id, AVG(salary) AS avg_salary \nFROM employees \nGROUP BY ...'
+            }
+        ];
+
+        // Init App on Window Load
+        window.onload = function() {
+            initAlaSQL();
+            renderTaskSelectOptions();
+            loadTask(0);
+        };
+
+        // Initialize Virtual In-Memory Database Engine
+        function initAlaSQL() {
+            try {
+                // Load Current DB tables into AlaSQL
+                const dbConfig = DATABASES[currentDbKey];
+                
+                // Drop existing tables if any
+                Object.keys(dbConfig.tables).forEach(tableName => {
+                    alasql(`DROP TABLE IF EXISTS ${tableName}`);
+                });
+
+                // Create and populate tables
+                Object.entries(dbConfig.tables).forEach(([tableName, tableDef]) => {
+                    // Build CREATE TABLE query
+                    const colDefs = tableDef.columns.map(c => `${c.name} ${c.type}`).join(', ');
+                    alasql(`CREATE TABLE ${tableName} (${colDefs})`);
+
+                    // Build INSERT queries
+                    tableDef.data.forEach(row => {
+                        alasql(`INSERT INTO ${tableName} VALUES (${row.map(v => typeof v === 'string' ? `'${v}'` : v).join(', ')})`);
+                    });
+                });
+
+                renderSchemaExplorer();
+            } catch (err) {
+                console.error("Деректер базасын іске қосу қатесі:", err);
+            }
+        }
+
+        // Switch Database Context
+        function changeDatabase(dbKey) {
+            currentDbKey = dbKey;
+            initAlaSQL();
+            showStatus("Деректер базасы ауыстырылды: " + DATABASES[dbKey].name, "info");
+        }
+
+        // Mode Switcher (Tasks vs Sandbox)
+        function switchMode(mode) {
+            currentMode = mode;
+            const tasksBtn = document.getElementById('mode-tasks-btn');
+            const sandboxBtn = document.getElementById('mode-sandbox-btn');
+
+            if (mode === 'tasks') {
+                tasksBtn.className = "px-3 py-1.5 rounded-lg font-medium transition-all bg-cyan-600 text-white shadow-md flex items-center gap-1.5";
+                sandboxBtn.className = "px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
+                switchSidebarTab('task');
+            } else {
+                sandboxBtn.className = "px-3 py-1.5 rounded-lg font-medium transition-all bg-cyan-600 text-white shadow-md flex items-center gap-1.5";
+                tasksBtn.className = "px-3 py-1.5 rounded-lg font-medium text-slate-400 hover:text-white transition-all flex items-center gap-1.5";
+                switchSidebarTab('schema');
+            }
+        }
+
+        // Sidebar Tab Switcher
+        function switchSidebarTab(tab) {
+            const taskBtn = document.getElementById('tab-btn-task');
+            const schemaBtn = document.getElementById('tab-btn-schema');
+            const taskPanel = document.getElementById('sidebar-task-panel');
+            const schemaPanel = document.getElementById('sidebar-schema-panel');
+
+            if (tab === 'task') {
+                taskBtn.className = "flex-1 py-2.5 px-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center justify-center gap-1.5 font-semibold";
+                schemaBtn.className = "flex-1 py-2.5 px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5";
+                taskPanel.classList.remove('hidden');
+                schemaPanel.classList.add('hidden');
+            } else {
+                schemaBtn.className = "flex-1 py-2.5 px-3 border-b-2 border-cyan-500 text-cyan-400 flex items-center justify-center gap-1.5 font-semibold";
+                taskBtn.className = "flex-1 py-2.5 px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center justify-center gap-1.5";
+                schemaPanel.classList.remove('hidden');
+                taskPanel.classList.add('hidden');
+            }
+        }
+
+        // Populate Select dropdown for tasks
+        function renderTaskSelectOptions() {
+            const select = document.getElementById('task-select');
+            select.innerHTML = TASKS.map((t, idx) => `
+                <option value="${idx}">${t.title}</option>
+            `).join('');
+        }
+
+        // Load active task into editor
+        function loadTask(index) {
+            currentTaskIndex = index;
+            const task = TASKS[index];
+            
+            // Auto switch DB if needed
+            if (currentDbKey !== task.db) {
+                currentDbKey = task.db;
+                document.getElementById('db-selector').value = task.db;
+                initAlaSQL();
+            }
+
+            document.getElementById('task-select').value = index;
+            document.getElementById('task-title').textContent = task.title;
+            document.getElementById('task-desc').textContent = task.desc;
+            document.getElementById('task-hint').textContent = task.hint;
+            document.getElementById('task-hint').classList.add('hidden');
+            document.getElementById('sql-input').value = task.defaultCode;
+            document.getElementById('task-id-badge').textContent = `#${task.id}`;
+            document.getElementById('task-difficulty-badge').textContent = task.difficulty;
+
+            // Progress Bar UI
+            const pct = Math.round(((index + 1) / TASKS.length) * 100);
+            document.getElementById('task-progress-text').textContent = `${index + 1}/${TASKS.length}`;
+            document.getElementById('task-progress-bar').style.width = `${pct}%`;
+
+            showStatus("Тапсырма жүктелді. SQL сұранысын жазыңыз.", "info");
+        }
+
+        function prevTask() {
+            if (currentTaskIndex > 0) loadTask(currentTaskIndex - 1);
+        }
+
+        function nextTask() {
+            if (currentTaskIndex < TASKS.length - 1) loadTask(currentTaskIndex + 1);
+        }
+
+        function selectTask(idx) {
+            loadTask(idx);
+        }
+
+        function toggleHint() {
+            const hintEl = document.getElementById('task-hint');
+            hintEl.classList.toggle('hidden');
+        }
+
+        // Render DB Tables Schema Accordion
+        function renderSchemaExplorer() {
+            const accordion = document.getElementById('tables-accordion');
+            const db = DATABASES[currentDbKey];
+            
+            let html = '';
+            Object.entries(db.tables).forEach(([tableName, meta]) => {
+                html += `
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden text-xs">
+                        <div class="p-2.5 bg-slate-800/60 flex items-center justify-between font-mono font-bold text-cyan-300">
+                            <span><i class="fa-solid fa-table text-slate-500 mr-1.5"></i>${tableName}</span>
+                            <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-slate-400 font-sans">${meta.data.length} жазба</span>
+                        </div>
+                        <div class="p-2 space-y-1 bg-slate-900/40">
+                            ${meta.columns.map(c => `
+                                <div class="flex items-center justify-between font-mono text-[11px] text-slate-400 py-0.5 border-b border-slate-800/40 last:border-0">
+                                    <span class="${c.pk ? 'text-amber-400 font-bold' : ''}">
+                                        ${c.pk ? '<i class="fa-solid fa-key text-[9px] mr-1"></i>' : ''}${c.name}
+                                    </span>
+                                    <span class="text-slate-500 text-[10px]">${c.type}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            accordion.innerHTML = html;
+        }
+
+        // Execute SQL Query Engine
+        function runQuery() {
+            const query = document.getElementById('sql-input').value.trim();
+            if (!query) {
+                showStatus("Өтініш, SQL сұранысын енгізіңіз", "error");
+                return;
+            }
+
+            const startTime = performance.now();
+
+            try {
+                // Execute Query using AlaSQL
+                const res = alasql(query);
+                const endTime = performance.now();
+                const execMs = (endTime - startTime).toFixed(2);
+
+                document.getElementById('execution-time').textContent = `${execMs} мс`;
+
+                if (Array.isArray(res)) {
+                    renderResultTable(res);
+                    showStatus(`Сұраныс сәтті орындалды. Қайтарылған жазбалар: ${res.length}`, "success");
+
+                    // If in task mode, check correctness
+                    if (currentMode === 'tasks') {
+                        verifyTaskSolution(res);
+                    }
+                } else {
+                    renderEmptyResult();
+                    showStatus("Пәрмен сәтті орындалды", "success");
+                }
+            } catch (err) {
+                showStatus("SQL Қатесі: " + err.message, "error");
+                renderEmptyResult();
+            }
+        }
+
+        // Compare User Output with Task Solution
+        function verifyTaskSolution(userResult) {
+            const currentTask = TASKS[currentTaskIndex];
+            try {
+                const expectedResult = alasql(currentTask.solution);
+                
+                // Compare JSON structure
+                const isCorrect = JSON.stringify(userResult) === JSON.stringify(expectedResult);
+
+                if (isCorrect) {
+                    showStatus("🎉 Керемет! Тапсырма дұрыс орындалды!", "success");
+                    if (window.confetti) {
+                        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+                    }
+                } else {
+                    showStatus("⚠️ Сұраныс орындалды, бірақ нәтиже тапсырма талабына сәйкес келмейді.", "warning");
+                }
+            } catch (e) {
+                console.error("Тапсырманы тексеру қатесі:", e);
+            }
+        }
+
+        // Render Table Results
+        function renderResultTable(data) {
+            const table = document.getElementById('result-table');
+            const thead = document.getElementById('result-thead');
+            const tbody = document.getElementById('result-tbody');
+            const emptyMsg = document.getElementById('empty-result-msg');
+            const countBadge = document.getElementById('row-count-badge');
+
+            if (!data || data.length === 0) {
+                table.classList.add('hidden');
+                emptyMsg.classList.remove('hidden');
+                emptyMsg.querySelector('p').textContent = "Сұраныс нәтижесі бос (0 жол)";
+                countBadge.textContent = "Жолдар: 0";
+                return;
+            }
+
+            emptyMsg.classList.add('hidden');
+            table.classList.remove('hidden');
+            countBadge.textContent = `Жолдар: ${data.length}`;
+
+            // Generate Headers
+            const cols = Object.keys(data[0]);
+            thead.innerHTML = `
+                <tr>
+                    ${cols.map(c => `<th class="px-4 py-2.5 font-semibold text-slate-300 uppercase tracking-wider text-[11px] border-b border-slate-700">${c}</th>`).join('')}
+                </tr>
+            `;
+
+            // Generate Data Rows
+            tbody.innerHTML = data.map(row => `
+                <tr class="hover:bg-slate-800/50 transition-colors">
+                    ${cols.map(c => `<td class="px-4 py-2 text-slate-300 border-b border-slate-800/60 whitespace-nowrap">${row[c] !== null ? row[c] : '<span class="text-slate-600 italic">NULL</span>'}</td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        function renderEmptyResult() {
+            const table = document.getElementById('result-table');
+            const emptyMsg = document.getElementById('empty-result-msg');
+            table.classList.add('hidden');
+            emptyMsg.classList.remove('hidden');
+        }
+
+        // UI Status Helper
+        function showStatus(text, type) {
+            const dot = document.getElementById('status-dot');
+            const textEl = document.getElementById('status-text');
+
+            textEl.textContent = text;
+
+            if (type === 'success') {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse";
+                textEl.className = "text-emerald-400 font-semibold";
+            } else if (type === 'error') {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+                textEl.className = "text-rose-400 font-semibold";
+            } else if (type === 'warning') {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+                textEl.className = "text-amber-400 font-semibold";
+            } else {
+                dot.className = "w-2.5 h-2.5 rounded-full bg-cyan-500";
+                textEl.className = "text-slate-300";
+            }
+        }
+
+        // Keyboard Shortcut: Ctrl + Enter / Cmd + Enter to Run
+        function handleKeyDown(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runQuery();
+            }
+        }
+
+        function clearQuery() {
+            document.getElementById('sql-input').value = '';
+            showStatus("Редактор тазартылды", "info");
+        }
+
+        function formatQuery() {
+            let val = document.getElementById('sql-input').value;
+            const keywords = ['SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'HAVING', 'JOIN', 'INNER JOIN', 'LEFT JOIN', 'ON', 'AND', 'OR', 'LIMIT', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE'];
+            
+            keywords.forEach(kw => {
+                const regex = new RegExp(`\\b${kw}\\b`, 'gi');
+                val = val.replace(regex, kw);
+            });
+            
+            document.getElementById('sql-input').value = val;
+        }
+    </script>
+</body>
+</html>
