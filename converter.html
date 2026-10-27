@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Санау жүйелері - Түрлендіргіш және Ойын</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for game achievements -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .tab-btn.active {
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 text-slate-100 flex flex-col justify-between min-h-screen">
+
+    <div class="max-w-5xl mx-auto w-full">
+        <!-- Header -->
+        <header class="glass-panel rounded-2xl p-4 md:p-6 mb-6 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-2xl font-bold shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid font-mono">101</i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300">
+                        Санау жүйелерінің әлемі
+                    </h1>
+                    <p class="text-xs md:text-sm text-slate-400">Интерактивті түрлендіргіш және оқыту ойыны</p>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex p-1.5 bg-slate-900/80 rounded-xl border border-slate-700/50 w-full md:w-auto justify-center">
+                <button id="nav-calc" onclick="switchTab('calc')" class="tab-btn active px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator"></i> Түрлендіргіш
+                </button>
+                <button id="nav-game" onclick="switchTab('game')" class="tab-btn px-5 py-2.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all duration-300 flex items-center gap-2">
+                    <i class="fa-solid fa-gamepad"></i> Ойын-Квиз
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN SECTION: CONVERTER -->
+        <main id="tab-calc-content" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Input Panel -->
+                <div class="lg:col-span-5 glass-panel rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between space-y-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-indigo-300 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders"></i> Енгізу параметрлері
+                        </h2>
+
+                        <!-- Input Number -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                                Бастапқы сан:
+                            </label>
+                            <input type="text" id="input-number" value="42" placeholder="Санды енгізіңіз..."
+                                   class="w-full bg-slate-900/90 border border-indigo-500/40 rounded-xl px-4 py-3 text-lg font-mono font-bold text-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                                   oninput="processConversion()">
+                            <p id="input-error" class="text-xs text-rose-400 mt-1 hidden"></p>
+                        </div>
+
+                        <!-- From Base -->
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                                Қай жүйеден:
+                            </label>
+                            <div class="grid grid-cols-2 gap-2" id="from-base-group">
+                                <button onclick="setBase('from', 2)" class="from-base-btn p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center" data-base="2">
+                                    <span>2-лік (Двоичная)</span>
+                                    <span class="font-mono text-indigo-400 font-bold">BIN</span>
+                                </button>
+                                <button onclick="setBase('from', 8)" class="from-base-btn p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center" data-base="8">
+                                    <span>8-дік (Восьмеричная)</span>
+                                    <span class="font-mono text-indigo-400 font-bold">OCT</span>
+                                </button>
+                                <button onclick="setBase('from', 10)" class="from-base-btn p-2.5 text-xs font-medium rounded-xl border border-indigo-500/80 bg-indigo-950/60 transition-all text-left flex justify-between items-center" data-base="10">
+                                    <span>10-дық (Десятичная)</span>
+                                    <span class="font-mono text-indigo-400 font-bold">DEC</span>
+                                </button>
+                                <button onclick="setBase('from', 16)" class="from-base-btn p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center" data-base="16">
+                                    <span>16-лық (Шестнадцатеричная)</span>
+                                    <span class="font-mono text-indigo-400 font-bold">HEX</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Swap Button -->
+                        <div class="flex justify-center my-2">
+                            <button onclick="swapBases()" class="p-2 rounded-full bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-slate-700 transition-all shadow-md">
+                                <i class="fa-solid fa-arrow-down-up-lock text-sm"></i>
+                            </button>
+                        </div>
+
+                        <!-- To Base -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                                Қай жүйеге:
+                            </label>
+                            <div class="grid grid-cols-2 gap-2" id="to-base-group">
+                                <button onclick="setBase('to', 2)" class="to-base-btn p-2.5 text-xs font-medium rounded-xl border border-indigo-500/80 bg-indigo-950/60 transition-all text-left flex justify-between items-center" data-base="2">
+                                    <span>2-лік (Двоичная)</span>
+                                    <span class="font-mono text-emerald-400 font-bold">BIN</span>
+                                </button>
+                                <button onclick="setBase('to', 8)" class="to-base-btn p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center" data-base="8">
+                                    <span>8-дік (Восьмеричная)</span>
+                                    <span class="font-mono text-emerald-400 font-bold">OCT</span>
+                                </button>
+                                <button onclick="setBase('to', 10)" class="to-base-btn p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center" data-base="10">
+                                    <span>10-дық (Десятичная)</span>
+                                    <span class="font-mono text-emerald-400 font-bold">DEC</span>
+                                </button>
+                                <button onclick="setBase('to', 16)" class="to-base-btn p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center" data-base="16">
+                                    <span>16-лық (Шестнадцатеричная)</span>
+                                    <span class="font-mono text-emerald-400 font-bold">HEX</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Preset Buttons -->
+                    <div class="pt-4 border-t border-slate-800">
+                        <span class="text-xs text-slate-400 block mb-2">Жылдам мысалдар:</span>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="applyPreset('101010', 2, 10)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg font-mono text-slate-300">101010₂ → DEC</button>
+                            <button onclick="applyPreset('255', 10, 16)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg font-mono text-slate-300">255₁₀ → HEX</button>
+                            <button onclick="applyPreset('77', 8, 2)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg font-mono text-slate-300">77₈ → BIN</button>
+                            <button onclick="applyPreset('1A3', 16, 10)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg font-mono text-slate-300">1A3₁₆ → DEC</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result & Step-by-Step Explanation Panel -->
+                <div class="lg:col-span-7 space-y-6 flex flex-col justify-between">
+                    <!-- Main Result Card -->
+                    <div class="glass-panel rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-8 -top-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Нәтиже:</span>
+                        <div class="flex items-baseline justify-between flex-wrap gap-2">
+                            <div class="font-mono text-3xl md:text-4xl font-extrabold text-emerald-400 tracking-wider break-all" id="output-result">
+                                101010
+                            </div>
+                            <div class="text-slate-400 font-mono text-lg font-semibold" id="output-base-badge">
+                                (негізі: 2)
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800/80 flex justify-between items-center text-xs text-slate-400">
+                            <span id="formula-summary">42₁₀ = 101010₂</span>
+                            <button onclick="copyResult()" class="text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 bg-indigo-950/40 px-2.5 py-1 rounded-lg border border-indigo-800/50">
+                                <i class="fa-regular fa-copy"></i> Көшіріп алу
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Steps Container -->
+                    <div class="glass-panel rounded-2xl p-5 md:p-6 shadow-xl flex-grow flex flex-col">
+                        <h3 class="text-base font-bold text-indigo-300 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol"></i> Пошаговый аудару түсіндірмесі (Қадамдары)
+                        </h3>
+                        <div id="steps-container" class="space-y-3 overflow-y-auto max-h-[350px] pr-2 custom-scrollbar text-sm flex-grow">
+                            <!-- Dynamic Steps will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- MAIN SECTION: INTERACTIVE GAME -->
+        <main id="tab-game-content" class="hidden space-y-6">
+            <!-- Game Header & Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-panel rounded-2xl p-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">Ұпай (Score)</div>
+                        <div class="text-xl font-bold font-mono text-amber-300" id="game-score">0</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-fire"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">Комбо (Streak)</div>
+                        <div class="text-xl font-bold font-mono text-indigo-300" id="game-streak">0x</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">Деңгей (Level)</div>
+                        <div class="text-xl font-bold text-emerald-300" id="game-level">1 (Оңай)</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-2xl p-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400">Жан (Lives)</div>
+                        <div class="text-xl font-bold text-rose-400 flex gap-1" id="game-lives">
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-heart"></i>
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Card -->
+            <div class="glass-panel rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+                <!-- Level selection -->
+                <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4 flex-wrap gap-2">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Тапсырма режимі:</span>
+                    <div class="flex gap-2">
+                        <button onclick="setGameDifficulty(1)" id="diff-1" class="px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all">Оңай</button>
+                        <button onclick="setGameDifficulty(2)" id="diff-2" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-400 hover:text-white transition-all">Орташа</button>
+                        <button onclick="setGameDifficulty(3)" id="diff-3" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-400 hover:text-white transition-all">Күрделі</button>
+                    </div>
+                </div>
+
+                <!-- Game Question Display -->
+                <div class="text-center py-6">
+                    <p class="text-sm text-slate-300 mb-2" id="game-question-text">Берілген санды дұрыс жүйеге түрлендіріңіз:</p>
+                    <div class="inline-block bg-slate-900/90 border border-indigo-500/30 rounded-2xl px-8 py-6 my-2 shadow-inner">
+                        <span class="text-3xl md:text-5xl font-extrabold font-mono text-purple-300 tracking-wider" id="game-source-val">1011</span>
+                        <sub class="text-lg md:text-xl font-bold text-indigo-400 ml-1" id="game-source-base">2</sub>
+                        <span class="text-2xl md:text-3xl mx-3 text-slate-500">=</span>
+                        <span class="text-3xl md:text-5xl font-extrabold font-mono text-amber-400 border-b-4 border-dashed border-amber-400/50">?</span>
+                        <sub class="text-lg md:text-xl font-bold text-emerald-400 ml-1" id="game-target-base">10</sub>
+                    </div>
+                </div>
+
+                <!-- Multiple Choice Options -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4" id="game-options-container">
+                    <!-- Options injected dynamically -->
+                </div>
+
+                <!-- Feedback Banner -->
+                <div id="game-feedback" class="mt-4 p-4 rounded-xl hidden text-center font-bold text-sm transition-all">
+                </div>
+
+                <!-- Game Control Action -->
+                <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-800">
+                    <button onclick="showGameHint()" class="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                        <i class="fa-solid fa-lightbulb"></i> Көмек / Түсіндірме
+                    </button>
+                    <button id="next-question-btn" onclick="generateNewQuestion()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 font-semibold text-sm shadow-lg shadow-indigo-500/30 transition-all flex items-center gap-2">
+                        Келесі сұрақ <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Hint Modal / Panel -->
+                <div id="game-hint-box" class="mt-4 p-4 bg-slate-900/90 rounded-xl border border-amber-500/30 hidden text-xs text-slate-300 space-y-2">
+                    <div class="font-bold text-amber-300 flex items-center gap-1">
+                        <i class="fa-solid fa-graduation-cap"></i> Шағын нұсқаулық:
+                    </div>
+                    <div id="game-hint-content"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-xs text-slate-500 py-4 border-t border-slate-800/60">
+            <p>Санау жүйелерінің интерактивті платформасы &copy; 2026. Информатика сабағына арналған көрнекі құрал.</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 flex items-center gap-2 z-50 text-sm font-semibold">
+        <i class="fa-solid fa-circle-check"></i> <span id="toast-msg">Нәтиже көшірілді!</span>
+    </div>
+
+    <!-- SCRIPT LOGIC -->
+    <script>
+        // State management
+        let state = {
+            fromBase: 10,
+            toBase: 2,
+            inputVal: "42",
+            // Game State
+            game: {
+                score: 0,
+                streak: 0,
+                difficulty: 1, // 1: Easy, 2: Medium, 3: Hard
+                lives: 3,
+                currentQuestion: null,
+                answered: false
+            }
+        };
+
+        // Initialize on Load
+        window.onload = function() {
+            processConversion();
+            generateNewQuestion();
+        };
+
+        // Navigation Tabs Switcher
+        function switchTab(tab) {
+            const calcTab = document.getElementById('nav-calc');
+            const gameTab = document.getElementById('nav-game');
+            const calcContent = document.getElementById('tab-calc-content');
+            const gameContent = document.getElementById('tab-game-content');
+
+            if (tab === 'calc') {
+                calcTab.classList.add('active');
+                calcTab.classList.remove('text-slate-400');
+                gameTab.classList.remove('active');
+                gameTab.classList.add('text-slate-400');
+
+                calcContent.classList.remove('hidden');
+                gameContent.classList.add('hidden');
+            } else {
+                gameTab.classList.add('active');
+                gameTab.classList.remove('text-slate-400');
+                calcTab.classList.remove('active');
+                calcTab.classList.add('text-slate-400');
+
+                gameContent.classList.remove('hidden');
+                calcContent.classList.add('hidden');
+            }
+        }
+
+        // Set Base in Converter
+        function setBase(type, base) {
+            if (type === 'from') {
+                state.fromBase = base;
+                updateButtonStyles('from-base-btn', base, 'indigo');
+            } else {
+                state.toBase = base;
+                updateButtonStyles('to-base-btn', base, 'emerald');
+            }
+            processConversion();
+        }
+
+        function updateButtonStyles(className, selectedBase, colorTheme) {
+            const buttons = document.getElementsByClassName(className);
+            for (let btn of buttons) {
+                const bBase = parseInt(btn.getAttribute('data-base'));
+                if (bBase === selectedBase) {
+                    btn.className = `${className} p-2.5 text-xs font-medium rounded-xl border border-${colorTheme}-500/80 bg-${colorTheme}-950/60 transition-all text-left flex justify-between items-center shadow-lg`;
+                } else {
+                    btn.className = `${className} p-2.5 text-xs font-medium rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-700/80 transition-all text-left flex justify-between items-center`;
+                }
+            }
+        }
+
+        function swapBases() {
+            const temp = state.fromBase;
+            state.fromBase = state.toBase;
+            state.toBase = temp;
+
+            // Update UI buttons
+            updateButtonStyles('from-base-btn', state.fromBase, 'indigo');
+            updateButtonStyles('to-base-btn', state.toBase, 'emerald');
+
+            processConversion();
+        }
+
+        function applyPreset(val, from, to) {
+            document.getElementById('input-number').value = val;
+            setBase('from', from);
+            setBase('to', to);
+        }
+
+        // Conversion Core Engine
+        function processConversion() {
+            const rawInput = document.getElementById('input-number').value.trim().toUpperCase();
+            const errorEl = document.getElementById('input-error');
+            const resultEl = document.getElementById('output-result');
+            const badgeEl = document.getElementById('output-base-badge');
+            const summaryEl = document.getElementById('formula-summary');
+            const stepsContainer = document.getElementById('steps-container');
+
+            if (!rawInput) {
+                errorEl.textContent = "Өтініш, санды енгізіңіз";
+                errorEl.classList.remove('hidden');
+                resultEl.textContent = "0";
+                stepsContainer.innerHTML = "<div class='text-slate-400 italic text-center py-4'>Мәлімет жоқ</div>";
+                return;
+            }
+
+            // Validate Input against selected base
+            if (!isValidForBase(rawInput, state.fromBase)) {
+                errorEl.textContent = `Қате! "${rawInput}" саны ${state.fromBase}-лік жүйеге сәйкес келмейді.`;
+                errorEl.classList.remove('hidden');
+                resultEl.textContent = "---";
+                stepsContainer.innerHTML = `<div class='p-3 bg-rose-950/50 border border-rose-800/60 rounded-xl text-rose-300 text-xs'>
+                    <b>Ескерту:</b> ${state.fromBase}-лік жүйеде тек мына цифрлар қолданылады: <b>${getBaseDigits(state.fromBase)}</b>
+                </div>`;
+                return;
+            }
+
+            errorEl.classList.add('hidden');
+
+            // Convert to Decimal first (Intermediate representation)
+            const decimalVal = parseInt(rawInput, state.fromBase);
+            const convertedVal = decimalVal.toString(state.toBase).toUpperCase();
+
+            // Render Results
+            resultEl.textContent = convertedVal;
+            badgeEl.textContent = `(негізі: ${state.toBase})`;
+            summaryEl.textContent = `${rawInput}₍${state.fromBase}₎ = ${convertedVal}₍${state.toBase}₎`;
+
+            // Build Step-by-Step Explanations
+            generateStepByStepExplanation(rawInput, state.fromBase, state.toBase, decimalVal, convertedVal);
+        }
+
+        function isValidForBase(val, base) {
+            const validChars = "0123456789ABCDEF".slice(0, base);
+            for (let char of val) {
+                if (!validChars.includes(char)) return false;
+            }
+            return true;
+        }
+
+        function getBaseDigits(base) {
+            if (base === 2) return "0, 1";
+            if (base === 8) return "0, 1, 2, 3, 4, 5, 6, 7";
+            if (base === 10) return "0, 1, 2, 3, 4, 5, 6, 7, 8, 9";
+            if (base === 16) return "0-9 және A, B, C, D, E, F";
+            return "";
+        }
+
+        // Generate Detailed Kazak Steps
+        function generateStepByStepExplanation(input, fromBase, toBase, decimalVal, finalResult) {
+            const container = document.getElementById('steps-container');
+            container.innerHTML = '';
+
+            if (fromBase === toBase) {
+                container.innerHTML = `<div class='p-3 bg-indigo-950/40 rounded-xl border border-indigo-800/40 text-slate-300'>
+                    Бастапқы жүйе мен соңғы жүйе бірдей (${fromBase}). Өзгеріссіз қалады.
+                </div>`;
+                return;
+            }
+
+            let html = '';
+
+            // CASE 1: Convert X -> 10
+            if (toBase === 10) {
+                html += renderToDecimalSteps(input, fromBase);
+            }
+            // CASE 2: Convert 10 -> X
+            else if (fromBase === 10) {
+                html += renderFromDecimalSteps(decimalVal, toBase);
+            }
+            // CASE 3: Convert X -> Y (Direct via Decimal)
+            else {
+                html += `<div class='p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 mb-2'>
+                    <span class='font-bold text-indigo-300'>1-кезең:</span> ${fromBase}-лік жүйеден 10-дық жүйеге аудару:
+                </div>`;
+                html += renderToDecimalSteps(input, fromBase);
+
+                html += `<div class='p-3 bg-slate-800/80 rounded-xl border border-slate-700/60 my-2'>
+                    <span class='font-bold text-emerald-300'>2-кезең:</span> Tapқан 10-дық саннан (${decimalVal}) ${toBase}-лік жүйеге аудару (бөлу арқылы):
+                </div>`;
+                html += renderFromDecimalSteps(decimalVal, toBase);
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Step generator: Any base to Decimal
+        function renderToDecimalSteps(strNum, base) {
+            const len = strNum.length;
+            let stepHtml = `<div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2 font-mono">`;
+            stepHtml += `<div class="text-xs text-slate-400 font-sans mb-1">Разрядтар дәрежесі бойынша жіктеу:</div>`;
+
+            let terms = [];
+            let sumCalc = [];
+            let total = 0;
+
+            for (let i = 0; i < len; i++) {
+                const char = strNum[i];
+                const digitValue = parseInt(char, base);
+                const power = len - 1 - i;
+                const powerVal = Math.pow(base, power);
+                const termVal = digitValue * powerVal;
+                total += termVal;
+
+                terms.push(`(${char} × ${base}<sup>${power}</sup>)`);
+                sumCalc.push(`(${digitValue} × ${powerVal})`);
+            }
+
+            stepHtml += `<div class="text-indigo-300 flex flex-wrap gap-1 items-center">
+                <span>${strNum}<sub>${base}</sub> = </span>
+                <span>${terms.join(' + ')}</span>
+            </div>`;
+
+            stepHtml += `<div class="text-slate-300 flex flex-wrap gap-1 items-center">
+                <span>= ${sumCalc.join(' + ')}</span>
+            </div>`;
+
+            stepHtml += `<div class="text-emerald-400 font-bold text-base pt-1">
+                = ${total}<sub>10</sub>
+            </div>`;
+
+            stepHtml += `</div>`;
+            return stepHtml;
+        }
+
+        // Step generator: Decimal to Any Base
+        function renderFromDecimalSteps(decNum, targetBase) {
+            if (decNum === 0) {
+                return `<div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800">0 кез келген жүйеде 0 болады.</div>`;
+            }
+
+            let temp = decNum;
+            let remainders = [];
+            let steps = [];
+
+            while (temp > 0) {
+                let rem = temp % targetBase;
+                let quot = Math.floor(temp / targetBase);
+                let remChar = rem.toString(targetBase).toUpperCase();
+
+                steps.push({
+                    div: temp,
+                    base: targetBase,
+                    quot: quot,
+                    rem: rem,
+                    remChar: remChar
+                });
+
+                remainders.push(remChar);
+                temp = quot;
+            }
+
+            let stepHtml = `<div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 space-y-2">`;
+            stepHtml += `<div class="text-xs text-slate-400 font-sans mb-2">Санды ${targetBase}-ге қалдықсыз бөлу қадамдары:</div>`;
+            stepHtml += `<div class="space-y-1.5 font-mono text-xs">`;
+
+            steps.forEach((s, idx) => {
+                stepHtml += `<div class="flex items-center justify-between border-b border-slate-800/60 pb-1">
+                    <span class="text-slate-300">${s.div} ÷ ${s.base} = <b>${s.quot}</b></span>
+                    <span class="text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40">
+                        Қалдық: <b>${s.remChar}</b> ${s.rem !== parseInt(s.remChar) ? `(${s.rem})` : ''}
+                    </span>
+                </div>`;
+            });
+
+            stepHtml += `</div>`;
+
+            // Reverse remainders
+            const finalResult = remainders.slice().reverse().join('');
+            stepHtml += `<div class="mt-3 pt-2 text-xs text-slate-300 font-sans">
+                Қалдықтарды төменнен жоғарыға (кері ретпен) жазамыз:
+                <span class="font-mono text-emerald-400 font-bold text-sm block mt-1">
+                    ${remainders.reverse().join(' ← ')} = ${finalResult}<sub>${targetBase}</sub>
+                </span>
+            </div>`;
+
+            stepHtml += `</div>`;
+            return stepHtml;
+        }
+
+        // Clipboard Copy
+        function copyResult() {
+            const res = document.getElementById('output-result').textContent.trim();
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = res;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast("Нәтиже алмасу буферіне көшірілді!");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2500);
+        }
+
+        // ==========================================
+        // GAME & QUIZ ENGINE
+        // ==========================================
+
+        function setGameDifficulty(level) {
+            state.game.difficulty = level;
+            for (let i = 1; i <= 3; i++) {
+                const btn = document.getElementById(`diff-${i}`);
+                if (i === level) {
+                    btn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-indigo-600 text-white transition-all shadow-md";
+                } else {
+                    btn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-400 hover:text-white transition-all";
+                }
+            }
+
+            const levelNames = {1: "1 (Оңай)", 2: "2 (Орташа)", 3: "3 (Күрделі)"};
+            document.getElementById('game-level').textContent = levelNames[level];
+
+            generateNewQuestion();
+        }
+
+        function generateNewQuestion() {
+            state.game.answered = false;
+            document.getElementById('game-feedback').classList.add('hidden');
+            document.getElementById('game-hint-box').classList.add('hidden');
+
+            const diff = state.game.difficulty;
+            let maxVal = diff === 1 ? 25 : (diff === 2 ? 100 : 255);
+
+            // Bases selection based on difficulty
+            let availableBases = [2, 10];
+            if (diff >= 2) availableBases.push(8);
+            if (diff >= 3) availableBases.push(16);
+
+            let srcBase = availableBases[Math.floor(Math.random() * availableBases.length)];
+            let targetBase = availableBases[Math.floor(Math.random() * availableBases.length)];
+            while (targetBase === srcBase) {
+                targetBase = availableBases[Math.floor(Math.random() * availableBases.length)];
+            }
+
+            // Generate Random Number in Decimal
+            let numDec = Math.floor(Math.random() * (maxVal - 2)) + 2;
+            let srcVal = numDec.toString(srcBase).toUpperCase();
+            let correctAns = numDec.toString(targetBase).toUpperCase();
+
+            state.game.currentQuestion = {
+                numDec: numDec,
+                srcBase: srcBase,
+                targetBase: targetBase,
+                srcVal: srcVal,
+                correctAns: correctAns
+            };
+
+            // Display Question
+            document.getElementById('game-source-val').textContent = srcVal;
+            document.getElementById('game-source-base').textContent = srcBase;
+            document.getElementById('game-target-base').textContent = targetBase;
+
+            // Generate 4 Multiple Choice Options
+            let options = new Set();
+            options.add(correctAns);
+
+            while (options.size < 4) {
+                let delta = (Math.floor(Math.random() * 7) - 3);
+                let fakeDec = Math.max(1, numDec + delta);
+                let fakeVal = fakeDec.toString(targetBase).toUpperCase();
+                options.add(fakeVal);
+            }
+
+            let shuffledOptions = Array.from(options).sort(() => Math.random() - 0.5);
+
+            // Render Option Buttons
+            const optContainer = document.getElementById('game-options-container');
+            optContainer.innerHTML = '';
+
+            shuffledOptions.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.className = "game-opt-btn p-4 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-100 font-mono font-bold text-lg md:text-xl transition-all hover:scale-[1.02] flex items-center justify-between shadow-lg";
+                btn.innerHTML = `<span>${opt}</span><span class="text-xs text-slate-500 font-sans font-normal">(${targetBase}-лік)</span>`;
+                btn.onclick = () => checkGameAnswer(opt, btn);
+                optContainer.appendChild(btn);
+            });
+        }
+
+        function checkGameAnswer(selectedOpt, btnElement) {
+            if (state.game.answered) return;
+            state.game.answered = true;
+
+            const q = state.game.currentQuestion;
+            const feedbackEl = document.getElementById('game-feedback');
+
+            // Disable all option buttons
+            const allBtns = document.querySelectorAll('.game-opt-btn');
+
+            if (selectedOpt === q.correctAns) {
+                // CORRECT
+                btnElement.classList.remove('bg-slate-800/80', 'border-slate-700');
+                btnElement.classList.add('bg-emerald-600', 'border-emerald-400', 'text-white');
+
+                state.game.score += 10 * state.game.difficulty * (state.game.streak + 1);
+                state.game.streak += 1;
+
+                feedbackEl.className = "mt-4 p-4 rounded-xl text-center font-bold text-sm bg-emerald-950/80 border border-emerald-500/50 text-emerald-300";
+                feedbackEl.innerHTML = `<i class="fa-solid fa-circle-check text-lg mr-1"></i> Тамаша! Дұрыс жауап: ${q.correctAns}<sub>${q.targetBase}</sub> (+${10 * state.game.difficulty} ұпай)`;
+                feedbackEl.classList.remove('hidden');
+
+                // Trigger confetti animation for good streak
+                if (window.confetti && state.game.streak % 3 === 0) {
+                    confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+                }
+            } else {
+                // INCORRECT
+                btnElement.classList.remove('bg-slate-800/80', 'border-slate-700');
+                btnElement.classList.add('bg-rose-600', 'border-rose-400', 'text-white');
+
+                // Highlight correct one
+                allBtns.forEach(b => {
+                    if (b.textContent.includes(q.correctAns)) {
+                        b.classList.add('ring-2', 'ring-emerald-400');
+                    }
+                });
+
+                state.game.streak = 0;
+                state.game.lives -= 1;
+
+                feedbackEl.className = "mt-4 p-4 rounded-xl text-center font-bold text-sm bg-rose-950/80 border border-rose-500/50 text-rose-300";
+                feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-lg mr-1"></i> Қате! Дұрыс жауап: <b>${q.correctAns}<sub>${q.targetBase}</sub></b>`;
+                feedbackEl.classList.remove('hidden');
+
+                if (state.game.lives <= 0) {
+                    setTimeout(() => {
+                        alert(`Ойын аяқталды! Жинаған жалпы ұпайыңыз: ${state.game.score}`);
+                        resetGame();
+                    }, 500);
+                }
+            }
+
+            updateGameStatsUI();
+        }
+
+        function updateGameStatsUI() {
+            document.getElementById('game-score').textContent = state.game.score;
+            document.getElementById('game-streak').textContent = `${state.game.streak}x`;
+
+            // Hearts UI
+            let heartsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < state.game.lives) {
+                    heartsHtml += '<i class="fa-solid fa-heart text-rose-500"></i> ';
+                } else {
+                    heartsHtml += '<i class="fa-regular fa-heart text-slate-600"></i> ';
+                }
+            }
+            document.getElementById('game-lives').innerHTML = heartsHtml;
+        }
+
+        function resetGame() {
+            state.game.score = 0;
+            state.game.streak = 0;
+            state.game.lives = 3;
+            updateGameStatsUI();
+            generateNewQuestion();
+        }
+
+        function showGameHint() {
+            const hintBox = document.getElementById('game-hint-box');
+            const hintContent = document.getElementById('game-hint-content');
+            const q = state.game.currentQuestion;
+
+            if (!q) return;
+
+            hintContent.innerHTML = `
+                <p>Бастапқы сан: <b>${q.srcVal}<sub>${q.srcBase}</sub></b>. 
+                   Ондық жүйедегі мәні: <b>${q.numDec}<sub>10</sub></b>.</p>
+                <p class="mt-1 text-slate-400">Егер ${q.targetBase}-лік жүйеге аударсақ, санды ${q.targetBase}-ге бөліп, қалдықтарын кері жазамыз.</p>
+            `;
+            hintBox.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
