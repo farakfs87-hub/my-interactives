@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ASCII және Unicode Интерактивті Тілі</title>
+<style>
+:root {
+  --bg: #f8fafc;
+  --fg: #0f172a;
+  --mut: #64748b;
+  --card: #ffffff;
+  --bd: #e2e8f0;
+  --ac: #2563eb;
+  --ac-hover: #1d4ed8;
+  --hl: #fef08a;
+  --ok: #16a34a;
+  --bad: #dc2626;
+  --ascii-bg: #e0f2fe;
+  --ascii-border: #38bdf8;
+  --utf8-bg: #fef3c7;
+  --utf8-border: #f59e0b;
+  box-sizing: border-box;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f172a;
+    --fg: #f8fafc;
+    --mut: #94a3b8;
+    --card: #1e293b;
+    --bd: #334155;
+    --ac: #3b82f6;
+    --ac-hover: #60a5fa;
+    --hl: #854d0e;
+    --ok: #22c55e;
+    --bad: #ef4444;
+    --ascii-bg: #0369a1;
+    --ascii-border: #0284c7;
+    --utf8-bg: #78350f;
+    --utf8-border: #b45309;
+  }
+}
+
+body {
+  margin: 0 auto;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, sans-serif;
+  padding: 16px;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0 0 6px 0;
+}
+
+.s {
+  margin: 0 0 16px 0;
+  color: var(--mut);
+  font-size: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+button, input, textarea {
+  font: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--bd);
+  background: var(--card);
+  color: var(--fg);
+}
+
+button {
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  border-color: var(--ac);
+}
+
+.tabs button {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.tabs button.on, button.p {
+  background: var(--ac);
+  border-color: var(--ac);
+  color: #ffffff;
+}
+
+.tabs button.on:hover, button.p:hover {
+  background: var(--ac-hover);
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  resize: vertical;
+  min-height: 80px;
+  font-size: 18px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.lab {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+/* Character Inspection Grid */
+.char-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.char-card {
+  border: 1px solid var(--bd);
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px;
+  min-width: 90px;
+  flex: 1 1 calc(33.333% - 10px);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.char-card.ascii {
+  border-color: var(--ascii-border);
+}
+
+.char-card.unicode {
+  border-color: var(--utf8-border);
+}
+
+.char-symbol {
+  font-size: 28px;
+  font-weight: bold;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.char-meta {
+  font-size: 12px;
+  color: var(--mut);
+  font-family: ui-monospace, monospace;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.badge-ascii {
+  background: var(--ascii-bg);
+  color: var(--fg);
+}
+
+.badge-unicode {
+  background: var(--utf8-bg);
+  color: var(--fg);
+}
+
+/* Comparison visualizer */
+.byte-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  justify-content: center;
+}
+
+.byte-box {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+/* Quiz Styles */
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 8px 0;
+  padding: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: var(--card);
+  cursor: pointer;
+}
+
+.quiz-option:hover {
+  background: var(--bg);
+}
+
+#quiz-msg {
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Table styling for ASCII reference */
+.table-container {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+}
+
+th, td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--bd);
+}
+
+th {
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  color: var(--mut);
+}
+
+.hint-box {
+  background: var(--bg);
+  border-left: 4px solid var(--ac);
+  padding: 10px;
+  border-radius: 0 8px 8px 0;
+  font-size: 14px;
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<h1>ASCII және Unicode Интерактиві</h1>
+<p class="s">Кодтау жүйелерінің жұмыс істеу принципін зерттеңіз: мәтін компьютерде қалай сақталады?</p>
+
+<div class="tabs">
+  <button id="tab-inspect" class="on">🔍 Зерттеу (Inspector)</button>
+  <button id="tab-compare">⚖️ ASCII vs UTF-8</button>
+  <button id="tab-quiz">🎮 Викторина / Тексеру</button>
+</div>
+
+<!-- SECTION 1: INSPECTOR -->
+<div id="sec-inspect">
+  <div class="card">
+    <div class="lab">Кез келген мәтін немесе символ енгізіңіз (Латын, Қазақ, Эмодзи)</div>
+    <textarea id="inp-text" spellcheck="false">Сәлем! Hi 🤖</textarea>
+  </div>
+
+  <div class="card">
+    <div class="lab">Символдардың кодтық талдауы</div>
+    <div id="grid-inspect" class="char-grid"></div>
+  </div>
+</div>
+
+<!-- SECTION 2: COMPARISON -->
+<div id="sec-compare" style="display:none">
+  <div class="card">
+    <div class="lab">Негізгі айырмашылықтар</div>
+    <div class="hint-box">
+      <strong>ASCII:</strong> Тек 128 символдан тұрады (Ағылшын әріптері, цифрлар, белгілер). Әр символ дәл <strong>1 байт (7/8 бит)</strong> алады.<br><br>
+      <strong>Unicode (UTF-8):</strong> Әлемнің барлық тілдерін (қазақ Ә, Ң, Ғ, т.б.) және эмодзилерді қамтиды. <strong>1-ден 4 байтқа дейін</strong> динамикалық көлем алады.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lab">Байт көлемін салыстыру динамикасы</div>
+    <div class="char-grid">
+      <div class="char-card ascii">
+        <div class="char-symbol">A</div>
+        <div class="char-meta">ASCII</div>
+        <div class="badge badge-ascii">1 Байт (8 бит)</div>
+        <div class="byte-row"><span class="byte-box">01000001</span></div>
+      </div>
+      <div class="char-card unicode">
+        <div class="char-symbol">Ә</div>
+        <div class="char-meta">Unicode (UTF-8)</div>
+        <div class="badge badge-unicode">2 Байт (16 бит)</div>
+        <div class="byte-row">
+          <span class="byte-box">D6</span>
+          <span class="byte-box">98</span>
+        </div>
+      </div>
+      <div class="char-card unicode">
+        <div class="char-symbol">🚀</div>
+        <div class="char-meta">Unicode (UTF-8)</div>
+        <div class="badge badge-unicode">4 Байт (32 бит)</div>
+        <div class="byte-row">
+          <span class="byte-box">F0</span>
+          <span class="byte-box">9F</span>
+          <span class="byte-box">9A</span>
+          <span class="byte-box">80</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="lab">Стандартты ASCII Кестесі (0-127)</div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Dec</th><th>Hex</th><th>Binary</th><th>Char</th></tr>
+        </thead>
+        <tbody id="ascii-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: QUIZ -->
+<div id="sec-quiz" style="display:none">
+  <div class="card">
+    <div class="lab">Білгірлік тесті</div>
+    <div id="quiz-question" style="font-size: 18px; font-weight: 600; margin-bottom: 12px;"></div>
+    <div id="quiz-options"></div>
+    <div id="quiz-msg"></div>
+    <button id="quiz-next" class="p" style="display:none; margin-top: 10px;">Келесі сұрақ ➔</button>
+  </div>
+</div>
+
+<script>
+var $ = function(id) { return document.getElementById(id); };
+
+// --- UTILS ---
+function strToUtf8Bytes(str) {
+  var utf8 = [];
+  for (var i = 0; i < str.length; i++) {
+    var charcode = str.charCodeAt(i);
+    if (charcode < 0x80) utf8.push(charcode);
+    else if (charcode < 0x800) {
+      utf8.push(0xc0 | (charcode >> 6), 
+                0x80 | (charcode & 0x3f));
+    }
+    else if (charcode < 0xd800 || charcode >= 0xe000) {
+      utf8.push(0xe0 | (charcode >> 12), 
+                0x80 | ((charcode >> 6) & 0x3f), 
+                0x80 | (charcode & 0x3f));
+    }
+    else {
+      // surrogate pair
+      i++;
+      charcode = 0x10000 + (((charcode & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
+      utf8.push(0xf0 | (charcode >> 18), 
+                0x80 | ((charcode >> 12) & 0x3f), 
+                0x80 | ((charcode >> 6) & 0x3f), 
+                0x80 | (charcode & 0x3f));
+    }
+  }
+  return utf8;
+}
+
+function toHex(n, pad) {
+  var h = n.toString(16).toUpperCase();
+  while (h.length < (pad || 2)) h = "0" + h;
+  return h;
+}
+
+function toBin(n, pad) {
+  var b = n.toString(2);
+  while (b.length < (pad || 8)) b = "0" + b;
+  return b;
+}
+
+// --- INSPECTOR ---
+function updateInspector() {
+  var text = $("inp-text").value;
+  var container = $("grid-inspect");
+  container.innerHTML = "";
+
+  if (!text) {
+    container.innerHTML = "<div style='color:var(--mut); font-size:14px;'>Мәтін енгізіңіз...</div>";
+    return;
+  }
+
+  // Segment by Unicode graphemes (handling surrogate pairs / emojis correctly)
+  var chars = Array.from(text);
+
+  chars.forEach(function(ch) {
+    var codePoint = ch.codePointAt(0);
+    var isAscii = codePoint <= 127;
+    var utf8Bytes = strToUtf8Bytes(ch);
+
+    var card = document.createElement("div");
+    card.className = "char-card " + (isAscii ? "ascii" : "unicode");
+
+    var displayChar = ch === " " ? "␣" : (ch === "\n" ? "↵" : ch);
+    var hexStr = "U+" + toHex(codePoint, 4);
+    var bytesHex = utf8Bytes.map(function(b) { return toHex(b); }).join(" ");
+    var bytesBin = utf8Bytes.map(function(b) { return toBin(b); }).join("<br>");
+
+    card.innerHTML = 
+      '<div class="char-symbol">' + displayChar + '</div>' +
+      '<div class="char-meta"><strong>Code:</strong> ' + hexStr + ' (' + codePoint + ')</div>' +
+      '<div class="char-meta" style="margin-top:4px;"><strong>UTF-8 Bytes:</strong><br>' + bytesHex + '</div>' +
+      '<div class="badge ' + (isAscii ? "badge-ascii" : "badge-unicode") + '">' + 
+        (isAscii ? "ASCII (1 byte)" : "Unicode (" + utf8Bytes.length + " bytes)") + 
+      '</div>';
+
+    container.appendChild(card);
+  });
+}
+
+// --- ASCII TABLE BUILDER ---
+function buildAsciiTable() {
+  var tbody = $("ascii-table-body");
+  var html = "";
+  for (var i = 32; i < 128; i++) {
+    var ch = String.fromCharCode(i);
+    if (i === 32) ch = "␣ (Space)";
+    if (i === 127) ch = "DEL";
+    html += "<tr>" +
+      "<td>" + i + "</td>" +
+      "<td>0x" + toHex(i) + "</td>" +
+      "<td>" + toBin(i) + "</td>" +
+      "<td><strong>" + ch + "</strong></td>" +
+      "</tr>";
+  }
+  tbody.innerHTML = html;
+}
+
+// --- QUIZ LOGIC ---
+var quizQuestions = [
+  {
+    q: "ASCII стандартында бір символ неше бит алады?",
+    opts: ["7 немесе 8 бит (1 байт)", "16 бит (2 байт)", "32 бит (4 байт)", "Динамикалық шексіз"],
+    ans: 0
+  },
+  {
+    q: "Қазақ әріптері (Ә, Ң, Ғ т.б.) мен Эмодзилерді сақтау үшін қай стандарт қолданылады?",
+    opts: ["Базалық ASCII", "Unicode (UTF-8 / UTF-16)", "Тек Morse Коды", "MS-DOS ASCII"],
+    ans: 1
+  },
+  {
+    q: "ASCII кестесінде 'A' (ағылшын) әрпінің ондық (Decimal) коды 65-ке тең. 'B' әрпінің коды неше?",
+    opts: ["66", "67", "97", "100"],
+    ans: 0
+  },
+  {
+    q: "UTF-8 жүйесінде бір Unicode символы қанша байт орын алуы мүмкін?",
+    opts: ["Әрқашан дәл 1 байт", "1-ден 4 байтқа дейін", "Әрқашан 8 байт", "Тек 2 байт"],
+    ans: 1
+  },
+  {
+    q: "0x41 Шестнадцатеричный (Hex) коды ASCII бойынша қай символға сәйкес келеді?",
+    opts: ["A", "a", "0", "Space"],
+    ans: 0
+  }
+];
+
+var currentQuiz = 0;
+var quizScore = 0;
+
+function loadQuizQuestion() {
+  var qData = quizQuestions[currentQuiz];
+  $("quiz-question").textContent = (currentQuiz + 1) + ". " + qData.q;
+  
+  var optsContainer = $("quiz-options");
+  optsContainer.innerHTML = "";
+  $("quiz-msg").textContent = "";
+  $("quiz-msg").className = "";
+  $("quiz-next").style.display = "none";
+
+  qData.opts.forEach(function(optText, idx) {
+    var btn = document.createElement("button");
+    btn.className = "quiz-option";
+    btn.textContent = optText;
+    btn.onclick = function() { checkAnswer(idx); };
+    optsContainer.appendChild(btn);
+  });
+}
+
+function checkAnswer(chosenIdx) {
+  var qData = quizQuestions[currentQuiz];
+  var optsBtns = $("quiz-options").querySelectorAll("button");
+  
+  // Disable all buttons
+  optsBtns.forEach(function(b) { b.disabled = true; });
+
+  if (chosenIdx === qData.ans) {
+    optsBtns[chosenIdx].style.borderColor = "var(--ok)";
+    optsBtns[chosenIdx].style.background = "var(--ok)";
+    optsBtns[chosenIdx].style.color = "#fff";
+    $("quiz-msg").textContent = "Дұрыс! 🎉";
+    $("quiz-msg").style.color = "var(--ok)";
+    quizScore++;
+  } else {
+    optsBtns[chosenIdx].style.borderColor = "var(--bad)";
+    optsBtns[chosenIdx].style.background = "var(--bad)";
+    optsBtns[chosenIdx].style.color = "#fff";
+    
+    optsBtns[qData.ans].style.borderColor = "var(--ok)";
+    optsBtns[qData.ans].style.background = "var(--ok)";
+    optsBtns[qData.ans].style.color = "#fff";
+
+    $("quiz-msg").textContent = "Қате! Дұрыс жауабы белгіленді.";
+    $("quiz-msg").style.color = "var(--bad)";
+  }
+
+  if (currentQuiz < quizQuestions.length - 1) {
+    $("quiz-next").style.display = "inline-block";
+  } else {
+    $("quiz-msg").textContent += " Тест аяқталды! Нәтиже: " + quizScore + " / " + quizQuestions.length;
+  }
+}
+
+$("quiz-next").onclick = function() {
+  currentQuiz++;
+  loadQuizQuestion();
+};
+
+// --- NAVIGATION ---
+function setTab(tab) {
+  $("tab-inspect").className = tab === "inspect" ? "on" : "";
+  $("tab-compare").className = tab === "compare" ? "on" : "";
+  $("tab-quiz").className = tab === "quiz" ? "on" : "";
+
+  $("sec-inspect").style.display = tab === "inspect" ? "block" : "none";
+  $("sec-compare").style.display = tab === "compare" ? "block" : "none";
+  $("sec-quiz").style.display = tab === "quiz" ? "block" : "none";
+}
+
+$("tab-inspect").onclick = function() { setTab("inspect"); };
+$("tab-compare").onclick = function() { setTab("compare"); };
+$("tab-quiz").onclick = function() { setTab("quiz"); };
+
+$("inp-text").oninput = updateInspector;
+
+// Initialize
+updateInspector();
+buildAsciiTable();
+loadQuizQuestion();
+</script>
+</body>
+</html>
