@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тасбақа суретші</title>
+<style>
+:root{--bg:#f7f7f5;--fg:#1f2328;--mut:#6b7280;--card:#fff;--bd:#d8d8d2;--ac:#2563eb;--rep:#fef3c7;--ok:#16a34a;--bad:#dc2626;--ghost:#cbd5e1;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa;--rep:#713f12;--ok:#4ade80;--bad:#f87171;--ghost:#475569}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#e6e6e6;--mut:#9aa0a6;--card:#1d2026;--bd:#363a42;--ac:#60a5fa;--rep:#713f12;--ok:#4ade80;--bad:#f87171;--ghost:#475569}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0 auto;background:var(--bg);color:var(--fg);font:17px/1.4 system-ui,sans-serif;padding:14px;max-width:480px}
+h1{font-size:23px;margin:0 0 4px}
+button{font:inherit;border-radius:12px;border:2px solid var(--bd);background:var(--card);color:var(--fg);padding:10px 12px;cursor:pointer}
+button.on,button.p{background:var(--ac);border-color:var(--ac);color:#fff}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+#task{background:var(--card);border:2px solid var(--bd);border-radius:12px;padding:10px;font-size:16px}
+#board{background:var(--card);border:2px solid var(--bd);border-radius:12px;margin:10px 0}
+#board svg{width:100%;height:auto;display:block}
+.pal button{font-size:20px;padding:12px 14px;flex:1}
+.sw{width:44px;height:44px;flex:none!important;padding:0!important}
+#prog{background:var(--card);border:2px dashed var(--bd);border-radius:12px;padding:8px;min-height:56px;display:flex;flex-wrap:wrap;gap:5px;align-items:flex-start}
+.chip{font-size:22px;padding:6px 10px;border-radius:10px;border:2px solid var(--bd);background:var(--bg);cursor:pointer}
+.rep{background:var(--rep);border:2px solid var(--bd);border-radius:12px;padding:6px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;width:100%;box-sizing:border-box}
+.rep .h{font-size:16px;display:flex;gap:6px;align-items:center;width:100%}
+.rep .h button{padding:2px 10px;font-size:18px}
+.rep.open{border-color:var(--ac)}
+#msg{min-height:28px;font-weight:700;margin:8px 0;font-size:18px}
+.hint{color:var(--mut);font-size:14px}
+</style>
+</head>
+<body>
+<h1>🐢 Тасбақа суретші</h1>
+<div class="row" id="lv"></div>
+<div id="task"></div>
+<div id="board"></div>
+
+<div class="hint">Блоктардан бағдарлама құрастыр:</div>
+<div class="row pal">
+  <button data-a="f">⬆️ Алға</button>
+  <button data-a="l">↩️ Солға</button>
+  <button data-a="r">↪️ Оңға</button>
+</div>
+<div class="row pal">
+  <button id="repb">🔁 Қайтала</button>
+  <button id="endb" style="display:none">✔ Қайталауды аяқтау</button>
+  <button data-c="#ef4444" class="sw" style="background:#ef4444"></button>
+  <button data-c="#2563eb" class="sw" style="background:#2563eb"></button>
+  <button data-c="#16a34a" class="sw" style="background:#16a34a"></button>
+</div>
+<div id="prog"></div>
+<div class="row">
+  <button class="p" id="run" style="flex:2">▶ Іске қосу</button>
+  <button id="undo">⌫</button>
+  <button id="clr">🗑</button>
+</div>
+<div id="msg"></div>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+var S=32,G=8,P=16,DX=[0,1,0,-1],DY=[-1,0,1,0];
+function rep(s,n){var r="";while(n--)r+=s;return r}
+var LV=[
+ {n:"1. Шаршы",sx:2,sy:6,sol:rep("FFFR",4),task:"Сұр түсті шаршымен бірдей шаршы сал. Тасбақа жоғары қарап тұр. Кеңес: 🔁 4 рет қайтала."},
+ {n:"2. Баспалдақ",sx:1,sy:7,sol:rep("FRFL",4),task:"Баспалдақ сал. Бір саты: алға, оңға, алға, солға."},
+ {n:"3. Жиектеме",sx:1,sy:6,sol:"FFFRFFFFRFFFFRFFFFR".replace("FFFR","FFFR"),task:"Сұр сызықтар бойымен 3-ке 4 өлшемді жиектеме сал."},
+ {n:"4. Еркіндік",sx:4,sy:4,sol:null,task:"Өзің қалаған суретті сал! Түрлі-түсті сызықтарды қолданып көр."}
+];
+LV[2].sol="FFFRFFFFRFFFRFFFF".slice(0,0)+"FFFRFFFFRFFFRFFFFR".slice(0,17);
+var cur=0,prog=[],open=null,drawn=[],T,target=[],timer=null,queue=[],col="#2563eb";
+function key(a,b,c,d){var p=a+","+b,q=c+","+d;return p<q?p+"|"+q:q+"|"+p}
+function simSol(s,sx,sy){
+  var x=sx,y=sy,d=0,out=[];
+  for(var i=0;i<s.length;i++){var c=s[i];
+    if(c==="R")d=(d+1)%4;else if(c==="L")d=(d+3)%4;
+    else{out.push({x1:x,y1:y,x2:x+DX[d],y2:y+DY[d]});x+=DX[d];y+=DY[d]}}
+  return out;
+}
+function px(v){return v*S+P}
+function draw(){
+  var s='<svg viewBox="0 0 '+(G*S+2*P)+' '+(G*S+2*P)+'">';
+  for(var x=0;x<=G;x++)for(var y=0;y<=G;y++)s+='<circle cx="'+px(x)+'" cy="'+px(y)+'" r="2" fill="var(--bd)"/>';
+  target.forEach(function(t){s+='<line x1="'+px(t.x1)+'" y1="'+px(t.y1)+'" x2="'+px(t.x2)+'" y2="'+px(t.y2)+'" stroke="var(--ghost)" stroke-width="8" stroke-linecap="round"/>'});
+  drawn.forEach(function(t){s+='<line x1="'+px(t.x1)+'" y1="'+px(t.y1)+'" x2="'+px(t.x2)+'" y2="'+px(t.y2)+'" stroke="'+t.c+'" stroke-width="4" stroke-linecap="round"/>'});
+  s+='<g transform="translate('+px(T.x)+' '+px(T.y)+') rotate('+T.d*90+')"><polygon points="0,-12 9,9 -9,9" fill="#16a34a" stroke="#fff" stroke-width="1.5"/></g></svg>';
+  $("board").innerHTML=s;
+}
+function resetBoard(){
+  stopT();var L=LV[cur];T={x:L.sx,y:L.sy,d:0};drawn=[];col="#2563eb";
+  target=L.sol?simSol(L.sol,L.sx,L.sy):[];draw();
+}
+function stopT(){if(timer){clearInterval(timer);timer=null}$("run").textContent="▶ Іске қосу"}
+function addCmd(c){if(open!==null)prog[open].body.push(c);else prog.push(c);render()}
+function sym(c){return c.a==="f"?"⬆️":c.a==="l"?"↩️":c.a==="r"?"↪️":'<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:'+c.c+';vertical-align:middle"></span>'}
+function render(){
+  var h="";
+  prog.forEach(function(c,i){
+    if(c.a==="rep"){
+      h+='<div class="rep'+(open===i?" open":"")+'"><div class="h">Қайтала <button data-m="'+i+'">−</button><b>'+c.n+'</b><button data-p="'+i+'">+</button> рет <button data-x="'+i+'" style="margin-left:auto">✖</button></div>';
+      c.body.forEach(function(b,j){h+='<span class="chip" data-d="'+i+'.'+j+'">'+sym(b)+'</span>'});
+      h+='</div>';
+    }else h+='<span class="chip" data-d="'+i+'">'+sym(c)+'</span>';
+  });
+  $("prog").innerHTML=h||'<span class="hint">Әзірге бос. Жоғарыдағы батырмаларды бас.</span>';
+  $("endb").style.display=open!==null?"block":"none";
+  $("repb").style.display=open!==null?"none":"block";
+}
+function flat(list){var o=[];list.forEach(function(c){if(c.a==="rep"){for(var k=0;k<c.n;k++)o=o.concat(flat(c.body))}else o.push(c)});return o}
+function msg(t,c){$("msg").textContent=t;$("msg").style.color=c||"var(--fg)"}
+function runStep(){
+  if(!queue.length){finish();return}
+  var c=queue.shift();
+  if(c.a==="l")T.d=(T.d+3)%4;
+  else if(c.a==="r")T.d=(T.d+1)%4;
+  else if(c.a==="c")col=c.c;
+  else{
+    var nx=T.x+DX[T.d],ny=T.y+DY[T.d];
+    if(nx<0||ny<0||nx>G||ny>G){draw();stopT();queue=[];msg("Ой! Тасбақа шетіне жетіп қалды 🙈","var(--bad)");return}
+    drawn.push({x1:T.x,y1:T.y,x2:nx,y2:ny,c:col});T.x=nx;T.y=ny;
+  }
+  draw();
+}
+function finish(){
+  stopT();
+  if(!LV[cur].sol){msg("Әдемі! 🎨","var(--ok)");return}
+  var a={},b={},ok=true;
+  target.forEach(function(t){a[key(t.x1,t.y1,t.x2,t.y2)]=1});
+  drawn.forEach(function(t){b[key(t.x1,t.y1,t.x2,t.y2)]=1});
+  for(var k in a)if(!b[k])ok=false;
+  for(var k2 in b)if(!a[k2])ok=false;
+  if(ok)msg("Жарайсың! ⭐ Керемет!","var(--ok)");else msg("Дәл емес. Сұр суретпен салыстырып, қайта байқап көр.","var(--bad)");
+}
+$("run").onclick=function(){
+  if(timer){stopT();return}
+  resetBoard();msg("");
+  queue=flat(prog);
+  if(!queue.length){msg("Бағдарламаға блоктарды қос.");return}
+  $("run").textContent="⏸ Пауза";
+  timer=setInterval(runStep,260);
+};
+[].forEach.call(document.querySelectorAll("[data-a]"),function(b){b.onclick=function(){addCmd({a:b.getAttribute("data-a")})}});
+[].forEach.call(document.querySelectorAll("[data-c]"),function(b){b.onclick=function(){addCmd({a:"c",c:b.getAttribute("data-c")})}});
+$("repb").onclick=function(){prog.push({a:"rep",n:4,body:[]});open=prog.length-1;render()};
+$("endb").onclick=function(){open=null;render()};
+$("undo").onclick=function(){
+  if(open!==null){var r=prog[open];if(r.body.length)r.body.pop();else{prog.splice(open,1);open=null}}
+  else{var l=prog[prog.length-1];if(l)prog.pop()}
+  render();
+};
+$("clr").onclick=function(){prog=[];open=null;render();resetBoard();msg("")};
+$("prog").onclick=function(e){
+  var t=e.target.closest("[data-d],[data-m],[data-p],[data-x]");if(!t)return;
+  var d=t.getAttribute("data-d"),m=t.getAttribute("data-m"),p=t.getAttribute("data-p"),x=t.getAttribute("data-x");
+  if(d!==null){var s=d.split(".");if(s.length===2)prog[+s[0]].body.splice(+s[1],1);else{if(open!==null&&+s[0]<open)open--;prog.splice(+s[0],1)}}
+  if(m!==null&&prog[+m].n>1)prog[+m].n--;
+  if(p!==null&&prog[+p].n<9)prog[+p].n++;
+  if(x!==null){var i=+x;if(open===i)open=null;else if(open!==null&&i<open)open--;prog.splice(i,1)}
+  render();
+};
+function setLevel(i){
+  cur=i;prog=[];open=null;
+  var h="";LV.forEach(function(l,k){h+='<button data-k="'+k+'" class="'+(k===i?"on":"")+'">'+l.n+'</button>'});
+  $("lv").innerHTML=h;
+  [].forEach.call($("lv").children,function(b){b.onclick=function(){setLevel(+b.getAttribute("data-k"))}});
+  $("task").textContent=LV[i].task;render();resetBoard();msg("");
+}
+setLevel(0);
+</script>
+</body>
+</html>
