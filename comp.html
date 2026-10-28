@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Компьютер сырлары | Сұрыптау интерактиві</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rubik', sans-serif;
+            user-select: none;
+        }
+        .draggable-card {
+            touch-action: none;
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .draggable-card:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+            z-index: 50;
+        }
+        .drop-zone {
+            transition: all 0.2s ease;
+        }
+        .drop-zone.drag-over {
+            border-color: #38bdf8;
+            background-color: rgba(56, 189, 248, 0.15);
+            transform: scale(1.01);
+        }
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .correct-anim {
+            animation: correctPulse 0.4s ease-out;
+        }
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Victory Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 px-4 py-3 flex justify-between items-center z-20 shadow-lg sticky top-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-tr from-cyan-500 to-blue-600 p-2.5 rounded-xl shadow-lg shadow-cyan-500/30">
+                <i class="fa-solid fa-laptop-code text-2xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400">
+                    Информатика: Компьютер әлемі
+                </h1>
+                <p class="text-xs text-slate-400 hidden sm:block">Сұрыптау тапсырмалары және Компьютер құрылғылары</p>
+            </div>
+        </div>
+
+        <!-- Mode Selector Switcher -->
+        <div class="flex bg-slate-900/90 p-1 rounded-xl border border-slate-700 text-xs font-semibold">
+            <button id="nav-mode-abilities" class="px-3 py-1.5 rounded-lg transition text-white bg-cyan-600 shadow">
+                <i class="fa-solid fa-brain mr-1.5"></i>Компьютер не істей алады?
+            </button>
+            <button id="nav-mode-devices" class="px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+                <i class="fa-solid fa-microchip mr-1.5"></i>Құрылғыларды сұрыптау
+            </button>
+        </div>
+
+        <!-- Sound & Theory Buttons -->
+        <div class="flex items-center gap-2">
+            <button id="btn-theory" class="bg-indigo-600/80 hover:bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-md">
+                <i class="fa-solid fa-book-open"></i>
+                <span class="hidden md:inline">Теория</span>
+            </button>
+            <button id="btn-sound" class="bg-slate-700 hover:bg-slate-600 text-slate-200 p-2.5 rounded-lg transition">
+                <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+
+        <!-- Top Scoreboard / Progress Header -->
+        <div class="bg-slate-800/60 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-lg">
+                    <i id="mode-icon-display" class="fa-solid fa-brain"></i>
+                </div>
+                <div>
+                    <h2 id="mode-title-display" class="font-bold text-base text-slate-100">
+                        Тапсырма: Компьютердің мүмкіндіктерін сұрыптау
+                    </h2>
+                    <p id="mode-desc-display" class="text-xs text-slate-400">
+                        Карточкаларды тиісті себетке (Компьютер істей алады / істей алмайды) сүйреп апарыңыз.
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Score Counter -->
+                <div class="bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 text-center">
+                    <span class="text-xs text-slate-400 block uppercase font-bold">Упай</span>
+                    <span id="score-counter" class="text-xl font-extrabold text-amber-400">0 / 0</span>
+                </div>
+                <!-- Reset Button -->
+                <button id="btn-reset-game" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Кайта бастау
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Game Workspace -->
+        <div class="flex-1 flex flex-col gap-6">
+
+            <!-- Card Source Pool (Cards to be sorted) -->
+            <div class="bg-slate-800/40 border border-slate-700/80 rounded-2xl p-4 min-h-[130px]">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-hand-pointer text-cyan-400"></i> Сұрыпталатын карточкалар (Сүйреңіз немесе басыңыз):
+                    </span>
+                    <span id="remaining-cards-count" class="text-xs bg-slate-700 text-cyan-300 px-2.5 py-0.5 rounded-full font-semibold">
+                        Қалғаны: 0
+                    </span>
+                </div>
+
+                <div id="cards-pool" class="flex flex-wrap gap-3 min-h-[70px] items-center justify-center sm:justify-start">
+                    <!-- Cards will be dynamically injected here -->
+                </div>
+            </div>
+
+            <!-- Target Drop Baskets (Drop Zones) -->
+            <div id="drop-zones-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 flex-1">
+                <!-- Drop zones generated dynamically -->
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Theory Modal -->
+    <div id="modal-theory" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-cyan-400"></i>
+                    Информатика: Компьютер және Құрылғылар
+                </h2>
+                <button class="btn-close-modal text-slate-400 hover:text-white text-xl p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 text-sm text-slate-300 leading-relaxed">
+                <!-- Section 1 -->
+                <div class="bg-slate-900/60 border border-slate-700 p-4 rounded-xl">
+                    <h3 class="text-cyan-300 font-bold mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-brain"></i> Компьютердің мүмкіндіктері
+                    </h3>
+                    <p class="text-xs text-slate-300 mb-2">
+                        Компьютер — ақпаратты өңдеуге арналған әмбебап электронды құрылғы. Ол үлкен көлемдегі есептеулерді өте жылдам орындайды, ақпаратты сақтайды.
+                    </p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-emerald-950/40 border border-emerald-500/30 p-2 rounded-lg text-emerald-300">
+                            <strong>✔ Компьютер істей алады:</strong> Мәтін жазу, математикалық есептеулер, видео ойнату, файл іздеу.
+                        </div>
+                        <div class="bg-rose-950/40 border border-rose-500/30 p-2 rounded-lg text-rose-300">
+                            <strong>✖ Компьютер істей алмайды:</strong> Шын қуану/ренжу, өздігінен ашығу, адам орнына махаббат сезіну.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 -->
+                <div class="bg-slate-900/60 border border-slate-700 p-4 rounded-xl">
+                    <h3 class="text-cyan-300 font-bold mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-microchip"></i> Компьютер құрылғыларының топтары
+                    </h3>
+                    <ul class="space-y-2 text-xs">
+                        <li class="flex items-start gap-2">
+                            <span class="bg-blue-500/20 text-blue-400 p-1 rounded font-bold">1</span>
+                            <div>
+                                <strong class="text-white">Енгізу құрылғылары:</strong> Компьютерге ақпаратты (мәтін, дыбыс, сурет) енгізу үшін қолданылады. <i>(Пернетақта, тышқан, микрофон, веб-камера, сканер)</i>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="bg-emerald-500/20 text-emerald-400 p-1 rounded font-bold">2</span>
+                            <div>
+                                <strong class="text-white">Шығару құрылғылары:</strong> Компьютерде өңделген ақпаратты адамға көрсету немесе дыбыстау үшін қолданылады. <i>(Монитор, принтер, құлаққап, колонкалар, проектор)</i>
+                            </div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="bg-amber-500/20 text-amber-400 p-1 rounded font-bold">3</span>
+                            <div>
+                                <strong class="text-white">Өңдеу және Сақтау құрылғылары:</strong> Ақпаратты өңдейді және ұзақ уақытқа сақтайды. <i>(Процессор, Жесткий диск (HDD/SSD), ОЗУ оперативті есте сақтау, Флешка)</i>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-700 text-right">
+                <button class="btn-close-modal bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition">
+                    Түсінікті, ойынды бастау!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="modal-victory" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl relative">
+            <div class="w-20 h-20 bg-gradient-to-tr from-emerald-400 to-teal-300 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/30">
+                <i class="fa-solid fa-trophy text-4xl text-slate-900"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2 text-emerald-400">ЖАРАЙСЫҢ! ТАМАША!</h2>
+            <p id="victory-msg-text" class="text-slate-300 text-sm mb-6">
+                Барлық карточкалар дұрыс орындарына сұрыпталды!
+            </p>
+            <div class="flex flex-col gap-2">
+                <button id="btn-switch-or-reset" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right"></i> Келесі модульге өту
+                </button>
+                <button class="btn-close-victory w-full bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl font-semibold text-xs transition">
+                    Нәтижелерді қарау
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Game Data Configuration
+         */
+        
+        // Mode 1: What can a computer do vs what it cannot do
+        const ABILITIES_DATA = {
+            id: 'abilities',
+            title: "Тапсырма: Компьютер не істей алады?",
+            desc: "Карточкаларды «Компьютер істей алады» және «Компьютер істей алмайды» себеттеріне орналастырыңыз.",
+            icon: 'fa-brain',
+            zones: [
+                {
+                    id: 'can_do',
+                    title: 'Компьютер істей алады',
+                    icon: 'fa-circle-check',
+                    color: 'emerald',
+                    bgColor: 'bg-emerald-950/20',
+                    borderColor: 'border-emerald-500/40',
+                    textColor: 'text-emerald-400'
+                },
+                {
+                    id: 'cannot_do',
+                    title: 'Компьютер істей алмайды',
+                    icon: 'fa-circle-xmark',
+                    color: 'rose',
+                    bgColor: 'bg-rose-950/20',
+                    borderColor: 'border-rose-500/40',
+                    textColor: 'text-rose-400'
+                }
+            ],
+            items: [
+                { id: 'a1', text: 'Үлкен сандарды есептеу', zone: 'can_do', icon: 'fa-calculator' },
+                { id: 'a2', text: 'Шын қуану немесе ренжу', zone: 'cannot_do', icon: 'fa-face-smile-beam' },
+                { id: 'a3', text: 'Мәтін мен құжаттарды сақтау', zone: 'can_do', icon: 'fa-file-lines' },
+                { id: 'a4', text: 'Адам сияқты тамақ жеу', zone: 'cannot_do', icon: 'fa-utensils' },
+                { id: 'a5', text: 'Интернеттен ақпарат табу', zone: 'can_do', icon: 'fa-globe' },
+                { id: 'a6', text: 'Шын жылау және шаршау', zone: 'cannot_do', icon: 'fa-face-sad-tear' },
+                { id: 'a7', text: 'Музыка мен видеоны ойнату', zone: 'can_do', icon: 'fa-music' },
+                { id: 'a8', text: 'Өздігінен ұйықтау немесе түс көру', zone: 'cannot_do', icon: 'fa-moon' },
+                { id: 'a9', text: 'Шахмат пен ойын ойнау', zone: 'can_do', icon: 'fa-gamepad' },
+                { id: 'a10', text: 'Адамның орнына ғашық болу', zone: 'cannot_do', icon: 'fa-heart' }
+            ]
+        };
+
+        // Mode 2: Sorting Computer Devices into categories
+        const DEVICES_DATA = {
+            id: 'devices',
+            title: "Тапсырма: Компьютер құрылғыларын сұрыптау",
+            desc: "Құрылғыларды қызметіне қарай үш себетке (Еңгізу, Шығару, Өңдеу/Сақтау) бөліңіз.",
+            icon: 'fa-microchip',
+            zones: [
+                {
+                    id: 'input',
+                    title: 'Еңгізу құрылғылары',
+                    sub: '(Ақпаратты компьютерге енгізеді)',
+                    icon: 'fa-right-to-bracket',
+                    color: 'sky',
+                    bgColor: 'bg-sky-950/20',
+                    borderColor: 'border-sky-500/40',
+                    textColor: 'text-sky-400'
+                },
+                {
+                    id: 'output',
+                    title: 'Шығару құрылғылары',
+                    sub: '(Ақпаратты адамға көрсетеді)',
+                    icon: 'fa-right-from-bracket',
+                    color: 'emerald',
+                    bgColor: 'bg-emerald-950/20',
+                    borderColor: 'border-emerald-500/40',
+                    textColor: 'text-emerald-400'
+                },
+                {
+                    id: 'storage',
+                    title: 'Өңдеу және Сақтау',
+                    sub: '(Есептейді және ақпаратты сақтайды)',
+                    icon: 'fa-database',
+                    color: 'amber',
+                    bgColor: 'bg-amber-950/20',
+                    borderColor: 'border-amber-500/40',
+                    textColor: 'text-amber-400'
+                }
+            ],
+            items: [
+                { id: 'd1', text: 'Пернетақта (Keyboard)', zone: 'input', icon: 'fa-keyboard' },
+                { id: 'd2', text: 'Монитор (Экран)', zone: 'output', icon: 'fa-desktop' },
+                { id: 'd3', text: 'Процессор (CPU)', zone: 'storage', icon: 'fa-microchip' },
+                { id: 'd4', text: 'Компьютерлік тышқан', zone: 'input', icon: 'fa-computer-mouse' },
+                { id: 'd5', text: 'Принтер', zone: 'output', icon: 'fa-print' },
+                { id: 'd6', text: 'Жесткий диск (HDD/SSD)', zone: 'storage', icon: 'fa-hard-drive' },
+                { id: 'd7', text: 'Микрофон', zone: 'input', icon: 'fa-microphone' },
+                { id: 'd8', text: 'Дыбыс колонкалары', zone: 'output', icon: 'fa-volume-high' },
+                { id: 'd9', text: 'Оперативті есте сақтау (ОЗУ)', zone: 'storage', icon: 'fa-memory' },
+                { id: 'd10', text: 'Веб-камера', zone: 'input', icon: 'fa-video' },
+                { id: 'd11', text: 'Құлаққап (Наушники)', zone: 'output', icon: 'fa-headphones' },
+                { id: 'd12', text: 'Флешка (USB флеш)', zone: 'storage', icon: 'fa-compact-disc' }
+            ]
+        };
+
+        // Application State
+        let currentMode = 'abilities'; // 'abilities' or 'devices'
+        let currentItems = [];
+        let score = 0;
+        let totalItems = 0;
+        let soundEnabled = true;
+        let selectedCardId = null; // For tap-to-select alternative to drag-and-drop
+
+        // Web Audio Context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new AudioContext();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'win') {
+                    const freqs = [261.63, 329.63, 392.00, 523.25, 659.25];
+                    freqs.forEach((f, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(f, now + i * 0.08);
+                        g.gain.setValueAtTime(0.1, now + i * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.2);
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        o.start(now + i * 0.08);
+                        o.stop(now + i * 0.08 + 0.2);
+                    });
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {
+                console.log("Audio error:", e);
+            }
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            initGame();
+            setupEventListeners();
+        });
+
+        function initGame() {
+            const data = currentMode === 'abilities' ? ABILITIES_DATA : DEVICES_DATA;
+            
+            // Header display
+            document.getElementById('mode-title-display').innerText = data.title;
+            document.getElementById('mode-desc-display').innerText = data.desc;
+            document.getElementById('mode-icon-display').className = `fa-solid ${data.icon}`;
+
+            // Reset scores
+            score = 0;
+            totalItems = data.items.length;
+            selectedCardId = null;
+            updateScoreUI();
+
+            // Clone and Shuffle Cards
+            currentItems = JSON.parse(JSON.stringify(data.items));
+            shuffleArray(currentItems);
+
+            // Render Target Zones & Cards
+            renderDropZones(data.zones);
+            renderCardsPool();
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function updateScoreUI() {
+            document.getElementById('score-counter').innerText = `${score} / ${totalItems}`;
+            document.getElementById('remaining-cards-count').innerText = `Қалғаны: ${currentItems.length}`;
+        }
+
+        // Render Drop Zones (Baskets)
+        function renderDropZones(zones) {
+            const container = document.getElementById('drop-zones-container');
+            container.innerHTML = '';
+
+            // Grid column layout based on number of zones
+            if (zones.length === 3) {
+                container.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 flex-1';
+            } else {
+                container.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 flex-1';
+            }
+
+            zones.forEach(zone => {
+                const zoneEl = document.createElement('div');
+                zoneEl.className = `drop-zone ${zone.bgColor} border-2 border-dashed ${zone.borderColor} rounded-2xl p-4 flex flex-col transition-all min-h-[220px] shadow-inner`;
+                zoneEl.dataset.zoneId = zone.id;
+
+                zoneEl.innerHTML = `
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-700/60 pointer-events-none">
+                        <i class="fa-solid ${zone.icon} ${zone.textColor} text-xl"></i>
+                        <div>
+                            <h3 class="font-bold text-sm sm:text-base ${zone.textColor}">${zone.title}</h3>
+                            ${zone.sub ? `<span class="text-[11px] text-slate-400 block">${zone.sub}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="zone-cards-list flex flex-col gap-2 flex-1 min-h-[120px] justify-start">
+                        <!-- Placed items will land here -->
+                    </div>
+                `;
+
+                // Drag & Drop Event Listeners
+                zoneEl.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zoneEl.classList.add('drag-over');
+                });
+
+                zoneEl.addEventListener('dragleave', () => {
+                    zoneEl.classList.remove('drag-over');
+                });
+
+                zoneEl.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zoneEl.classList.remove('drag-over');
+                    const cardId = e.dataTransfer.getData('text/plain');
+                    handleCardPlacement(cardId, zone.id);
+                });
+
+                // Tap to drop click listener
+                zoneEl.addEventListener('click', () => {
+                    if (selectedCardId) {
+                        handleCardPlacement(selectedCardId, zone.id);
+                    }
+                });
+
+                container.appendChild(zoneEl);
+            });
+        }
+
+        // Render Pool of Unsorted Cards
+        function renderCardsPool() {
+            const pool = document.getElementById('cards-pool');
+            pool.innerHTML = '';
+
+            if (currentItems.length === 0) {
+                pool.innerHTML = `<span class="text-xs text-emerald-400 font-semibold m-auto">Барлық карточкалар сұрыпталды! ✨</span>`;
+                return;
+            }
+
+            currentItems.forEach(item => {
+                const card = document.createElement('div');
+                card.id = `card-${item.id}`;
+                card.draggable = true;
+                const isSelected = selectedCardId === item.id;
+
+                card.className = `draggable-card bg-slate-800 hover:bg-slate-700 border ${
+                    isSelected ? 'ring-2 ring-cyan-400 border-cyan-400 bg-slate-700' : 'border-slate-600'
+                } text-slate-100 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-2 shadow-md select-none`;
+
+                card.innerHTML = `
+                    <i class="fa-solid ${item.icon} text-cyan-400 text-base"></i>
+                    <span>${item.text}</span>
+                `;
+
+                // Drag Events
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    card.classList.add('opacity-50');
+                    playSound('click');
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('opacity-50');
+                });
+
+                // Click / Tap Selection Event
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    playSound('click');
+                    if (selectedCardId === item.id) {
+                        selectedCardId = null;
+                    } else {
+                        selectedCardId = item.id;
+                    }
+                    renderCardsPool();
+                });
+
+                pool.appendChild(card);
+            });
+        }
+
+        // Handle Card Dropping/Placement Logic
+        function handleCardPlacement(cardId, targetZoneId) {
+            const itemIndex = currentItems.findIndex(i => i.id === cardId);
+            if (itemIndex === -1) return;
+
+            const item = currentItems[itemIndex];
+
+            // Verify if placement is correct
+            if (item.zone === targetZoneId) {
+                // Correct match!
+                playSound('correct');
+                score++;
+
+                // Remove from pool array
+                currentItems.splice(itemIndex, 1);
+                selectedCardId = null;
+
+                // Add to Dropzone List UI
+                const zoneList = document.querySelector(`[data-zone-id="${targetZoneId}"] .zone-cards-list`);
+                const placedCard = document.createElement('div');
+                placedCard.className = 'bg-slate-800/90 border border-emerald-500/50 text-emerald-300 px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between shadow correct-anim';
+                placedCard.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid ${item.icon} text-emerald-400"></i>
+                        <span>${item.text}</span>
+                    </div>
+                    <i class="fa-solid fa-check-circle text-emerald-400"></i>
+                `;
+                zoneList.appendChild(placedCard);
+
+                updateScoreUI();
+                renderCardsPool();
+
+                // Check for overall victory
+                if (currentItems.length === 0) {
+                    setTimeout(triggerVictory, 400);
+                }
+            } else {
+                // Wrong placement
+                playSound('wrong');
+                
+                // Visual shake feedback on card
+                const cardEl = document.getElementById(`card-${cardId}`);
+                if (cardEl) {
+                    cardEl.classList.add('bg-rose-900/40', 'border-rose-500');
+                    setTimeout(() => {
+                        cardEl.classList.remove('bg-rose-900/40', 'border-rose-500');
+                    }, 600);
+                }
+            }
+        }
+
+        // Trigger Victory
+        function triggerVictory() {
+            playSound('win');
+            startConfetti();
+
+            const modal = document.getElementById('modal-victory');
+            const msg = document.getElementById('victory-msg-text');
+            const switchBtn = document.getElementById('btn-switch-or-reset');
+
+            if (currentMode === 'abilities') {
+                msg.innerText = "Өте жақсы! Компьютердің мүмкіндіктерін толық меңгердіңіз! Енді құрылғыларды сұрыптауға көшеміз бе?";
+                switchBtn.innerHTML = `<i class="fa-solid fa-microchip"></i> Құрылғыларды сұрыптауға өту`;
+            } else {
+                msg.innerText = "Тамаша! Компьютер құрылғыларының барлық топтарын дұрыс сұрыптадыңыз!";
+                switchBtn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Басынан қайта бастау`;
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            // Mode Nav Buttons
+            const navAbilities = document.getElementById('nav-mode-abilities');
+            const navDevices = document.getElementById('nav-mode-devices');
+
+            navAbilities.addEventListener('click', () => {
+                if (currentMode === 'abilities') return;
+                currentMode = 'abilities';
+                navAbilities.className = 'px-3 py-1.5 rounded-lg transition text-white bg-cyan-600 shadow';
+                navDevices.className = 'px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white';
+                initGame();
+            });
+
+            navDevices.addEventListener('click', () => {
+                if (currentMode === 'devices') return;
+                currentMode = 'devices';
+                navDevices.className = 'px-3 py-1.5 rounded-lg transition text-white bg-cyan-600 shadow';
+                navAbilities.className = 'px-3 py-1.5 rounded-lg transition text-slate-400 hover:text-white';
+                initGame();
+            });
+
+            // Reset Game
+            document.getElementById('btn-reset-game').addEventListener('click', () => {
+                initGame();
+            });
+
+            // Victory Modal Switch / Reset Button
+            document.getElementById('btn-switch-or-reset').addEventListener('click', () => {
+                document.getElementById('modal-victory').classList.add('opacity-0', 'pointer-events-none');
+                if (currentMode === 'abilities') {
+                    navDevices.click();
+                } else {
+                    initGame();
+                }
+            });
+
+            // Victory Modal Close
+            document.querySelectorAll('.btn-close-victory').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('modal-victory').classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+
+            // Sound Toggle
+            document.getElementById('btn-sound').addEventListener('click', () => {
+                soundEnabled = !soundEnabled;
+                const icon = document.getElementById('sound-icon');
+                icon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-rose-400';
+            });
+
+            // Theory Modal
+            const theoryModal = document.getElementById('modal-theory');
+            document.getElementById('btn-theory').addEventListener('click', () => {
+                theoryModal.classList.remove('opacity-0', 'pointer-events-none');
+            });
+
+            document.querySelectorAll('.btn-close-modal').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    theoryModal.classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+        }
+
+        // Particle Confetti Effect
+        function startConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#06b6d4', '#10b981', '#f59e0b', '#3b82f6', '#ec4899'];
+
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 3 + 2,
+                    speedX: Math.random() * 2 - 1
+                });
+            }
+
+            let animationFrame;
+            let startTime = Date.now();
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y += p.speedY;
+                    p.x += p.speedX;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+
+                if (Date.now() - startTime < 3500) {
+                    animationFrame = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+            render();
+        }
+    </script>
+</body>
+</html>
