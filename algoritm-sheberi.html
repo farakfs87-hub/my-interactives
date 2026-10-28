@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Алгоритм Шебері - Блок-схемалар Интерактив Ойыны</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter & Fira Code) -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for winning effect -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Flowchart Block Styles */
+        .block-shape-start-end {
+            border-radius: 9999px; /* Oval */
+        }
+        .block-shape-process {
+            border-radius: 0.5rem; /* Rectangle */
+        }
+        .block-shape-io {
+            transform: skewX(-12deg); /* Parallelogram */
+        }
+        .block-shape-io > div {
+            transform: skewX(12deg); /* Unskew text */
+        }
+        .block-shape-condition {
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); /* Diamond */
+            min-height: 80px;
+        }
+
+        /* Drag & Drop Visual cues */
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            /* Custom scrollbar */
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
+            ::-webkit-scrollbar-track {
+                background: #f1f5f9;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+            }
+            ::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
+            }
+
+            /* Branching Layout Styles */
+            .branch-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1.5rem;
+                width: 100%;
+                max-w: 28rem;
+                position: relative;
+            }
+            .branch-label {
+                font-size: 0.7rem;
+                font-weight: 700;
+                padding: 2px 6px;
+                border-radius: 4px;
+                text-transform: uppercase;
+            }
+        </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid font-bold fa-diagram-project text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-none">Алгоритм Шебері</h1>
+                    <span class="text-xs text-indigo-400 font-medium">Блок-схемаларды құрастыру ойыны</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="bg-slate-700/60 px-3 py-1.5 rounded-lg border border-slate-600 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span>Ұпай: <strong id="total-score" class="text-amber-400">0</strong></span>
+                </div>
+                <button id="help-btn" class="text-slate-400 hover:text-white transition p-2 rounded-lg hover:bg-slate-700">
+                    <i class="fa-solid fa-circle-question text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow flex flex-col md:flex-row gap-6">
+
+        <!-- Left Sidebar: Level Selector & Block Toolbox -->
+        <aside class="w-full md:w-80 flex flex-col gap-5 flex-shrink-0">
+            
+            <!-- Level Selector Card -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Деңгейді таңдаңыз</h2>
+                <div id="level-buttons" class="grid grid-cols-4 gap-2 mb-3">
+                    <!-- Buttons generated dynamically -->
+                </div>
+                <div class="bg-slate-900/80 rounded-xl p-3 border border-slate-700/60">
+                    <div class="flex items-center justify-between mb-1">
+                        <span id="level-title" class="font-semibold text-sm text-indigo-300">1-деңгей</span>
+                        <span id="level-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">Оңай</span>
+                    </div>
+                    <p id="level-desc" class="text-xs text-slate-300 leading-relaxed">
+                        Екі санның қосындысын табу алгоритмін құрастырыңыз.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Block Palette / Elements -->
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Блоктар қоры</h2>
+                    <span class="text-[11px] text-slate-400">Блоктарды оңға сүйреңіз</span>
+                </div>
+                
+                <div id="palette-container" class="space-y-3 overflow-y-auto max-h-[380px] pr-1 flex-grow">
+                    <!-- Blocks dynamically populated based on current task -->
+                </div>
+
+                <!-- Theory Cheat Sheet Mini -->
+                <div class="mt-4 pt-3 border-t border-slate-700 text-[11px] text-slate-400 space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500/40 border border-emerald-400 inline-block"></span>
+                        <span><b>Сопақша:</b> Басы / Соңы</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-2 bg-blue-500/40 border border-blue-400 inline-block transform -skew-x-12"></span>
+                        <span><b>Параллелограмм:</b> Енгізу / Шығару</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-2 bg-amber-500/40 border border-amber-400 rounded-sm inline-block"></span>
+                        <span><b>Тіктөртбұрыш:</b> Процесс / Есептеу</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 bg-purple-500/40 border border-purple-400 rotate-45 inline-block"></span>
+                        <span><b>Ромб:</b> Шарт / Шартты цикл</span>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Right Workspace: Canvas / Drop Slots -->
+        <section class="flex-grow bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl flex flex-col justify-between min-h-[500px] relative overflow-hidden">
+            
+            <!-- Canvas Header -->
+            <div class="flex flex-wrap justify-between items-center border-b border-slate-700 pb-4 mb-4 gap-3">
+                <div>
+                    <h2 class="font-bold text-lg text-white flex items-center gap-2">
+                        <i class="fa-solid fa-puzzle-piece text-indigo-400"></i>
+                        <span>Алгоритм құрастыру алаңы</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Тапсырма құрылымына (сызықтық, тармақталған, циклдік) сай блоктарды орналастырыңыз</p>
+                </div>
+                <div class="flex gap-2">
+                    <button id="reset-btn" class="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate-right"></i> Тазалау
+                    </button>
+                    <button id="check-btn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i> Тексеру
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workspace Area (Drop slots and arrows) -->
+            <div id="workspace" class="flex-grow flex flex-col items-center justify-start py-4 space-y-3 overflow-y-auto max-h-[550px] w-full">
+                <!-- Interactive Slot Layout generated dynamically based on algorithm type -->
+            </div>
+
+            <!-- Feedback Alert Box -->
+            <div id="feedback-card" class="hidden mt-4 p-4 rounded-xl border transition-all duration-300">
+                <div class="flex items-start gap-3">
+                    <div id="feedback-icon" class="text-xl mt-0.5"></div>
+                    <div class="flex-grow">
+                        <h4 id="feedback-title" class="font-bold text-sm"></h4>
+                        <p id="feedback-msg" class="text-xs mt-1 text-slate-300"></p>
+                    </div>
+                    <button id="next-level-btn" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow transition">
+                        Келесі деңгей <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal Help / Theory -->
+    <div id="help-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-indigo-400"></i>
+                    Блок-схема деген не?
+                </h3>
+                <button id="close-modal" class="text-slate-400 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-300 leading-relaxed max-h-96 overflow-y-auto pr-2">
+                <p><strong>Алгоритм</strong> — бұл қойылған мақсатқа жету үшін орындалатын іс-әрекеттердің ретті тізбегі.</p>
+                <p><strong>Алгоритмнің негізгі 3 түрі бар:</strong></p>
+                <ul class="list-disc pl-4 space-y-1">
+                    <li><b>Сызықтық:</b> Іс-әрекеттер бірінен соң бірі тізбектеліп орындалады.</li>
+                    <li><b>Тармақталған:</b> Белгілі бір шарттың орындалуына байланысты алгоритм екі жолдың бірін таңдайды.</li>
+                    <li><b>Циклдік:</b> Белгілі бір шарт орындалғанша іс-әрекеттер бірнеше рет қайталанады.</li>
+                </ul>
+                
+                <div class="grid grid-cols-1 gap-2 pt-2">
+                    <div class="p-2.5 bg-slate-900/60 rounded-lg border border-slate-700 flex items-center gap-3">
+                        <div class="w-20 py-1 bg-emerald-500/20 border border-emerald-400 text-emerald-300 rounded-full text-center text-[10px] font-semibold">Басы / Соңы</div>
+                        <span>Алгоритмнің басталуын немесе аяқталуын көрсетеді.</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/60 rounded-lg border border-slate-700 flex items-center gap-3">
+                        <div class="w-20 py-1 bg-blue-500/20 border border-blue-400 text-blue-300 transform -skew-x-12 text-center text-[10px] font-semibold">Енгізу / Шығару</div>
+                        <span>Бастапқы мәліметтерді енгізу немесе нәтижені экранға шығару.</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/60 rounded-lg border border-slate-700 flex items-center gap-3">
+                        <div class="w-20 py-1 bg-amber-500/20 border border-amber-400 text-amber-300 rounded text-center text-[10px] font-semibold">Процесс</div>
+                        <span>Математикалық есептеулер, амалдар немесе айнымалыға мән беру.</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-900/60 rounded-lg border border-slate-700 flex items-center gap-3">
+                        <div class="w-20 py-1 bg-purple-500/20 border border-purple-400 text-purple-300 rotate-45 text-center text-[10px] font-semibold">
+                            <span class="rotate-[-45deg] block">Шарт</span>
+                        </div>
+                        <span>Логикалық шартты немесе цикл шартын тексеру.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2 text-right">
+                <button id="close-modal-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl">
+                    Түсінікті, ойынға оралу
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-3 text-center text-xs text-slate-500">
+        Алгоритмдеу және бағдарламалау негіздері бойынша интерактивті оқу құралы
+    </footer>
+
+    <!-- Game Logic Script -->
+    <script>
+        // Tasks & Levels Database (Covering Linear, Branching, and Cyclic Algorithms)
+        const levels = [
+            {
+                id: 1,
+                title: "1-деңгей: Сызықтық алгоритм (Периметр)",
+                type: "linear",
+                difficulty: "Оңай",
+                difficultyClass: "bg-emerald-500/20 text-emerald-400",
+                description: "Сызықтық алгоритм: Үшбұрыштың a, b, c қабырғалары бойынша P = a + b + c периметрін есептеу алгоритмін құрастырыңыз.",
+                slotsCount: 5,
+                blocks: [
+                    { id: "b101", type: "start", text: "Басы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" },
+                    { id: "b102", type: "io", text: "a, b, c енгізу", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b103", type: "process", text: "P = a + b + c", color: "bg-amber-600/30 border-amber-500 text-amber-200" },
+                    { id: "b104", type: "io", text: "P шығару", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b105", type: "end", text: "Соңы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" }
+                ],
+                solution: ["b101", "b102", "b103", "b104", "b105"]
+            },
+            {
+                id: 2,
+                title: "2-деңгей: Тармақталған алгоритм (Жұп/Тақ)",
+                type: "branching",
+                difficulty: "Орташа",
+                difficultyClass: "bg-amber-500/20 text-amber-400",
+                description: "Тармақталған алгоритм: N санының жұп немесе тақ екенін шартты тармақталу (Иә / Жоқ) арқылы анықтаңыз.",
+                slotsCount: 6,
+                blocks: [
+                    { id: "b201", type: "start", text: "Басы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" },
+                    { id: "b202", type: "io", text: "N санын енгізу", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b203", type: "condition", text: "N % 2 == 0 ?", color: "bg-purple-600/30 border-purple-500 text-purple-200" },
+                    { id: "b204", type: "io", text: "«Жұп сан» шығару", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b205", type: "io", text: "«Тақ сан» шығару", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b206", type: "end", text: "Соңы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" }
+                ],
+                solution: ["b201", "b202", "b203", "b204", "b205", "b206"]
+            },
+            {
+                id: 3,
+                title: "3-деңгей: Тармақталған алгоритм (Максимум)",
+                type: "branching",
+                difficulty: "Орташа",
+                difficultyClass: "bg-amber-500/20 text-amber-400",
+                description: "Тармақталған алгоритм: x және y екі санын салыстырып, үлкенін Max айнымалысына теңестіру алгоритмін құраңыз.",
+                slotsCount: 6,
+                blocks: [
+                    { id: "b301", type: "start", text: "Басы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" },
+                    { id: "b302", type: "io", text: "x, y енгізу", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b303", type: "condition", text: "x > y ?", color: "bg-purple-600/30 border-purple-500 text-purple-200" },
+                    { id: "b304", type: "process", text: "Max = x", color: "bg-amber-600/30 border-amber-500 text-amber-200" },
+                    { id: "b305", type: "process", text: "Max = y", color: "bg-amber-600/30 border-amber-500 text-amber-200" },
+                    { id: "b306", type: "end", text: "Соңы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" }
+                ],
+                solution: ["b301", "b302", "b303", "b304", "b305", "b306"]
+            },
+            {
+                id: 4,
+                title: "4-деңгей: Циклдік алгоритм (Қосынды табу)",
+                type: "cyclic",
+                difficulty: "Қиын",
+                difficultyClass: "bg-rose-500/20 text-rose-400",
+                description: "Циклдік алгоритм: 1-ден N-ге дейінгі сандардың қосындысын қайталау механизмі және кері байланыс арқылы есептеңіз.",
+                slotsCount: 7,
+                blocks: [
+                    { id: "b401", type: "start", text: "Басы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" },
+                    { id: "b402", type: "io", text: "N енгізу", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b403", type: "process", text: "S = 0, i = 1", color: "bg-amber-600/30 border-amber-500 text-amber-200" },
+                    { id: "b404", type: "condition", text: "i <= N ?", color: "bg-purple-600/30 border-purple-500 text-purple-200" },
+                    { id: "b405", type: "process", text: "S = S + i; i = i + 1", color: "bg-amber-600/30 border-amber-500 text-amber-200" },
+                    { id: "b406", type: "io", text: "S шығару", color: "bg-blue-600/30 border-blue-500 text-blue-200" },
+                    { id: "b407", type: "end", text: "Соңы", color: "bg-emerald-600/30 border-emerald-500 text-emerald-200" }
+                ],
+                solution: ["b401", "b402", "b403", "b404", "b405", "b406", "b407"]
+            }
+        ];
+
+        // Global State
+        let currentLevelIdx = 0;
+        let score = 0;
+        let userSlots = []; // Array storing block object or null per slot
+        let draggedBlockData = null;
+
+        // DOM Elements
+        const levelButtonsContainer = document.getElementById('level-buttons');
+        const levelTitle = document.getElementById('level-title');
+        const levelBadge = document.getElementById('level-badge');
+        const levelDesc = document.getElementById('level-desc');
+        const paletteContainer = document.getElementById('palette-container');
+        const workspace = document.getElementById('workspace');
+        const totalScoreEl = document.getElementById('total-score');
+        const feedbackCard = document.getElementById('feedback-card');
+        const feedbackIcon = document.getElementById('feedback-icon');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        const checkBtn = document.getElementById('check-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Modal elements
+        const helpBtn = document.getElementById('help-btn');
+        const helpModal = document.getElementById('help-modal');
+        const closeModal = document.getElementById('close-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // Initialize App
+        window.onload = function() {
+            renderLevelButtons();
+            loadLevel(0);
+            setupEventListeners();
+        };
+
+        function setupEventListeners() {
+            checkBtn.addEventListener('click', checkSolution);
+            resetBtn.addEventListener('click', () => loadLevel(currentLevelIdx));
+            nextLevelBtn.addEventListener('click', goToNextLevel);
+
+            // Modal handlers
+            helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+            closeModal.addEventListener('click', () => helpModal.classList.add('hidden'));
+            closeModalBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+        }
+
+        function renderLevelButtons() {
+            levelButtonsContainer.innerHTML = '';
+            levels.forEach((lvl, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `py-1.5 px-3 rounded-xl font-bold text-xs transition border ${
+                    idx === currentLevelIdx 
+                        ? 'bg-indigo-600 border-indigo-500 text-white shadow-md' 
+                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700'
+                }`;
+                btn.innerText = `${idx + 1}`;
+                btn.addEventListener('click', () => loadLevel(idx));
+                levelButtonsContainer.appendChild(btn);
+            });
+        }
+
+        function loadLevel(idx) {
+            currentLevelIdx = idx;
+            const lvl = levels[currentLevelIdx];
+            
+            // Update Header & Level buttons
+            renderLevelButtons();
+            levelTitle.innerText = lvl.title;
+            levelBadge.innerText = lvl.difficulty;
+            levelBadge.className = `text-[10px] px-2 py-0.5 rounded-full font-medium ${lvl.difficultyClass}`;
+            levelDesc.innerText = lvl.description;
+
+            // Hide feedback
+            feedbackCard.classList.add('hidden');
+            nextLevelBtn.classList.add('hidden');
+
+            // Initialize Slots
+            userSlots = new Array(lvl.slotsCount).fill(null);
+
+            // Render Palette & Workspace Layout
+            renderPalette();
+            renderWorkspace();
+        }
+
+        function renderPalette() {
+            paletteContainer.innerHTML = '';
+            const lvl = levels[currentLevelIdx];
+            
+            // Shuffle blocks for challenge
+            const availableBlocks = [...lvl.blocks]
+                .filter(b => !userSlots.some(slot => slot && slot.id === b.id))
+                .sort(() => Math.random() - 0.5);
+
+            if (availableBlocks.length === 0) {
+                paletteContainer.innerHTML = `<div class="text-center py-6 text-xs text-slate-500 italic">Барлық блоктар алаңға орналастырылды</div>`;
+                return;
+            }
+
+            availableBlocks.forEach(block => {
+                const blockEl = createBlockDOM(block);
+                paletteContainer.appendChild(blockEl);
+            });
+        }
+
+        function createBlockDOM(block) {
+            const div = document.createElement('div');
+            div.draggable = true;
+            div.dataset.id = block.id;
+
+            let shapeClass = "";
+            if (block.type === 'start' || block.type === 'end') shapeClass = "block-shape-start-end";
+            else if (block.type === 'process') shapeClass = "block-shape-process";
+            else if (block.type === 'io') shapeClass = "block-shape-io";
+            else if (block.type === 'condition') shapeClass = "block-shape-condition";
+
+            div.className = `p-3 border-2 cursor-grab active:cursor-grabbing text-center shadow-md transition hover:scale-[1.02] ${block.color} ${shapeClass} flex items-center justify-center font-semibold text-xs min-h-[48px]`;
+
+            if(block.type === 'io') {
+                div.innerHTML = `<div>${block.text}</div>`;
+            } else {
+                div.innerText = block.text;
+            }
+
+            // Drag Events
+            div.addEventListener('dragstart', (e) => {
+                draggedBlockData = block;
+                div.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', block.id);
+            });
+
+            div.addEventListener('dragend', () => {
+                div.classList.remove('dragging');
+            });
+
+            return div;
+        }
+
+        function createSlotElement(slotIndex, placeholderText) {
+            const slot = document.createElement('div');
+            slot.className = "w-full min-h-[56px] border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center p-1 bg-slate-900/40 transition-all duration-200 relative";
+            slot.dataset.index = slotIndex;
+
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                slot.classList.add('drop-zone-active');
+            });
+
+            slot.addEventListener('dragleave', () => {
+                slot.classList.remove('drop-zone-active');
+            });
+
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.classList.remove('drop-zone-active');
+                if (draggedBlockData) {
+                    userSlots[slotIndex] = draggedBlockData;
+                    draggedBlockData = null;
+                    renderWorkspace();
+                    renderPalette();
+                }
+            });
+
+            if (userSlots[slotIndex]) {
+                const block = userSlots[slotIndex];
+                const placedBlock = createBlockDOM(block);
+                placedBlock.classList.add('w-full');
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = "absolute -top-2 -right-2 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow hover:bg-rose-600 z-10";
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    userSlots[slotIndex] = null;
+                    renderWorkspace();
+                    renderPalette();
+                };
+
+                slot.appendChild(placedBlock);
+                slot.appendChild(removeBtn);
+                slot.classList.remove('border-dashed');
+                slot.classList.add('border-solid', 'border-slate-700');
+            } else {
+                slot.innerHTML = `<span class="text-xs text-slate-500 font-medium">${placeholderText || `${slotIndex + 1}-блок`}</span>`;
+            }
+
+            return slot;
+        }
+
+        function createArrow() {
+            const arrow = document.createElement('div');
+            arrow.className = "my-1 flex flex-col items-center text-indigo-400 opacity-80";
+            arrow.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="0" x2="12" y2="18" class="flow-line"></line>
+                    <polyline points="6 12 12 18 18 12"></polyline>
+                </svg>
+            `;
+            return arrow;
+        }
+
+        function renderWorkspace() {
+            workspace.innerHTML = '';
+            const lvl = levels[currentLevelIdx];
+
+            if (lvl.type === 'linear') {
+                // Standard Linear Layout
+                for (let i = 0; i < lvl.slotsCount; i++) {
+                    const row = document.createElement('div');
+                    row.className = "flex flex-col items-center w-full max-w-sm";
+                    row.appendChild(createSlotElement(i, `${i + 1}-блокты осы жерге тастаңыз`));
+                    if (i < lvl.slotsCount - 1) row.appendChild(createArrow());
+                    workspace.appendChild(row);
+                }
+            } else if (lvl.type === 'branching') {
+                // Branching Layout (2 parallel branches after condition slot #2)
+                const container = document.createElement('div');
+                container.className = "flex flex-col items-center w-full max-w-md space-y-2";
+
+                // Slot 0 & Slot 1
+                container.appendChild(createSlotElement(0, "1-блок (Басы)"));
+                container.appendChild(createArrow());
+                container.appendChild(createSlotElement(1, "2-блок (Енгізу)"));
+                container.appendChild(createArrow());
+                
+                // Slot 2: Condition
+                container.appendChild(createSlotElement(2, "3-блок (Шарт)"));
+
+                // Branch splitting graphics
+                const splitHeader = document.createElement('div');
+                splitHeader.className = "w-full flex justify-around items-center my-1 text-xs font-bold";
+                splitHeader.innerHTML = `
+                    <span class="text-emerald-400 bg-emerald-950/60 border border-emerald-600/50 px-2 py-0.5 rounded">ИӘ (True) ↓</span>
+                    <span class="text-rose-400 bg-rose-950/60 border border-rose-600/50 px-2 py-0.5 rounded">ЖОҚ (False) ↓</span>
+                `;
+                container.appendChild(splitHeader);
+
+                // Two branches grid (Slot 3 left, Slot 4 right)
+                const grid = document.createElement('div');
+                grid.className = "grid grid-cols-2 gap-4 w-full";
+                
+                const leftBranch = document.createElement('div');
+                leftBranch.className = "flex flex-col items-center";
+                leftBranch.appendChild(createSlotElement(3, "4-блок (Иә тармағы)"));
+
+                const rightBranch = document.createElement('div');
+                rightBranch.className = "flex flex-col items-center";
+                rightBranch.appendChild(createSlotElement(4, "5-блок (Жоқ тармағы)"));
+
+                grid.appendChild(leftBranch);
+                grid.appendChild(rightBranch);
+                container.appendChild(grid);
+
+                // Merge arrow pointing to Slot 5 (End)
+                const mergeFooter = document.createElement('div');
+                mergeFooter.className = "flex justify-center my-1 text-slate-400";
+                mergeFooter.innerHTML = `
+                    <svg width="60" height="24" viewBox="0 0 60 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M 15 0 L 15 12 L 30 20 L 45 12 L 45 0" fill="none"></path>
+                        <line x1="30" y1="20" x2="30" y2="24"></line>
+                    </svg>
+                `;
+                container.appendChild(mergeFooter);
+
+                // Slot 5: End
+                container.appendChild(createSlotElement(5, "6-блок (Соңы)"));
+
+                workspace.appendChild(container);
+            } else if (lvl.type === 'cyclic') {
+                // Cyclic Layout with explicit loopback visual arrow
+                const container = document.createElement('div');
+                container.className = "flex flex-col items-center w-full max-w-md relative pl-8";
+
+                // Slots 0, 1, 2
+                container.appendChild(createSlotElement(0, "1-блок (Басы)"));
+                container.appendChild(createArrow());
+                container.appendChild(createSlotElement(1, "2-блок (Енгізу)"));
+                container.appendChild(createArrow());
+                container.appendChild(createSlotElement(2, "3-блок (Бастапқы мән)"));
+                container.appendChild(createArrow());
+
+                // Slot 3: Condition (Loop Header)
+                const condWrapper = document.createElement('div');
+                condWrapper.className = "w-full relative flex flex-col items-center";
+                condWrapper.appendChild(createSlotElement(3, "4-блок (Цикл шарты)"));
+                
+                // Label for True/False branches
+                const loopLabel = document.createElement('div');
+                loopLabel.className = "w-full flex justify-between px-4 text-[11px] font-bold mt-1";
+                loopLabel.innerHTML = `
+                    <span class="text-emerald-400">ИӘ (Ішкі цикл) ↓</span>
+                    <span class="text-amber-400">ЖОҚ (Шығу) ↓</span>
+                `;
+                condWrapper.appendChild(loopLabel);
+                container.appendChild(condWrapper);
+
+                // Loop Body Container (Slot 4)
+                const loopBody = document.createElement('div');
+                loopBody.className = "w-full flex flex-col items-center my-2 p-2 border-2 border-indigo-500/40 rounded-xl bg-indigo-950/20 relative";
+                
+                // Visual Loopback Line
+                const loopLine = document.createElement('div');
+                loopLine.className = "absolute -left-7 top-1/2 -translate-y-1/2 h-[120%] w-6 border-l-2 border-t-2 border-b-2 border-indigo-400 rounded-l-lg flex items-center justify-start";
+                loopLine.innerHTML = `<span class="text-[9px] -rotate-90 font-bold text-indigo-300 -ml-3">Қайталау</span>`;
+                loopBody.appendChild(loopLine);
+
+                loopBody.appendChild(createSlotElement(4, "5-блок (Цикл денесі: есептеу)"));
+                container.appendChild(loopBody);
+
+                container.appendChild(createArrow());
+                container.appendChild(createSlotElement(5, "6-блок (Нәтиже шығару)"));
+                container.appendChild(createArrow());
+                container.appendChild(createSlotElement(6, "7-блок (Соңы)"));
+
+                workspace.appendChild(container);
+            }
+        }
+
+        function checkSolution() {
+            const lvl = levels[currentLevelIdx];
+            let isCorrect = true;
+            let isComplete = true;
+
+            // Check if all slots filled
+            for (let i = 0; i < lvl.slotsCount; i++) {
+                if (!userSlots[i]) {
+                    isComplete = false;
+                    break;
+                }
+            }
+
+            if (!isComplete) {
+                showFeedback(false, "Алгоритм толық емес!", "Барлық ұяшықтарға тиісті блоктарды орналастырыңыз.");
+                return;
+            }
+
+            // Check order
+            for (let i = 0; i < lvl.slotsCount; i++) {
+                if (userSlots[i].id !== lvl.solution[i]) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                score += 100;
+                totalScoreEl.innerText = score;
+                
+                showFeedback(true, "Жарайсың! Алгоритм дұрыс құрастырылды! 🎉", "Сіз блок-схеманың логикалық реттілігін дәл таптыңыз.");
+                
+                // Trigger Confetti
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+
+                if (currentLevelIdx < levels.length - 1) {
+                    nextLevelBtn.classList.remove('hidden');
+                }
+            } else {
+                showFeedback(false, "Қате бар!", "Блоктардың орналасу ретінде қателік бар. Қайтадан тексеріп көріңіз.");
+            }
+        }
+
+        function showFeedback(isSuccess, title, msg) {
+            feedbackCard.classList.remove('hidden', 'bg-emerald-950/40', 'border-emerald-500/50', 'bg-rose-950/40', 'border-rose-500/50');
+            
+            if (isSuccess) {
+                feedbackCard.classList.add('bg-emerald-950/40', 'border-emerald-500/50');
+                feedbackIcon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                feedbackTitle.className = "font-bold text-sm text-emerald-300";
+            } else {
+                feedbackCard.classList.add('bg-rose-950/40', 'border-rose-500/50');
+                feedbackIcon.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-400"></i>';
+                feedbackTitle.className = "font-bold text-sm text-rose-300";
+            }
+
+            feedbackTitle.innerText = title;
+            feedbackMsg.innerText = msg;
+        }
+
+        function goToNextLevel() {
+            if (currentLevelIdx < levels.length - 1) {
+                loadLevel(currentLevelIdx + 1);
+            }
+        }
+    </script>
+</body>
+</html>
