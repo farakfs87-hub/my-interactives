@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch "Егер ... Онда" Симуляциясы</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Nunito for friendly Scratch-like look -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            user-select: none;
+        }
+        /* Scratch block style classes */
+        .scratch-event-block {
+            background-color: #FFBF00;
+            border: 2px solid #D6A000;
+        }
+        .scratch-control-block {
+            background-color: #FFAB19;
+            border: 2px solid #CF8B11;
+        }
+        .scratch-sensing-block {
+            background-color: #5CB1D6;
+            border: 2px solid #4792B3;
+        }
+        .scratch-motion-block {
+            background-color: #4C97FF;
+            border: 2px solid #3373CC;
+        }
+        .scratch-looks-block {
+            background-color: #9966FF;
+            border: 2px solid #774DCB;
+        }
+        .scratch-sound-block {
+            background-color: #CF63CF;
+            border: 2px solid #A64AA6;
+        }
+        /* Custom glow for active execution */
+        .execution-highlight {
+            box-shadow: 0 0 15px #FFD700, 0 0 5px #FF8C00;
+            transform: scale(1.02);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header / Navigation -->
+    <header class="bg-amber-500 text-white p-3 shadow-md flex justify-between items-center z-10">
+        <div class="flex items-center gap-3">
+            <div class="bg-white p-2 rounded-xl text-amber-500 text-2xl font-black flex items-center gap-2 shadow">
+                <i class="fa-solid fa-puzzle-piece"></i> Scratch
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-wide">"Егер ... Онда" Оқыту Симуляторы</h1>
+                <p class="text-xs text-amber-100">Нұртұрған блоктармен бағдарламалау негіздерін үйрену</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="btn-mode-free" onclick="setGameMode('free')" class="px-4 py-2 rounded-xl text-sm font-bold bg-amber-600 hover:bg-amber-700 transition shadow">
+                <i class="fa-solid fa-flask"></i> Еркін режим
+            </button>
+            <button id="btn-mode-tasks" onclick="setGameMode('tasks')" class="px-4 py-2 rounded-xl text-sm font-bold bg-amber-400 hover:bg-amber-300 text-amber-950 transition shadow">
+                <i class="fa-solid fa-trophy"></i> Тапсырмалар (<span id="task-progress">0/3</span>)
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Split Container -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden p-3 gap-3">
+
+        <!-- Left Column: Block Builder & Logic Panel -->
+        <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- Panel Header -->
+            <div class="bg-slate-50 border-b border-slate-200 p-3 flex justify-between items-center">
+                <div class="font-extrabold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-cubes text-amber-500"></i> Блоктар Басқару Панелі
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="resetScript()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold text-slate-700 transition">
+                        <i class="fa-solid fa-rotate-left"></i> Тазалау
+                    </button>
+                </div>
+            </div>
+
+            <!-- Block Constructor Canvas -->
+            <div class="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col items-center justify-start gap-3" id="script-container">
+                
+                <!-- EVENT BLOCK -->
+                <div class="scratch-event-block text-white font-bold p-3 rounded-xl shadow-md w-full max-w-md flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-flag text-green-400 text-lg"></i>
+                    <span>жасыл жалауша басылғанда</span>
+                </div>
+
+                <!-- FOREVER LOOP BLOCK CONTAINER -->
+                <div class="scratch-control-block text-white font-bold p-3 rounded-2xl shadow-md w-full max-w-md flex flex-col gap-3">
+                    <div class="flex items-center gap-2 border-b border-amber-400/50 pb-2">
+                        <i class="fa-solid fa-repeat"></i>
+                        <span>әрдайым кайталау</span>
+                    </div>
+
+                    <!-- IF THEN BLOCK MAIN CONTAINER -->
+                    <div id="if-block-element" class="scratch-control-block bg-amber-500/80 p-3 rounded-xl border-2 border-amber-300 flex flex-col gap-2 transition-all">
+                        
+                        <!-- IF CONDITION HEADER -->
+                        <div class="flex flex-wrap items-center gap-2 text-sm sm:text-base">
+                            <span class="font-extrabold uppercase tracking-wider bg-amber-600 px-2 py-0.5 rounded text-xs">ЕГЕР</span>
+                            
+                            <!-- CONDITION SELECTOR -->
+                            <div class="inline-flex items-center">
+                                <select id="condition-select" onchange="updateLogic()" class="scratch-sensing-block text-white font-bold px-3 py-1.5 rounded-lg text-sm shadow cursor-pointer outline-none focus:ring-2 focus:ring-sky-300">
+                                    <option value="touch-star">⭐ Жұлдызшаға тисе?</option>
+                                    <option value="touch-lava">🔥 Отқа/Лаваға тисе?</option>
+                                    <option value="press-space">⌨️ "Бос орын" (Space) басылса?</option>
+                                    <option value="touch-edge">🧱 Шетіне тисе?</option>
+                                </select>
+                            </div>
+
+                            <span class="font-extrabold uppercase tracking-wider bg-amber-600 px-2 py-0.5 rounded text-xs">ОНДА</span>
+                        </div>
+
+                        <!-- THEN ACTION INSIDE IF BLOCK -->
+                        <div class="pl-4 border-l-4 border-amber-300 my-1 flex flex-col gap-2">
+                            <div class="text-xs text-amber-100 font-normal">Орындалатын әрекет:</div>
+                            
+                            <select id="action-select" onchange="updateLogic()" class="scratch-motion-block text-white font-bold px-3 py-2 rounded-lg text-sm shadow cursor-pointer outline-none focus:ring-2 focus:ring-blue-300">
+                                <option value="say-hello">💬 "Сәлем!" деп айт</option>
+                                <option value="jump">🚀 Жоғары секір (+40px)</option>
+                                <option value="change-color">🎨 Түсін өзгерт</option>
+                                <option value="play-sound">🔊 Дыбыс шығар</option>
+                                <option value="score-up">⭐ 10 ұпай қос</option>
+                                <option value="reset-position">🔄 Бастапқы орынға қайт</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- END IF BLOCK -->
+
+                </div>
+                <!-- END FOREVER BLOCK -->
+
+            </div>
+
+            <!-- Interactive Hint Box -->
+            <div class="bg-amber-50 p-3 border-t border-amber-200 text-xs text-amber-900 flex items-start gap-2">
+                <i class="fa-solid fa-lightbulb text-amber-500 text-base mt-0.5"></i>
+                <div>
+                    <strong class="font-bold">Ереже:</strong> "Егер" шарты орындалса (True/Шын), онда ішіндегі блок бірден іске қосылады! Шарты орындалмаса, ол ішіндегі әрекетті өткізіп жібереді.
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Canvas & Control Simulation -->
+        <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            
+            <!-- Simulation Header & Controls -->
+            <div class="bg-slate-50 border-b border-slate-200 p-3 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <!-- GREEN FLAG START -->
+                    <button id="btn-start" onclick="toggleSimulation(true)" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-2 rounded-xl text-sm flex items-center gap-2 shadow-md transition active:scale-95">
+                        <i class="fa-solid fa-flag text-lg"></i> Іске қосу
+                    </button>
+                    <!-- RED STOP BUTTON -->
+                    <button id="btn-stop" onclick="toggleSimulation(false)" class="bg-rose-500 hover:bg-rose-600 text-white font-black px-3 py-2 rounded-xl text-sm flex items-center gap-2 shadow-md transition active:scale-95">
+                        <i class="fa-solid fa-octagon-stop text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Game Status Dashboard -->
+                <div class="flex items-center gap-4 text-xs font-bold">
+                    <div class="bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg border border-amber-300">
+                        Ұпай: <span id="score-display" class="text-base text-amber-950">0</span>
+                    </div>
+                    <div id="status-badge" class="bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-400" id="status-dot"></span>
+                        <span id="status-text">Тоқтатылды</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Scratch Stage Area -->
+            <div class="flex-1 bg-slate-900 relative overflow-hidden flex items-center justify-center p-2" id="stage-area">
+                
+                <!-- Stage Grid Background Canvas -->
+                <canvas id="stage-canvas" class="w-full h-full rounded-xl bg-slate-800 border border-slate-700 shadow-inner"></canvas>
+
+                <!-- Task overlay header (Visible in Task mode) -->
+                <div id="task-banner" class="absolute top-4 left-4 right-4 bg-slate-900/90 text-white p-3 rounded-xl border border-slate-700 backdrop-blur shadow-lg hidden flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-amber-400 font-bold uppercase tracking-wider" id="task-level-title">1-Тапсырма</div>
+                        <div class="text-sm font-bold" id="task-description">Шарты: Кейіпкер жұлдызға тигенде "10 ұпай қос" әрекетін орнат!</div>
+                    </div>
+                    <button onclick="checkTask()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-1.5 rounded-lg text-xs shadow transition">
+                        Тексеру <i class="fa-solid fa-check"></i>
+                    </button>
+                </div>
+
+                <!-- Speech Bubble for Sprite -->
+                <div id="speech-bubble" class="absolute hidden bg-white text-slate-900 font-black px-3 py-1.5 rounded-2xl shadow-xl text-xs border-2 border-slate-800 z-20 transition-all pointer-events-none">
+                    Сәлем!
+                </div>
+            </div>
+
+            <!-- On-Screen Controllers (Touch / Click support) -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                <div class="text-xs font-bold text-slate-500">
+                    <i class="fa-solid fa-keyboard"></i> Пернетақта: <b>A/D</b> немесе <b>←/→</b> жылжу, <b>Space</b> - бос орын
+                </div>
+
+                <!-- On-screen directional buttons -->
+                <div class="flex gap-2">
+                    <button onmousedown="startMove('left')" onmouseup="stopMove()" onmouseleave="stopMove()" ontouchstart="startMove('left')" ontouchend="stopMove()" class="bg-slate-200 active:bg-slate-300 text-slate-700 font-black w-10 h-10 rounded-xl shadow border border-slate-300 active:scale-95 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+                    <button onmousedown="pressSpaceKey()" class="bg-amber-500 active:bg-amber-600 text-white font-black px-3 h-10 rounded-xl shadow border border-amber-600 active:scale-95 text-xs flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-space-shuttle"></i> Space
+                    </button>
+                    <button onmousedown="startMove('right')" onmouseup="stopMove()" onmouseleave="stopMove()" ontouchstart="startMove('right')" ontouchend="stopMove()" class="bg-slate-200 active:bg-slate-300 text-slate-700 font-black w-10 h-10 rounded-xl shadow border border-slate-300 active:scale-95 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Modal Dialog for Messages -->
+    <div id="modal-container" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl text-center flex flex-col items-center gap-3 border border-slate-200">
+            <div id="modal-icon" class="text-4xl text-amber-500">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 id="modal-title" class="text-lg font-black text-slate-800">Керемет!</h3>
+            <p id="modal-message" class="text-sm text-slate-600">Тапсырма сәтті орындалды!</p>
+            <button onclick="closeModal()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition">
+                Түсінікті
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Global Game State
+        let isRunning = false;
+        let score = 0;
+        let gameMode = 'free'; // 'free' or 'tasks'
+        let currentTaskIndex = 0;
+
+        // Stage & Canvas Elements
+        const canvas = document.getElementById('stage-canvas');
+        const ctx = canvas.getContext('2d');
+        const speechBubble = document.getElementById('speech-bubble');
+
+        // Animation Frame Reference
+        let animationFrameId = null;
+
+        // Sprite Character State
+        const sprite = {
+            x: 100,
+            y: 200,
+            width: 44,
+            height: 44,
+            vx: 0,
+            vy: 0,
+            color: '#FFAB19',
+            hue: 0,
+            sayText: '',
+            sayTimer: 0
+        };
+
+        // Interactive Objects in Stage
+        const star = { x: 300, y: 190, width: 32, height: 32, active: true };
+        const lava = { x: 200, y: 220, width: 50, height: 25 };
+
+        // Key Press Controls State
+        const keys = {
+            left: false,
+            right: false,
+            space: false,
+            spaceHandled: false
+        };
+
+        // Audio Context for Scratch Sound Effects
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playScratchSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'beep') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.3);
+                }
+            } catch (e) {
+                console.log("Audio not allowed yet");
+            }
+        }
+
+        // Resize Canvas to fit container
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width - 16;
+            canvas.height = rect.height - 16;
+            // Bound sprite inside
+            clampSprite();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Movement Controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+            if (e.key === ' ' || e.code === 'Space') {
+                keys.space = true;
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+            if (e.key === ' ' || e.code === 'Space') {
+                keys.space = false;
+                keys.spaceHandled = false;
+            }
+        });
+
+        function startMove(dir) {
+            if (dir === 'left') keys.left = true;
+            if (dir === 'right') keys.right = true;
+        }
+
+        function stopMove() {
+            keys.left = false;
+            keys.right = false;
+        }
+
+        function pressSpaceKey() {
+            keys.space = true;
+            setTimeout(() => { keys.space = false; }, 200);
+        }
+
+        // Tasks Definition
+        const tasks = [
+            {
+                title: "1-Тапсырма: Жұлдыз жинау",
+                desc: "Бағдарлама түз: ЕГЕР жұлдызшаға тисе, ОНДА '10 ұпай қос' таңда!",
+                cond: "touch-star",
+                act: "score-up"
+            },
+            {
+                title: "2-Тапсырма: Қауіптен сақтану",
+                desc: "Бағдарлама түз: ЕГЕР отқа/лаваға тисе, ОНДА 'Бастапқы орынға қайт' таңда!",
+                cond: "touch-lava",
+                act: "reset-position"
+            },
+            {
+                title: "3-Тапсырма: Бос орын түймесі",
+                desc: "Бағдарлама түз: ЕГЕР 'Бос орын' басылса, ОНДА 'Жоғары секір' таңда!",
+                cond: "press-space",
+                act: "jump"
+            }
+        ];
+
+        function setGameMode(mode) {
+            gameMode = mode;
+            const btnFree = document.getElementById('btn-mode-free');
+            const btnTasks = document.getElementById('btn-mode-tasks');
+            const taskBanner = document.getElementById('task-banner');
+
+            if (mode === 'free') {
+                btnFree.className = "px-4 py-2 rounded-xl text-sm font-bold bg-amber-600 text-white shadow";
+                btnTasks.className = "px-4 py-2 rounded-xl text-sm font-bold bg-amber-400 hover:bg-amber-300 text-amber-950 shadow";
+                taskBanner.classList.add('hidden');
+            } else {
+                btnTasks.className = "px-4 py-2 rounded-xl text-sm font-bold bg-amber-600 text-white shadow";
+                btnFree.className = "px-4 py-2 rounded-xl text-sm font-bold bg-amber-400 hover:bg-amber-300 text-amber-950 shadow";
+                taskBanner.classList.remove('hidden');
+                loadTask(currentTaskIndex);
+            }
+        }
+
+        function loadTask(index) {
+            if (index >= tasks.length) {
+                showModal("Құттықтаймыз! 🎉", "Сіз барлық тапсырмаларды сәтті аяқтадыңыз!", "fa-trophy");
+                setGameMode('free');
+                return;
+            }
+            const task = tasks[index];
+            document.getElementById('task-level-title').innerText = task.title;
+            document.getElementById('task-description').innerText = task.desc;
+            document.getElementById('task-progress').innerText = `${index + 1}/${tasks.length}`;
+        }
+
+        function checkTask() {
+            const condSelect = document.getElementById('condition-select').value;
+            const actSelect = document.getElementById('action-select').value;
+            const currentTask = tasks[currentTaskIndex];
+
+            if (condSelect === currentTask.cond && actSelect === currentTask.act) {
+                playScratchSound('win');
+                showModal("Өте жақсы! ✨", "Тапсырма дұрыс құрастырылды!", "fa-circle-check");
+                currentTaskIndex++;
+                if (gameMode === 'tasks') {
+                    loadTask(currentTaskIndex);
+                }
+            } else {
+                showModal("Қателік бар 🧐", "Блоктарның шарты мен әрекетін қайта тексеріп көріңіз.", "fa-triangle-exclamation");
+            }
+        }
+
+        // Toggle Simulation Execution
+        function toggleSimulation(start) {
+            isRunning = start;
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+
+            if (start) {
+                initAudio();
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping";
+                statusText.innerText = "Орындалуда...";
+                statusText.className = "text-emerald-700 font-bold";
+            } else {
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-slate-400";
+                statusText.innerText = "Тоқтатылды";
+                statusText.className = "text-slate-600 font-bold";
+            }
+        }
+
+        // Reset positions
+        function resetScript() {
+            sprite.x = 80;
+            sprite.y = canvas.height - 100;
+            sprite.vy = 0;
+            sprite.hue = 0;
+            sprite.sayText = '';
+            score = 0;
+            document.getElementById('score-display').innerText = score;
+            star.active = true;
+            toggleSimulation(false);
+        }
+
+        // Clamp sprite to canvas bounds
+        function clampSprite() {
+            const floorY = canvas.height - 70;
+            if (sprite.y > floorY) {
+                sprite.y = floorY;
+                sprite.vy = 0;
+            }
+            if (sprite.x < 10) sprite.x = 10;
+            if (sprite.x > canvas.width - sprite.width - 10) sprite.x = canvas.width - sprite.width - 10;
+        }
+
+        // Update logic for block trigger
+        let actionCooldown = false;
+
+        function checkConditionAndExecute() {
+            if (!isRunning) return;
+
+            const cond = document.getElementById('condition-select').value;
+            const action = document.getElementById('action-select').value;
+            const ifBlockEl = document.getElementById('if-block-element');
+
+            let conditionMet = false;
+
+            // Check conditions
+            if (cond === 'touch-star' && star.active) {
+                conditionMet = checkCollision(sprite, star);
+            } else if (cond === 'touch-lava') {
+                conditionMet = checkCollision(sprite, lava);
+            } else if (cond === 'press-space') {
+                conditionMet = keys.space;
+            } else if (cond === 'touch-edge') {
+                conditionMet = (sprite.x <= 15 || sprite.x >= canvas.width - sprite.width - 15);
+            }
+
+            // Visual feedback on "If" block highlight when TRUE
+            if (conditionMet) {
+                ifBlockEl.classList.add('execution-highlight');
+
+                if (!actionCooldown) {
+                    executeAction(action);
+                    actionCooldown = true;
+                    setTimeout(() => { actionCooldown = false; }, 300);
+                }
+            } else {
+                ifBlockEl.classList.remove('execution-highlight');
+            }
+        }
+
+        // Execute block action
+        function executeAction(action) {
+            if (action === 'say-hello') {
+                sprite.sayText = "Сәлем!";
+                sprite.sayTimer = 60; // 1 second approx
+            } else if (action === 'jump') {
+                if (sprite.y >= canvas.height - 80) {
+                    sprite.vy = -12;
+                }
+            } else if (action === 'change-color') {
+                sprite.hue = (sprite.hue + 45) % 360;
+            } else if (action === 'play-sound') {
+                playScratchSound('beep');
+            } else if (action === 'score-up') {
+                score += 10;
+                document.getElementById('score-display').innerText = score;
+                playScratchSound('win');
+                star.active = false;
+                setTimeout(() => { star.active = true; }, 2000); // Respawn star
+            } else if (action === 'reset-position') {
+                sprite.x = 50;
+                sprite.y = canvas.height - 70;
+            }
+        }
+
+        // Collision helper
+        function checkCollision(rect1, rect2) {
+            return (
+                rect1.x < rect2.x + rect2.width &&
+                rect1.x + rect1.width > rect2.x &&
+                rect1.y < rect2.y + rect2.height &&
+                rect1.y + rect1.height > rect2.y
+            );
+        }
+
+        // Main Simulation Render Loop
+        function gameLoop() {
+            // Update Positions
+            if (keys.left) sprite.x -= 4;
+            if (keys.right) sprite.x += 4;
+
+            // Gravity
+            const floorY = canvas.height - 70;
+            sprite.vy += 0.6; // gravity
+            sprite.y += sprite.vy;
+
+            clampSprite();
+
+            // Check scratch condition block
+            checkConditionAndExecute();
+
+            // Clear Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Stage Floor Background
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 4);
+
+            // Draw Lava Obstacle
+            lava.x = canvas.width / 2 - 25;
+            lava.y = canvas.height - 30;
+            ctx.fillStyle = '#EF4444';
+            ctx.beginPath();
+            ctx.roundRect(lava.x, lava.y - 10, lava.width, 15, [5, 5, 0, 0]);
+            ctx.fill();
+            ctx.fillStyle = '#F59E0B';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('🔥 Лава', lava.x + 5, lava.y - 12);
+
+            // Draw Star Target
+            if (star.active) {
+                star.x = canvas.width - 100;
+                star.y = canvas.height - 90;
+                ctx.font = '28px serif';
+                ctx.fillText('⭐', star.x, star.y + 24);
+            }
+
+            // Draw Scratch Cat Sprite
+            ctx.save();
+            ctx.translate(sprite.x + sprite.width / 2, sprite.y + sprite.height / 2);
+            if (sprite.hue > 0) {
+                ctx.filter = `hue-rotate(${sprite.hue}deg)`;
+            }
+
+            // Simple Sprite Body (Cat head shape)
+            ctx.fillStyle = sprite.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ears
+            ctx.beginPath();
+            ctx.moveTo(-16, -10);
+            ctx.lineTo(-8, -26);
+            ctx.lineTo(-2, -16);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(16, -10);
+            ctx.lineTo(8, -26);
+            ctx.lineTo(2, -16);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(-7, -4, 5, 0, Math.PI * 2);
+            ctx.arc(7, -4, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(-6, -4, 2.5, 0, Math.PI * 2);
+            ctx.arc(8, -4, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+
+            // Update Speech Bubble
+            if (sprite.sayTimer > 0) {
+                sprite.sayTimer--;
+                const rect = canvas.getBoundingClientRect();
+                speechBubble.style.left = `${sprite.x + rect.left - 10}px`;
+                speechBubble.style.top = `${sprite.y + rect.top - 35}px`;
+                speechBubble.innerText = sprite.sayText;
+                speechBubble.classList.remove('hidden');
+            } else {
+                speechBubble.classList.add('hidden');
+            }
+
+            // Request next frame
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // Show Modal Dialog
+        function showModal(title, message, iconClass) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal-icon').innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+            document.getElementById('modal-container').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+        }
+
+        // Logic update handler for select dropdown change events
+        function updateLogic() {
+            // Restart visual feedback or trigger any state updates on block change
+            const ifBlockEl = document.getElementById('if-block-element');
+            if (ifBlockEl) {
+                ifBlockEl.classList.remove('execution-highlight');
+            }
+        }
+
+        // Initialization on Load
+        window.onload = function() {
+            resizeCanvas();
+            resetScript();
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
