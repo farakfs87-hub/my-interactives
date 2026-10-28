@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Сәйкестендіру тапсырмасы</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+    body {
+      font-family: 'Nunito', sans-serif;
+      user-select: none;
+    }
+    
+    /* Scratch style hexagonal operator block UI */
+    .operator-block {
+      background-color: #59c059;
+      border: 2px solid #389438;
+      clip-path: polygon(12px 0%, calc(100% - 12px) 0%, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0% 50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 16px;
+      gap: 8px;
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15);
+    }
+
+    .operator-input {
+      background: white;
+      border-radius: 4px;
+      width: 32px;
+      height: 32px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .operator-symbol {
+      color: white;
+      font-weight: 800;
+      font-size: 22px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* Connections SVG layer */
+    #svg-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .dot {
+      width: 16px;
+      height: 16px;
+      background-color: #cbd5e1;
+      border: 3px solid #64748b;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dot.active {
+      background-color: #0284c7;
+      border-color: #0369a1;
+      transform: scale(1.3);
+      box-shadow: 0 0 10px rgba(2, 132, 199, 0.5);
+    }
+
+    .dot.connected {
+      background-color: #10b981;
+      border-color: #047857;
+    }
+
+    .card-item {
+      transition: all 0.2s ease;
+    }
+
+    .card-item:hover {
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body class="bg-emerald-50 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- Main Container -->
+  <div class="max-w-4xl w-full bg-white rounded-3xl shadow-xl border border-emerald-100 p-6 md:p-8 relative overflow-hidden">
+    
+    <!-- Title Section -->
+    <div class="text-center mb-8">
+      <h1 class="text-2xl md:text-3xl font-extrabold text-teal-800 mb-2">
+        <i class="fa-solid fa-puzzle-piece text-emerald-500 mr-2"></i>Блоктарды сипаттамасымен сәйкестендір
+      </h1>
+      <p class="text-slate-600 text-sm md:text-base">
+        Сол жақтағы оператор блогын оң жақтағы тиісті анықтамасымен қосыңыз. Нүктелерді басып сәйкестендіріңіз.
+      </p>
+    </div>
+
+    <!-- Interactive Interactive Board -->
+    <div id="board" class="relative grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-24 my-6 px-2 md:px-6">
+      
+      <!-- SVG Lines Container -->
+      <svg id="svg-canvas">
+        <path id="drag-line" d="" stroke="#0284c7" stroke-width="4" stroke-dasharray="6,6" fill="none" class="hidden" />
+      </svg>
+
+      <!-- Left Column (Blocks) -->
+      <div class="flex flex-col gap-6 justify-center" id="left-column">
+        <!-- Item 1: Equal -->
+        <div class="card-item bg-teal-600/10 border-2 border-teal-600/30 rounded-2xl p-4 flex items-center justify-between shadow-sm relative" data-id="1">
+          <div class="bg-teal-700 p-3 rounded-xl flex items-center justify-center w-full max-w-[220px]">
+            <div class="operator-block">
+              <div class="operator-input"></div>
+              <span class="operator-symbol">=</span>
+              <div class="operator-input"></div>
+            </div>
+          </div>
+          <div class="dot left-dot ml-4" data-id="1" id="left-dot-1"></div>
+        </div>
+
+        <!-- Item 2: Greater than -->
+        <div class="card-item bg-teal-600/10 border-2 border-teal-600/30 rounded-2xl p-4 flex items-center justify-between shadow-sm relative" data-id="2">
+          <div class="bg-teal-700 p-3 rounded-xl flex items-center justify-center w-full max-w-[220px]">
+            <div class="operator-block">
+              <div class="operator-input"></div>
+              <span class="operator-symbol">&gt;</span>
+              <div class="operator-input"></div>
+            </div>
+          </div>
+          <div class="dot left-dot ml-4" data-id="2" id="left-dot-2"></div>
+        </div>
+
+        <!-- Item 3: Less than -->
+        <div class="card-item bg-teal-600/10 border-2 border-teal-600/30 rounded-2xl p-4 flex items-center justify-between shadow-sm relative" data-id="3">
+          <div class="bg-teal-700 p-3 rounded-xl flex items-center justify-center w-full max-w-[220px]">
+            <div class="operator-block">
+              <div class="operator-input"></div>
+              <span class="operator-symbol">&lt;</span>
+              <div class="operator-input"></div>
+            </div>
+          </div>
+          <div class="dot left-dot ml-4" data-id="3" id="left-dot-3"></div>
+        </div>
+      </div>
+
+      <!-- Right Column (Descriptions - Shuffled target ids) -->
+      <div class="flex flex-col gap-6 justify-center" id="right-column">
+        <!-- Target 3: Less than description -->
+        <div class="card-item bg-teal-600 border-2 border-teal-700 text-white rounded-2xl p-4 flex items-center justify-between shadow-md relative" data-target="3">
+          <div class="dot right-dot mr-4" data-target="3" id="right-dot-3"></div>
+          <div class="flex-1 text-center font-bold text-lg md:text-xl py-2">
+            Егер айнымалы кіші болса, ...
+          </div>
+        </div>
+
+        <!-- Target 1: Equal description -->
+        <div class="card-item bg-teal-600 border-2 border-teal-700 text-white rounded-2xl p-4 flex items-center justify-between shadow-md relative" data-target="1">
+          <div class="dot right-dot mr-4" data-target="1" id="right-dot-1"></div>
+          <div class="flex-1 text-center font-bold text-lg md:text-xl py-2">
+            Егер айнымалы тең болса, ...
+          </div>
+        </div>
+
+        <!-- Target 2: Greater than description -->
+        <div class="card-item bg-teal-600 border-2 border-teal-700 text-white rounded-2xl p-4 flex items-center justify-between shadow-md relative" data-target="2">
+          <div class="dot right-dot mr-4" data-target="2" id="right-dot-2"></div>
+          <div class="flex-1 text-center font-bold text-lg md:text-xl py-2">
+            Егер айнымалы үлкен болса, ...
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Action Buttons & Feedback -->
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6">
+      <button id="reset-btn" class="w-full sm:w-auto px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl transition duration-200 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rotate-right"></i> Кайталау
+      </button>
+
+      <div id="feedback" class="text-center font-extrabold text-lg hidden"></div>
+
+      <button id="check-btn" class="w-full sm:w-auto px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition duration-200 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-check"></i> Тексеру
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const svgCanvas = document.getElementById('svg-canvas');
+      const dragLine = document.getElementById('drag-line');
+      const leftDots = document.querySelectorAll('.left-dot');
+      const rightDots = document.querySelectorAll('.right-dot');
+      const checkBtn = document.getElementById('check-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const feedback = document.getElementById('feedback');
+
+      let selectedLeft = null;
+      let connections = {}; // leftId -> rightTargetId
+
+      // Get Center coordinates of an element relative to SVG canvas
+      function getDotCenter(el) {
+        const rect = el.getBoundingClientRect();
+        const svgRect = svgCanvas.getBoundingClientRect();
+        return {
+          x: rect.left + rect.width / 2 - svgRect.left,
+          y: rect.top + rect.height / 2 - svgRect.top
+        };
+      }
+
+      // Render existing connections
+      function drawConnections() {
+        // Clear all path elements except drag line
+        const paths = svgCanvas.querySelectorAll('.connection-line');
+        paths.forEach(p => p.remove());
+
+        Object.keys(connections).forEach(leftId => {
+          const rightTargetId = connections[leftId];
+          const leftDot = document.getElementById(`left-dot-${leftId}`);
+          const rightDot = document.getElementById(`right-dot-${rightTargetId}`);
+
+          if (leftDot && rightDot) {
+            const p1 = getDotCenter(leftDot);
+            const p2 = getDotCenter(rightDot);
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            // Cubic bezier curve for beautiful smooth line
+            const dx = Math.abs(p2.x - p1.x) * 0.5;
+            const d = `M ${p1.x} ${p1.y} C ${p1.x + dx} ${p1.y}, ${p2.x - dx} ${p2.y}, ${p2.x} ${p2.y}`;
+
+            path.setAttribute('d', d);
+            path.setAttribute('stroke', '#0284c7');
+            path.setAttribute('stroke-width', '4');
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', 'connection-line');
+            svgCanvas.appendChild(path);
+
+            leftDot.classList.add('connected');
+            rightDot.classList.add('connected');
+          }
+        });
+      }
+
+      // Handle Dot Clicks
+      leftDots.forEach(dot => {
+        dot.addEventListener('click', () => {
+          const id = dot.getAttribute('data-id');
+
+          // If already connected, remove connection first
+          if (connections[id]) {
+            const oldTargetId = connections[id];
+            delete connections[id];
+            dot.classList.remove('connected');
+            const oldRightDot = document.getElementById(`right-dot-${oldTargetId}`);
+            if (oldRightDot) oldRightDot.classList.remove('connected');
+            drawConnections();
+          }
+
+          // Select this dot
+          leftDots.forEach(d => d.classList.remove('active'));
+          if (selectedLeft === id) {
+            selectedLeft = null;
+          } else {
+            selectedLeft = id;
+            dot.classList.add('active');
+          }
+        });
+      });
+
+      rightDots.forEach(dot => {
+        dot.addEventListener('click', () => {
+          const targetId = dot.getAttribute('data-target');
+
+          if (selectedLeft) {
+            // Remove previous connections pointing to this target
+            Object.keys(connections).forEach(lId => {
+              if (connections[lId] === targetId) {
+                const prevLeft = document.getElementById(`left-dot-${lId}`);
+                if (prevLeft) prevLeft.classList.remove('connected');
+                delete connections[lId];
+              }
+            });
+
+            // Set new connection
+            connections[selectedLeft] = targetId;
+
+            // Clear selection state
+            const currentLeft = document.getElementById(`left-dot-${selectedLeft}`);
+            if (currentLeft) currentLeft.classList.remove('active');
+            selectedLeft = null;
+
+            drawConnections();
+          }
+        });
+      });
+
+      // Window resize re-draws connections correctly
+      window.addEventListener('resize', drawConnections);
+
+      // Check Answers
+      checkBtn.addEventListener('click', () => {
+        const totalKeys = Object.keys(connections).length;
+
+        if (totalKeys < 3) {
+          feedback.textContent = "Барлық блоктарды сәйкестендіріңіз!";
+          feedback.className = "text-center font-extrabold text-lg text-amber-600 block";
+          return;
+        }
+
+        let isCorrect = true;
+        Object.keys(connections).forEach(leftId => {
+          if (leftId !== connections[leftId]) {
+            isCorrect = false;
+          }
+        });
+
+        // Update line colors according to result
+        const lines = svgCanvas.querySelectorAll('.connection-line');
+        if (isCorrect) {
+          lines.forEach(line => line.setAttribute('stroke', '#10b981'));
+          feedback.textContent = "Тамаша! Барлығы дұрыс! 🎉";
+          feedback.className = "text-center font-extrabold text-lg text-emerald-600 block";
+        } else {
+          lines.forEach(line => line.setAttribute('stroke', '#ef4444'));
+          feedback.textContent = "Қателіктер бар. Қайтадан байқап көріңіз! ❌";
+          feedback.className = "text-center font-extrabold text-lg text-rose-600 block";
+        }
+      });
+
+      // Reset
+      resetBtn.addEventListener('click', () => {
+        connections = {};
+        selectedLeft = null;
+        leftDots.forEach(d => d.classList.remove('active', 'connected'));
+        rightDots.forEach(d => d.classList.remove('connected'));
+        feedback.className = "text-center font-extrabold text-lg hidden";
+        drawConnections();
+      });
+
+    });
+  </script>
+</body>
+</html>
