@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Модельдеу Симуляторы | 7.3.2.1 Оқу Мақсаты</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js (3D Graphics Library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        .glow-effect {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<div class="min-h-screen flex flex-col justify-between">
+
+    <!-- Header / Navbar -->
+    <header class="glass-panel sticky top-0 z-50 px-6 py-4 flex justify-between items-center border-b border-slate-700">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-blue-600 to-indigo-500 p-2.5 rounded-xl text-white shadow-lg">
+                <i class="fa-solid fa-cube text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                    3D Graphic Studio
+                </h1>
+                <p class="text-xs text-slate-400">Оқу мақсаты: 7.3.2.1 - Компьютерлік модельдерді қолдану</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-6">
+            <div class="bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700 flex items-center space-x-3">
+                <i class="fa-solid fa-trophy text-amber-400 text-lg"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Ұпай (XP)</div>
+                    <div id="score-display" class="text-lg font-black text-amber-400">0</div>
+                </div>
+            </div>
+            <div class="bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700 flex items-center space-x-3">
+                <i class="fa-solid fa-star text-indigo-400 text-lg"></i>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Деңгей</div>
+                    <div id="level-display" class="text-lg font-black text-indigo-400">1 / 4</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Sidebar / Navigation Tabs & Tasks -->
+        <aside class="lg:col-span-4 flex flex-col gap-4">
+            
+            <!-- Quest Card -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-700/60 shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <span id="task-badge" class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-full border border-blue-500/30">
+                        1-Тапсырма: Архитектура
+                    </span>
+                    <span class="text-xs text-slate-400"><i class="fa-solid fa-clock mr-1"></i> Белсенді</span>
+                </div>
+                <h2 id="task-title" class="text-lg font-bold text-white mb-2">Ғимараттың 3D Моделін Құру</h2>
+                <p id="task-desc" class="text-sm text-slate-300 leading-relaxed mb-4">
+                    Компьютерлік модельдеу сәулет саласында құрылыс басталмай тұрып, болашақ ғимараттың жобасын көруге мүмкіндік береді. Төмендегі фигураларды пайдаланып үй құрастырыңыз!
+                </p>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-800 rounded-full h-2 mb-4 overflow-hidden border border-slate-700">
+                    <div id="task-progress" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500" style="width: 25%"></div>
+                </div>
+
+                <!-- Interactive Buttons for Tasks -->
+                <div id="action-buttons" class="space-y-2">
+                    <!-- Dynamic Controls inserted via JS -->
+                </div>
+            </div>
+
+            <!-- Applications Info Card -->
+            <div class="glass-panel p-5 rounded-2xl border border-slate-700/60 flex-1 flex flex-col">
+                <h3 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-yellow-400"></i>
+                    3D Модельдеу қайда қолданылады?
+                </h3>
+                <div class="space-y-3 text-xs text-slate-300 flex-1 overflow-y-auto pr-1">
+                    <div id="info-architecture" class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/80 hover:border-blue-500/50 transition">
+                        <strong class="text-blue-400 block text-sm mb-1"><i class="fa-solid fa-city mr-1.5"></i> 1. Архитектура мен Құрылыс</strong>
+                        Ғимараттардың, көпірлер мен қалалардың 3D модельдерін жасап, беріктігі мен дизайнын сынайды.
+                    </div>
+                    <div id="info-medicine" class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/80 hover:border-emerald-500/50 transition opacity-50">
+                        <strong class="text-emerald-400 block text-sm mb-1"><i class="fa-solid fa-heart-pulse mr-1.5"></i> 2. Медицина</strong>
+                        Адам мүшелерінің (жүрек, сүйек) 3D моделін жасап, күрделі оталарға дайындалады және протез басып шығарады.
+                    </div>
+                    <div id="info-engineering" class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/80 hover:border-amber-500/50 transition opacity-50">
+                        <strong class="text-amber-400 block text-sm mb-1"><i class="fa-solid fa-car-side mr-1.5"></i> 3. Инженерия және Өнеркәсіп</strong>
+                        Көліктерді, ұшақтарды, роботтарды жасамас бұрын олардың сандық аналогын жасап, аэродинамикасын тексереді.
+                    </div>
+                    <div id="info-entertainment" class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/80 hover:border-purple-500/50 transition opacity-50">
+                        <strong class="text-purple-400 block text-sm mb-1"><i class="fa-solid fa-gamepad mr-1.5"></i> 4. Кино мен Ойындар</strong>
+                        3D анимациялар, компьютерлік ойындардағы кейіпкерлер, арнайы эффектілер мен виртуалды әлемдерді құру.
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- 3D Canvas / Viewport Area -->
+        <section class="lg:col-span-8 flex flex-col gap-4">
+            
+            <div class="glass-panel rounded-2xl border border-slate-700/60 relative flex-1 min-h-[420px] overflow-hidden shadow-2xl flex flex-col">
+                
+                <!-- Viewport Overlay Toolbar -->
+                <div class="absolute top-4 left-4 right-4 z-10 flex justify-between items-center pointer-events-none">
+                    <div class="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 pointer-events-auto">
+                        <i class="fa-solid fa-camera mr-1.5 text-blue-400"></i> Интерактивті 3D Көрініс
+                    </div>
+                    
+                    <div class="flex gap-2 pointer-events-auto">
+                        <button id="btn-reset-cam" class="bg-slate-800/80 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-medium transition shadow">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Камераны қалпына келтіру
+                        </button>
+                        <button id="btn-clear-scene" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-3 py-1.5 rounded-lg border border-red-500/30 text-xs font-medium transition shadow">
+                            <i class="fa-solid fa-trash mr-1"></i> Тазалау
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3D Canvas container -->
+                <div id="canvas-container" class="w-full h-full flex-1 relative cursor-grab active:cursor-grabbing"></div>
+
+                <!-- Controls Guide Banner -->
+                <div class="absolute bottom-4 left-4 right-4 z-10 bg-slate-900/80 backdrop-blur-md p-2.5 rounded-xl border border-slate-700/80 text-xs text-slate-400 flex justify-around items-center flex-wrap gap-2">
+                    <span><i class="fa-solid fa-hand-pointer text-blue-400 mr-1"></i> Саусақпен / Тышқанмен айналдыру</span>
+                    <span><i class="fa-solid fa-magnifying-glass-plus text-amber-400 mr-1"></i> Екі саусақпен масштабтау</span>
+                </div>
+
+            </div>
+
+            <!-- Quiz / Verification Footer Bar -->
+            <div id="quiz-container" class="glass-panel p-4 rounded-2xl border border-slate-700/60 hidden">
+                <!-- Quiz dynamically injected -->
+            </div>
+
+            <div id="next-level-bar" class="glass-panel p-4 rounded-2xl border border-slate-700/60 flex justify-between items-center">
+                <div>
+                    <h4 id="status-title" class="text-sm font-bold text-white">Модельді құрастырыңыз</h4>
+                    <p id="status-sub" class="text-xs text-slate-400">Сол жақтағы батырмаларды басып, тапсырманы орындаңыз.</p>
+                </div>
+                <button id="btn-next-step" disabled class="px-6 py-2.5 bg-slate-700 text-slate-400 font-bold text-sm rounded-xl transition cursor-not-allowed flex items-center gap-2">
+                    <span>Келесі Кезең</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal Notification -->
+    <div id="modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-700 p-6 md:p-8 rounded-3xl max-w-md w-full text-center shadow-2xl relative animate-fade-in">
+            <div id="modal-icon" class="w-16 h-16 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h3 id="modal-title" class="text-2xl font-black text-white mb-2">Тамаша!</h3>
+            <p id="modal-msg" class="text-sm text-slate-300 mb-6">Сіз 3D модельдеудің бірінші қолданылу аясын сәтті аяқтадыңыз.</p>
+            <button id="modal-close-btn" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg transition transform hover:-translate-y-0.5">
+                Жалғастыру
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* ==========================================================================
+   GAME STATE & LEVEL DEFINITIONS
+   ========================================================================== */
+const gameState = {
+    score: 0,
+    currentLevel: 1,
+    maxLevels: 4,
+    objectsInScene: [],
+    levelCompleted: false
+};
+
+const levelsData = [
+    {
+        level: 1,
+        title: "Ғимараттың 3D Моделін Құру",
+        badge: "1-Тапсырма: Архитектура",
+        desc: "Архитектурада 3D модельдеу құрылыс нысанын визуализациялау үшін қажет. Төмендегі батырмалар арқылы үйдің іргетасын, қабырғасын және шатырын орнатыңыз.",
+        infoId: "info-architecture",
+        actions: [
+            { id: "add-foundation", label: "1. Іргетас салу (Куб)", icon: "fa-cube", type: "foundation" },
+            { id: "add-walls", label: "2. Қабырғаларды көтеру", icon: "fa-border-all", type: "walls" },
+            { id: "add-roof", label: "3. Шатырын жабу (Пирамида)", icon: "fa-shapes", type: "roof" }
+        ],
+        quiz: {
+            question: "Архитектурада 3D компьютерлік модельдеуді қолданудың басты артықшылығы неде?",
+            options: [
+                "Ғимарат салынбай тұрып, оның қателіктері мен дизайнын алдын ала көру",
+                "Құрылыс материалдарының салмағын ауырлату",
+                "Құрылысты мүлдем адамсыз салу"
+            ],
+            correct: 0
+        }
+    },
+    {
+        level: 2,
+        title: "Медициналық Жүрек Моделі",
+        badge: "2-Тапсырма: Медицина",
+        desc: "Медицинада 3D модельдеу арқылы пациенттің ішкі мүшелері сандық түрде зерттеліп, хирургтар ота жасауды жоспарлайды. Адам жүрегінің 3D моделін жинақтаңыз.",
+        infoId: "info-medicine",
+        actions: [
+            { id: "add-heart-base", label: "1. Жүрек негізін құру (Сфера)", icon: "fa-heart", type: "heart_base" },
+            { id: "add-vessels", label: "2. Қантамырларды қосу (Цилиндр)", icon: "fa-code-branch", type: "vessels" }
+        ],
+        quiz: {
+            question: "Медицинада 3D модельдер мен 3D принтерлер не үшін бірге қолданылады?",
+            options: [
+                "Дәрі-дәрмек рецептін басып шығару үшін",
+                "Ағза мүшелерінің көшірмесін немесе протездерді басып шығару үшін",
+                "Тек аурухана бөлмелерін безендіру үшін"
+            ],
+            correct: 1
+        }
+    },
+    {
+        level: 3,
+        title: "Автомобиль Моделін Сынау",
+        badge: "3-Тапсырма: Инженерия",
+        desc: "Инженерлер жаңа көлікті құрастырмас бұрын оның 3D компьюетрлік моделін аэродинамикалық трубада сынақтан өткізеді. Инженерлік модельді жинаңыз.",
+        infoId: "info-engineering",
+        actions: [
+            { id: "add-car-body", label: "1. Көлік корпусы", icon: "fa-car", type: "car_body" },
+            { id: "add-wheels", label: "2. Дөңгелектерін орнату", icon: "fa-circle-notch", type: "wheels" }
+        ],
+        quiz: {
+            question: "Неліктен жаңа машинаны өндіріске жібермес бұрын компьютерлік 3D модельде сынайды?",
+            options: [
+                "Шынайы машинаны қиратпай, уақыт пен қаражатты үнемдеу үшін",
+                "Машинаның түсін әдемірек ету үшін",
+                "Көліктің жылдамдығын азайту үшін"
+            ],
+            correct: 0
+        }
+    },
+    {
+        level: 4,
+        title: "Ойын Көрінісін Баптау (3D Кино/GameDev)",
+        badge: "4-Тапсырма: Кино мен Ойындар",
+        desc: "3D графика анимация, виртуалды шындық (VR) және компьютерлік ойындардың негізі. Ойын сахнасына кейіпкер мен ағаштарды қосып, виртуалды әлемді жандандырыңыз.",
+        infoId: "info-entertainment",
+        actions: [
+            { id: "add-terrain", label: "1. Ландшафт/Жер рельефі", icon: "fa-mountain", type: "terrain" },
+            { id: "add-character", label: "2. 3D Кейіпкер қосу", icon: "fa-user-astronaut", type: "character" },
+            { id: "add-environment", label: "3. Айналаны безендіру", icon: "fa-tree", type: "trees" }
+        ],
+        quiz: {
+            question: "3D модельдеудің қандай мысалы компьютерлік ойындарда қолданылады?",
+            options: [
+                "Мәтіндік құжаттарды теру",
+                "3D кейіпкерлер, затттар және виртуалды әлем орналасуы",
+                "Тек калькулятор есептеулері"
+            ],
+            correct: 1
+        }
+    }
+];
+
+/* ==========================================================================
+   THREE.JS SETUP & GRAPHICS LOGIC
+   ========================================================================== */
+let scene, camera, renderer, currentMeshGroup;
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+
+function initThree() {
+    const container = document.getElementById('canvas-container');
+    
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a);
+    scene.fog = new THREE.FogExp2(0x0f172a, 0.03);
+
+    // Camera
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 5, 12);
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    // Group to hold dynamic task models
+    currentMeshGroup = new THREE.Group();
+    scene.add(currentMeshGroup);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 15);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
+
+    const pointLight = new THREE.PointLight(0x3b82f6, 1, 20);
+    pointLight.position.set(-5, 5, -5);
+    scene.add(pointLight);
+
+    // Grid Helper
+    const gridHelper = new THREE.GridHelper(20, 20, 0x3b82f6, 0x1e293b);
+    gridHelper.position.y = -0.01;
+    scene.add(gridHelper);
+
+    // Custom Orbit Interaction
+    setupControls(container);
+
+    // Resize Handler
+    window.addEventListener('resize', onWindowResize);
+
+    // Animation Loop
+    animate();
+}
+
+function setupControls(container) {
+    const dom = renderer.domElement;
+    let initialTouchDistance = null;
+
+    // --- Mouse Events ---
+    dom.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    dom.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaMove = {
+            x: e.clientX - previousMousePosition.x,
+            y: e.clientY - previousMousePosition.y
+        };
+
+        if (e.shiftKey) {
+            // Pan
+            camera.position.x -= deltaMove.x * 0.01;
+            camera.position.y += deltaMove.y * 0.01;
+        } else {
+            // Orbit around center
+            rotateCamera(deltaMove.x, deltaMove.y);
+        }
+
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    dom.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        zoomCamera(e.deltaY > 0 ? 1.08 : 0.92);
+    }, { passive: false });
+
+    // --- Touch Events (Сенсорлық басқару) ---
+    dom.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2) {
+            isDragging = false;
+            // Calculate initial distance between 2 fingers for pinch zoom
+            initialTouchDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    }, { passive: true });
+
+    dom.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isDragging) {
+            const deltaMove = {
+                x: e.touches[0].clientX - previousMousePosition.x,
+                y: e.touches[0].clientY - previousMousePosition.y
+            };
+            rotateCamera(deltaMove.x, deltaMove.y);
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2 && initialTouchDistance) {
+            // Pinch-to-zoom logic
+            const currentDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const factor = initialTouchDistance / currentDistance;
+            zoomCamera(factor > 1 ? 1.03 : 0.97);
+            initialTouchDistance = currentDistance;
+        }
+    }, { passive: true });
+
+    dom.addEventListener('touchend', (e) => {
+        if (e.touches.length < 1) {
+            isDragging = false;
+        }
+        if (e.touches.length < 2) {
+            initialTouchDistance = null;
+        }
+    });
+}
+
+function rotateCamera(deltaX, deltaY) {
+    const radius = camera.position.distanceTo(new THREE.Vector3(0, 0, 0));
+    let theta = Math.atan2(camera.position.x, camera.position.z);
+    let phi = Math.acos(Math.min(Math.max(camera.position.y / radius, -1), 1));
+
+    theta -= deltaX * 0.008;
+    phi -= deltaY * 0.008;
+
+    phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi));
+
+    camera.position.x = radius * Math.sin(phi) * Math.sin(theta);
+    camera.position.y = radius * Math.cos(phi);
+    camera.position.z = radius * Math.sin(phi) * Math.cos(theta);
+    camera.lookAt(0, 1, 0);
+}
+
+function zoomCamera(factor) {
+    camera.position.multiplyScalar(factor);
+}
+
+function onWindowResize() {
+    const container = document.getElementById('canvas-container');
+    if (!container) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Slow rotation when idle
+    if (!isDragging && currentMeshGroup) {
+        currentMeshGroup.rotation.y += 0.003;
+    }
+
+    renderer.render(scene, camera);
+}
+
+function resetCamera() {
+    if (camera) {
+        camera.position.set(0, 5, 12);
+        camera.lookAt(0, 1, 0);
+    }
+}
+
+function clear3DScene() {
+    if (!currentMeshGroup) return;
+    
+    while (currentMeshGroup.children.length > 0) {
+        const obj = currentMeshGroup.children[0];
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+            if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+            else obj.material.dispose();
+        }
+        currentMeshGroup.remove(obj);
+    }
+    
+    if (currentMeshGroup.rotation) {
+        currentMeshGroup.rotation.set(0, 0, 0);
+    }
+}
+
+/* ==========================================================================
+   DYNAMIC 3D BUILDERS FOR LESSON SCENARIOS
+   ========================================================================== */
+function buildModelPart(type) {
+    const matStandard = (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.2 });
+
+    switch (type) {
+        // Level 1: Architecture
+        case 'foundation': {
+            if (currentMeshGroup.getObjectByName('foundation')) return;
+            const geo = new THREE.BoxGeometry(5, 0.4, 5);
+            const mesh = new THREE.Mesh(geo, matStandard(0x64748b));
+            mesh.position.y = 0.2;
+            mesh.name = 'foundation';
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            currentMeshGroup.add(mesh);
+            break;
+        }
+        case 'walls': {
+            if (currentMeshGroup.getObjectByName('walls')) return;
+            const geo = new THREE.BoxGeometry(4, 2.5, 4);
+            const mesh = new THREE.Mesh(geo, matStandard(0x3b82f6));
+            mesh.position.y = 1.65;
+            mesh.name = 'walls';
+            mesh.castShadow = true;
+            currentMeshGroup.add(mesh);
+            break;
+        }
+        case 'roof': {
+            if (currentMeshGroup.getObjectByName('roof')) return;
+            const geo = new THREE.ConeGeometry(3.2, 1.8, 4);
+            const mesh = new THREE.Mesh(geo, matStandard(0xef4444));
+            mesh.position.y = 3.8;
+            mesh.rotation.y = Math.PI / 4;
+            mesh.name = 'roof';
+            mesh.castShadow = true;
+            currentMeshGroup.add(mesh);
+            break;
+        }
+
+        // Level 2: Medicine (Heart Model)
+        case 'heart_base': {
+            if (currentMeshGroup.getObjectByName('heart_base')) return;
+            const group = new THREE.Group();
+            group.name = 'heart_base';
+
+            // Mesh 1
+            const geo1 = new THREE.SphereGeometry(1.5, 32, 32);
+            geo1.scale(1, 1.3, 1);
+            const mesh1 = new THREE.Mesh(geo1, matStandard(0xd97706));
+            group.add(mesh1);
+
+            // Mesh 2 (Position set on Mesh, not Geometry)
+            const geo2 = new THREE.SphereGeometry(1.2, 32, 32);
+            const mesh2 = new THREE.Mesh(geo2, matStandard(0xd97706));
+            mesh2.position.set(0.8, 0.4, 0);
+            group.add(mesh2);
+
+            group.position.y = 2.5;
+            currentMeshGroup.add(group);
+            break;
+        }
+        case 'vessels': {
+            if (currentMeshGroup.getObjectByName('vessels')) return;
+            const group = new THREE.Group();
+            group.name = 'vessels';
+
+            const geoCyl1 = new THREE.CylinderGeometry(0.3, 0.3, 2, 16);
+            const meshCyl1 = new THREE.Mesh(geoCyl1, matStandard(0xef4444));
+            meshCyl1.position.set(-0.4, 3.8, 0);
+            group.add(meshCyl1);
+
+            const geoCyl2 = new THREE.CylinderGeometry(0.25, 0.25, 2.2, 16);
+            const meshCyl2 = new THREE.Mesh(geoCyl2, matStandard(0x3b82f6));
+            meshCyl2.position.set(0.5, 3.8, 0.2);
+            meshCyl2.rotation.z = -0.2;
+            group.add(meshCyl2);
+
+            currentMeshGroup.add(group);
+            break;
+        }
+
+        // Level 3: Engineering (Car)
+        case 'car_body': {
+            if (currentMeshGroup.getObjectByName('car_body')) return;
+            const group = new THREE.Group();
+            group.name = 'car_body';
+
+            const baseGeo = new THREE.BoxGeometry(4.5, 1, 2.2);
+            const baseMesh = new THREE.Mesh(baseGeo, matStandard(0x10b981));
+            baseMesh.position.set(0, 1, 0);
+            group.add(baseMesh);
+
+            const topGeo = new THREE.BoxGeometry(2.4, 0.9, 1.8);
+            const topMesh = new THREE.Mesh(topGeo, matStandard(0x047857));
+            topMesh.position.set(-0.2, 1.8, 0);
+            group.add(topMesh);
+
+            currentMeshGroup.add(group);
+            break;
+        }
+        case 'wheels': {
+            if (currentMeshGroup.getObjectByName('wheels')) return;
+            const group = new THREE.Group();
+            group.name = 'wheels';
+
+            const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.4, 24);
+            wheelGeo.rotateX(Math.PI / 2);
+            const wheelMat = matStandard(0x334155);
+
+            const positions = [
+                [-1.4, 0.5, 1.1],
+                [1.4, 0.5, 1.1],
+                [-1.4, 0.5, -1.1],
+                [1.4, 0.5, -1.1]
+            ];
+
+            positions.forEach(pos => {
+                const w = new THREE.Mesh(wheelGeo.clone(), wheelMat);
+                w.position.set(pos[0], pos[1], pos[2]);
+                group.add(w);
+            });
+
+            currentMeshGroup.add(group);
+            break;
+        }
+
+        // Level 4: Game Environment
+        case 'terrain': {
+            if (currentMeshGroup.getObjectByName('terrain')) return;
+            const geo = new THREE.BoxGeometry(10, 0.3, 10);
+            const mesh = new THREE.Mesh(geo, matStandard(0x8b5cf6));
+            mesh.position.y = 0.15;
+            mesh.name = 'terrain';
+            currentMeshGroup.add(mesh);
+            break;
+        }
+        case 'character': {
+            if (currentMeshGroup.getObjectByName('character')) return;
+            const group = new THREE.Group();
+            group.name = 'character';
+
+            // Cylinder as robust body replacement for CapsuleGeometry
+            const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2, 16);
+            const bodyMesh = new THREE.Mesh(bodyGeo, matStandard(0xf59e0b));
+            bodyMesh.position.y = 1.2;
+            group.add(bodyMesh);
+
+            const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
+            const headMesh = new THREE.Mesh(headGeo, matStandard(0xfde047));
+            headMesh.position.y = 2.1;
+            group.add(headMesh);
+
+            currentMeshGroup.add(group);
+            break;
+        }
+        case 'trees': {
+            if (currentMeshGroup.getObjectByName('trees')) return;
+            const group = new THREE.Group();
+            group.name = 'trees';
+
+            const positions = [[-3, -3], [3, -2], [-2, 3], [3.5, 2.5]];
+            positions.forEach(([x, z]) => {
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 1), matStandard(0x78350f));
+                trunk.position.set(x, 0.8, z);
+
+                const leaves = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.5, 8), matStandard(0x15803d));
+                leaves.position.set(x, 1.8, z);
+
+                group.add(trunk, leaves);
+            });
+
+            currentMeshGroup.add(group);
+            break;
+        }
+    }
+}
+
+/* ==========================================================================
+   GAME UI & LOGIC MANAGEMENT
+   ========================================================================== */
+function loadLevel(levelNum) {
+    gameState.currentLevel = levelNum;
+    gameState.levelCompleted = false;
+    const data = levelsData[levelNum - 1];
+
+    // UI Updates
+    document.getElementById('level-display').innerText = `${levelNum} / ${gameState.maxLevels}`;
+    document.getElementById('task-badge').innerText = data.badge;
+    document.getElementById('task-title').innerText = data.title;
+    document.getElementById('task-desc').innerText = data.desc;
+    document.getElementById('task-progress').style.width = `${(levelNum / gameState.maxLevels) * 100}%`;
+
+    // Highlight Info Cards
+    ['info-architecture', 'info-medicine', 'info-engineering', 'info-entertainment'].forEach(id => {
+        const el = document.getElementById(id);
+        if (id === data.infoId) {
+            el.classList.remove('opacity-50');
+            el.classList.add('border-blue-500', 'ring-1', 'ring-blue-500/50');
+        } else {
+            el.classList.add('opacity-50');
+            el.classList.remove('border-blue-500', 'ring-1', 'ring-blue-500/50');
+        }
+    });
+
+    // Clear Previous 3D
+    clear3DScene();
+    resetCamera();
+
+    // Render Action Buttons
+    const actionContainer = document.getElementById('action-buttons');
+    actionContainer.innerHTML = '';
+
+    data.actions.forEach(act => {
+        const btn = document.createElement('button');
+        btn.className = "w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700/80 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center justify-between transition group shadow-sm";
+        btn.innerHTML = `
+            <span class="flex items-center gap-2.5">
+                <i class="fa-solid ${act.icon} text-blue-400 group-hover:scale-110 transition-transform"></i>
+                ${act.label}
+            </span>
+            <i class="fa-solid fa-plus text-slate-500 group-hover:text-white transition"></i>
+        `;
+        btn.onclick = () => {
+            buildModelPart(act.type);
+            btn.classList.add('border-emerald-500/80', 'bg-emerald-950/20');
+            checkLevelCompletion();
+        };
+        actionContainer.appendChild(btn);
+    });
+
+    // Hide Quiz and Reset Next Button
+    document.getElementById('quiz-container').classList.add('hidden');
+    const nextBtn = document.getElementById('btn-next-step');
+    nextBtn.disabled = true;
+    nextBtn.className = "px-6 py-2.5 bg-slate-700 text-slate-400 font-bold text-sm rounded-xl transition cursor-not-allowed flex items-center gap-2";
+
+    document.getElementById('status-title').innerText = "Модельді жинақтаңыз";
+    document.getElementById('status-sub').innerText = "Тапсырма батырмаларын басып, сахнаға элементтерді қосыңыз.";
+}
+
+function checkLevelCompletion() {
+    const data = levelsData[gameState.currentLevel - 1];
+    const createdObjectsCount = currentMeshGroup.children.length;
+
+    if (createdObjectsCount >= data.actions.length && !gameState.levelCompleted) {
+        gameState.levelCompleted = true;
+        showQuiz(data.quiz);
+    }
+}
+
+function showQuiz(quizData) {
+    const container = document.getElementById('quiz-container');
+    container.classList.remove('hidden');
+
+    container.innerHTML = `
+        <div class="mb-3">
+            <span class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold"><i class="fa-solid fa-circle-question mr-1"></i> Теориялық Сұрақ (7.3.2.1)</span>
+            <h4 class="text-xs md:text-sm font-bold text-white mt-0.5">${quizData.question}</h4>
+        </div>
+        <div class="space-y-2" id="quiz-options">
+            ${quizData.options.map((opt, idx) => `
+                <button onclick="handleQuizAnswer(${idx}, ${quizData.correct})" className="w-full text-left p-2.5 text-xs bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 rounded-xl transition flex items-center justify-between group">
+                    <span>${opt}</span>
+                    <i class="fa-regular fa-circle text-slate-500 group-hover:text-blue-400"></i>
+                </button>
+            `).join('')}
+        </div>
+    `;
+
+    document.getElementById('status-title').innerText = "Сұраққа жауап беріңіз";
+    document.getElementById('status-sub').innerText = "Теориялық біліміңізді дәлелдеу үшін төмендегі сұрақты шешіңіз.";
+}
+
+window.handleQuizAnswer = function(selectedIdx, correctIdx) {
+    if (selectedIdx === correctIdx) {
+        gameState.score += 25;
+        document.getElementById('score-display').innerText = gameState.score;
+
+        // Unlock Next
+        const nextBtn = document.getElementById('btn-next-step');
+        nextBtn.disabled = false;
+        nextBtn.className = "px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl transition shadow-lg flex items-center gap-2 transform hover:-translate-y-0.5 cursor-pointer";
+
+        showModal("Өте тамаша! +25 XP", "Сіз компьютерлік модельдің бұл салада қолданылуын толықтай меңгердіңіз.");
+
+        document.getElementById('status-title').innerText = "Тапсырма Аяқталды!";
+        document.getElementById('status-sub').innerText = "'Келесі Кезең' батырмасын басып, жалғастырыңыз.";
+    } else {
+        showModal("Қате жауап", "Қайтадан ойланып көріңіз! 3D модельдеудің негізгі мақсатын еске түсіріңіз.", true);
+    }
+};
+
+function showModal(title, msg, isError = false) {
+    const modal = document.getElementById('modal');
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-msg').innerText = msg;
+    
+    const iconEl = document.getElementById('modal-icon');
+    if(isError) {
+        iconEl.className = "w-16 h-16 bg-red-500/20 text-red-400 border border-red-500/30 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4";
+        iconEl.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    } else {
+        iconEl.className = "w-16 h-16 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4";
+        iconEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+    }
+
+    modal.classList.remove('hidden');
+}
+
+/* ==========================================================================
+   INITIALIZATION & EVENT LISTENERS
+   ========================================================================== */
+window.onload = () => {
+    initThree();
+    loadLevel(1);
+
+    // Event Controls
+    document.getElementById('btn-reset-cam').onclick = resetCamera;
+    document.getElementById('btn-clear-scene').onclick = clear3DScene;
+
+    document.getElementById('modal-close-btn').onclick = () => {
+        document.getElementById('modal').classList.add('hidden');
+    };
+
+    document.getElementById('btn-next-step').onclick = () => {
+        if (gameState.currentLevel < gameState.maxLevels) {
+            loadLevel(gameState.currentLevel + 1);
+        } else {
+            showModal("Құттықтаймыз! 🏆", `Сіз барлық 4 кезеңнен өтіп, ${gameState.score} XP жинадыңыз! Компьютерлік 3D модельдерді қолдану тақырыбын толық меңгердіңіз.`);
+        }
+    };
+};
+</script>
+</html>
