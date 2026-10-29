@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Компьютерлік Графика мен Түстік Модельдер Симуляторы</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-heading {
+            font-family: 'Comfortaa', cursive;
+        }
+        .pixelated {
+            image-rendering: pixelated;
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #6366f1;
+            color: #6366f1;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-palette text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold font-heading bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">
+                        Графика & Түстер Лабораториясы
+                    </h1>
+                    <p class="text-xs text-slate-400">Интерактивті оқу симуляторы</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex gap-2 bg-slate-900/60 p-1.5 rounded-xl border border-slate-700/50">
+                <button onclick="switchTab('graphics')" id="tab-graphics" class="tab-btn active px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+                    <i class="fa-solid fa-shapes mr-2"></i>1. Растр vs Вектор
+                </button>
+                <button onclick="switchTab('colors')" id="tab-colors" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-droplet mr-2"></i>2. RGB vs CMYK
+                </button>
+                <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-gamepad mr-2"></i>3. Ойын-Тренажер
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-6xl mx-auto w-full flex-grow p-4 md:p-6">
+
+        <!-- SECTION 1: RASTER VS VECTOR SIMULATOR -->
+        <section id="section-graphics" class="space-y-6">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur">
+                <h2 class="text-2xl font-bold font-heading text-indigo-400 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass-plus"></i> Масштабтау симуляциясы
+                </h2>
+                <p class="text-slate-300 text-sm mb-6">
+                    Кескінді жақындатқанда растрлық және векторлық графиканың қалай өзгеретінін бақылаңыз.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Raster Box -->
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700 flex flex-col items-center">
+                        <div class="w-full flex justify-between items-center mb-3">
+                            <span class="font-bold text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-border-all"></i> Растрлық Графика (.PNG, .JPG)
+                            </span>
+                            <span class="text-xs bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/20">Пиксельдер жиынтығы</span>
+                        </div>
+                        <div class="relative w-full h-64 bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center border border-slate-800">
+                            <canvas id="rasterCanvas" width="250" height="250" class="w-full h-full object-contain"></canvas>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3 text-center">
+                            Үлкейткенде: Пиксельдер көрініп, сапасы төмендейді (тор көздер байқалады).
+                        </p>
+                    </div>
+
+                    <!-- Vector Box -->
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700 flex flex-col items-center">
+                        <div class="w-full flex justify-between items-center mb-3">
+                            <span class="font-bold text-emerald-400 flex items-center gap-2">
+                                <i class="fa-solid fa-bezier-curve"></i> Векторлық Графика (.SVG, .AI)
+                            </span>
+                            <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20">Математикалық формулалар</span>
+                        </div>
+                        <div class="relative w-full h-64 bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center border border-slate-800">
+                            <svg id="vectorSvg" width="250" height="250" viewBox="0 0 250 250" class="w-full h-full">
+                                <!-- Dynamic SVG content via JS -->
+                            </svg>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3 text-center">
+                            Үлкейткенде: Формулалар қайта есептеліп, сапасы мүлдем жоғалмайды.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Zoom Slider Control -->
+                <div class="mt-6 bg-slate-900/80 p-4 rounded-xl border border-slate-700/80 flex flex-col md:flex-row items-center gap-4">
+                    <label for="zoomRange" class="font-semibold text-sm whitespace-nowrap flex items-center gap-2">
+                        <i class="fa-solid fa-search"></i> Масштаб (Zoom): <span id="zoomVal" class="text-indigo-400 font-bold">100%</span>
+                    </label>
+                    <input type="range" id="zoomRange" min="100" max="800" value="100" class="w-full accent-indigo-500 cursor-pointer">
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-800/40 border border-slate-700/60 p-5 rounded-2xl">
+                    <h3 class="text-lg font-bold text-amber-400 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-camera"></i> Растрлық графиканың сипаттамасы
+                    </h3>
+                    <ul class="text-sm space-y-2 text-slate-300">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span><strong>Негізгі элементі:</strong> Пиксель (түрлі-түсті нүкте).</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span><strong>Қолданылуы:</strong> Фотосуреттер, күрделі түсті өтулері бар суреттер.</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-xmark text-rose-400 mt-1"></i><span><strong>Кемшілігі:</strong> Масштабтағанда сапасы бұзылады, файлы үлкен болады.</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-folder text-indigo-400 mt-1"></i><span><strong>Пишіндері:</strong> JPEG, PNG, GIF, BMP, TIFF.</span></li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-800/40 border border-slate-700/60 p-5 rounded-2xl">
+                    <h3 class="text-lg font-bold text-emerald-400 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-nib"></i> Векторлық графиканың сипаттамасы
+                    </h3>
+                    <ul class="text-sm space-y-2 text-slate-300">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span><strong>Негізгі элементі:</strong> Математикалық сызықтар, векторлар, нүктелер.</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span><strong>Қолданылуы:</strong> Логотиптер, белгішелер (icons), сызбалар, шрифттер.</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1"></i><span><strong>Артықшылығы:</strong> Шексіз масштабталады, файл көлемі шағын.</span></li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-folder text-indigo-400 mt-1"></i><span><strong>Пишіндері:</strong> SVG, AI, CDR, EPS.</span></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: RGB VS CMYK SIMULATOR -->
+        <section id="section-colors" class="space-y-6 hidden">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur">
+                <h2 class="text-2xl font-bold font-heading text-indigo-400 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Түстік Модельдер Симуляциясы
+                </h2>
+                <p class="text-slate-300 text-sm mb-6">
+                    RGB (Экрандық) және CMYK (Баспалық) түстік модельдерінің айырмашылығын араластырып көріңіз.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- RGB Interactive Mixer -->
+                    <div class="bg-slate-900 rounded-xl p-5 border border-slate-700 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-lg text-cyan-400">RGB Моделі (Аддитивті)</h3>
+                                <span class="text-xs bg-cyan-500/10 text-cyan-400 px-2.5 py-1 rounded-full border border-cyan-500/20">Мониторлар & Экрандар</span>
+                            </div>
+
+                            <!-- Color Preview Box -->
+                            <div id="rgbPreview" class="w-full h-32 rounded-lg border border-slate-700 mb-4 transition-colors flex items-center justify-center font-mono font-bold text-shadow text-lg">
+                                rgb(255, 0, 0)
+                            </div>
+
+                            <!-- Sliders -->
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-red-400 font-semibold">
+                                        <span>R (Red / Қызыл)</span>
+                                        <span id="rVal">255</span>
+                                    </div>
+                                    <input type="range" id="sliderR" min="0" max="255" value="255" class="w-full accent-red-500">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-green-400 font-semibold">
+                                        <span>G (Green / Жасыл)</span>
+                                        <span id="gVal">0</span>
+                                    </div>
+                                    <input type="range" id="sliderG" min="0" max="255" value="0" class="w-full accent-green-500">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-blue-400 font-semibold">
+                                        <span>B (Blue / Көк)</span>
+                                        <span id="bVal">0</span>
+                                    </div>
+                                    <input type="range" id="sliderB" min="0" max="255" value="0" class="w-full accent-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-3">
+                            <strong>Ереже:</strong> Жарық сәулелері қосылады. Түстердің барлығын 100% қосса <strong>АҚ</strong> түс шығады (255, 255, 255).
+                        </p>
+                    </div>
+
+                    <!-- CMYK Interactive Mixer -->
+                    <div class="bg-slate-900 rounded-xl p-5 border border-slate-700 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-lg text-pink-400">CMYK Моделі (Субтрактивті)</h3>
+                                <span class="text-xs bg-pink-500/10 text-pink-400 px-2.5 py-1 rounded-full border border-pink-500/20">Баспахана & Полиграфия</span>
+                            </div>
+
+                            <!-- Color Preview Box -->
+                            <div id="cmykPreview" class="w-full h-32 rounded-lg border border-slate-700 mb-4 transition-colors flex items-center justify-center font-mono font-bold text-shadow text-lg text-black">
+                                cmyk(0%, 100%, 100%, 0%)
+                            </div>
+
+                            <!-- Sliders -->
+                            <div class="space-y-2">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-cyan-300 font-semibold">
+                                        <span>C (Cyan / Көгілдір)</span>
+                                        <span id="cVal">0%</span>
+                                    </div>
+                                    <input type="range" id="sliderC" min="0" max="100" value="0" class="w-full accent-cyan-400">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-pink-400 font-semibold">
+                                        <span>M (Magenta / Күлгін)</span>
+                                        <span id="mVal">100%</span>
+                                    </div>
+                                    <input type="range" id="sliderM" min="0" max="100" value="100" class="w-full accent-pink-500">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-yellow-400 font-semibold">
+                                        <span>Y (Yellow / Сары)</span>
+                                        <span id="yVal">100%</span>
+                                    </div>
+                                    <input type="range" id="sliderY" min="0" max="100" value="100" class="w-full accent-yellow-400">
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1 text-slate-300 font-semibold">
+                                        <span>K (Key/Black / Қара)</span>
+                                        <span id="kVal">0%</span>
+                                    </div>
+                                    <input type="range" id="sliderK" min="0" max="100" value="0" class="w-full accent-slate-400">
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-400 mt-4 border-t border-slate-800 pt-3">
+                            <strong>Ереже:</strong> Сия жарықты жұтады. Бояуларды араластырған сайын түс қараяды (100% C,M,Y,K = <strong>ҚАРА</strong>).
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Rule Table -->
+            <div class="bg-indigo-950/40 border border-indigo-800/40 rounded-2xl p-5">
+                <h3 class="text-lg font-bold text-indigo-300 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb"></i> Басты ереже: Түстік модельді қалай таңдаймыз?
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <p class="font-bold text-cyan-400 mb-1">RGB таңдаңыз, егер:</p>
+                        <p class="text-slate-300">Жұмысыңыз экранда көрсетілетін болса (Веб-сайттар, әлеуметтік желі постары, цифрлық фото, ойындар, видеолар).</p>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <p class="font-bold text-pink-400 mb-1">CMYK таңдаңыз, егер:</p>
+                        <p class="text-slate-300">Жұмысыңыз қағазға басып шығарылатын болса (Визиткалар, флаерлер, кітаптар, билбордтар, киімдегі принттер).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: INTERACTIVE QUIZ & SIMULATION GAME -->
+        <section id="section-quiz" class="space-y-6 hidden">
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 backdrop-blur">
+                <!-- Game Header -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-slate-700">
+                    <div>
+                        <h2 class="text-2xl font-bold font-heading text-indigo-400">
+                            <i class="fa-solid fa-user-gear"></i> "Дизайнер Симуляторы" Ойыны
+                        </h2>
+                        <p class="text-xs text-slate-300 mt-1">Тапсырыс берушінің талабына сай Графика түрін және Түстік Модельді анықтаңыз!</p>
+                    </div>
+                    <div class="flex gap-4 items-center bg-slate-900 px-4 py-2 rounded-xl border border-slate-700">
+                        <div>
+                            <span class="text-xs text-slate-400 block">Ұпай:</span>
+                            <span id="scoreText" class="text-xl font-bold text-emerald-400">0</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-700"></div>
+                        <div>
+                            <span class="text-xs text-slate-400 block">Сұрақ:</span>
+                            <span id="progressText" class="text-xl font-bold text-indigo-400">1/5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Card Container -->
+                <div id="gameBox" class="max-w-2xl mx-auto bg-slate-900 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                    <!-- Dynamic Order Content -->
+                    <div id="orderContent" class="space-y-6">
+                        <!-- Order Header -->
+                        <div class="flex items-center gap-3 bg-slate-800/80 p-3 rounded-xl border border-slate-700">
+                            <div id="clientAvatar" class="w-12 h-12 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-briefcase"></i>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 block">Тапсырыс беруші тапсырмасы:</span>
+                                <h3 id="taskTitle" class="font-bold text-base text-slate-100">Компанияға Логотип дайындау</h3>
+                            </div>
+                        </div>
+
+                        <!-- Task Description -->
+                        <div class="bg-indigo-950/30 p-4 rounded-xl border border-indigo-900/40 text-sm text-slate-300 leading-relaxed">
+                            <p id="taskDesc">
+                                Маған компаниямызға арналған жаңа логотип керек. Бұл логотип үлкен билбордтарда да, кішкентай визиткаларда да сапасын жоғалтпай басылып шығуы тиіс (Полиграфия).
+                            </p>
+                        </div>
+
+                        <!-- Questions Selection -->
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    1. Графика түрін таңдаңыз:
+                                </label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button onclick="selectChoice('type', 'raster')" id="btn-type-raster" class="choice-btn p-3 rounded-xl border border-slate-700 text-sm font-semibold hover:bg-slate-800 transition-all text-left flex items-center justify-between">
+                                        <span><i class="fa-solid fa-border-all mr-2 text-amber-400"></i> Растрлық</span>
+                                        <i class="fa-regular fa-circle text-slate-500 check-icon"></i>
+                                    </button>
+                                    <button onclick="selectChoice('type', 'vector')" id="btn-type-vector" class="choice-btn p-3 rounded-xl border border-slate-700 text-sm font-semibold hover:bg-slate-800 transition-all text-left flex items-center justify-between">
+                                        <span><i class="fa-solid fa-bezier-curve mr-2 text-emerald-400"></i> Векторлық</span>
+                                        <i class="fa-regular fa-circle text-slate-500 check-icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    2. Түстік модельді таңдаңыз:
+                                </label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button onclick="selectChoice('color', 'rgb')" id="btn-color-rgb" class="choice-btn p-3 rounded-xl border border-slate-700 text-sm font-semibold hover:bg-slate-800 transition-all text-left flex items-center justify-between">
+                                        <span><i class="fa-solid fa-desktop mr-2 text-cyan-400"></i> RGB</span>
+                                        <i class="fa-regular fa-circle text-slate-500 check-icon"></i>
+                                    </button>
+                                    <button onclick="selectChoice('color', 'cmyk')" id="btn-color-cmyk" class="choice-btn p-3 rounded-xl border border-slate-700 text-sm font-semibold hover:bg-slate-800 transition-all text-left flex items-center justify-between">
+                                        <span><i class="fa-solid fa-print mr-2 text-pink-400"></i> CMYK</span>
+                                        <i class="fa-regular fa-circle text-slate-500 check-icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Submit Button -->
+                        <button onclick="submitAnswer()" id="submitBtn" disabled class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                            <span>Жауапты тексеру</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- Feedback Box (Hidden by default) -->
+                    <div id="feedbackBox" class="hidden space-y-4 text-center py-4">
+                        <div id="feedbackIcon" class="text-5xl"></div>
+                        <h3 id="feedbackTitle" class="text-xl font-bold"></h3>
+                        <p id="feedbackText" class="text-sm text-slate-300 bg-slate-800 p-4 rounded-xl border border-slate-700"></p>
+                        <button onclick="nextQuestion()" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all">
+                            Келесі тапсырма <i class="fa-solid fa-chevron-right ml-1"></i>
+                        </button>
+                    </div>
+
+                    <!-- Game End Screen (Hidden) -->
+                    <div id="gameEndBox" class="hidden text-center py-8 space-y-4">
+                        <div class="text-6xl text-amber-400"><i class="fa-solid fa-trophy"></i></div>
+                        <h3 class="text-2xl font-bold font-heading">Құттықтаймыз! Симуляция аяқталды!</h3>
+                        <p class="text-slate-300 text-sm">Сіздің соңғы нәтижеңіз: <span id="finalScore" class="font-bold text-emerald-400 text-lg">0</span> / 500 ұпай</p>
+                        <button onclick="restartGame()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg">
+                            <i class="fa-solid fa-rotate-right mr-2"></i> Кайтадан бастау
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-slate-800 p-4 text-center text-xs text-slate-500">
+        Графика және Түстік Модельдер Оқу Симуляторы &copy; 2026 Информатика
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- TAB NAVIGATION ---
+        function switchTab(tabName) {
+            ['graphics', 'colors', 'quiz'].forEach(t => {
+                document.getElementById(`section-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active');
+                document.getElementById(`tab-${t}`).classList.add('text-slate-400');
+            });
+
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            activeTab.classList.add('active');
+            activeTab.classList.remove('text-slate-400');
+
+            if(tabName === 'graphics') renderGraphicsSim();
+        }
+
+        // --- SECTION 1: RASTER VS VECTOR LOGIC ---
+        const zoomRange = document.getElementById('zoomRange');
+        const zoomVal = document.getElementById('zoomVal');
+        const rasterCanvas = document.getElementById('rasterCanvas');
+        const ctx = rasterCanvas.getContext('2d');
+        const vectorSvg = document.getElementById('vectorSvg');
+
+        // Base image URL
+        const imageUrl = "https://cs5.pikabu.ru/post_img/2015/12/16/7/1450264677113731933.jpg";
+        
+        // Preload Image for Canvas & SVG simulation
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = imageUrl;
+
+        // Fallback drawing if image fails to load via CORS
+        function drawFallbackRaster(scale) {
+            const width = rasterCanvas.width;
+            const height = rasterCanvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            // Simulate low resolution raster picture
+            const baseRes = Math.max(12, Math.floor(120 / (scale / 1.2)));
+            const offscreen = document.createElement('canvas');
+            offscreen.width = baseRes;
+            offscreen.height = baseRes;
+            const oCtx = offscreen.getContext('2d');
+
+            // Draw rich geometric artwork representing raster
+            oCtx.fillStyle = '#1e1b4b'; oCtx.fillRect(0,0,baseRes,baseRes);
+            oCtx.fillStyle = '#ef4444'; oCtx.beginPath(); oCtx.arc(baseRes*0.3, baseRes*0.3, baseRes*0.25, 0, Math.PI*2); oCtx.fill();
+            oCtx.fillStyle = '#3b82f6'; oCtx.fillRect(baseRes*0.5, baseRes*0.2, baseRes*0.35, baseRes*0.35);
+            oCtx.fillStyle = '#10b981'; oCtx.beginPath(); oCtx.moveTo(baseRes*0.2, baseRes*0.8); oCtx.lineTo(baseRes*0.5, baseRes*0.4); oCtx.lineTo(baseRes*0.8, baseRes*0.8); oCtx.fill();
+
+            // Render scaled pixelated version
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(offscreen, 0, 0, width, height);
+        }
+
+        function renderGraphicsSim() {
+            const zoom = parseInt(zoomRange.value);
+            zoomVal.innerText = zoom + '%';
+
+            const scale = zoom / 100;
+            const width = rasterCanvas.width;
+            const height = rasterCanvas.height;
+
+            // 1. Draw Raster Image on Canvas with Pixelation effect
+            ctx.clearRect(0, 0, width, height);
+            
+            try {
+                if (img.complete && img.naturalWidth !== 0) {
+                    // Turn off image smoothing for pixelation effect on zoom
+                    ctx.imageSmoothingEnabled = false;
+
+                    // Calculate crop for zoom effect
+                    const cropW = img.width / scale;
+                    const cropH = img.height / scale;
+                    const cropX = (img.width - cropW) / 2;
+                    const cropY = (img.height - cropH) / 2;
+
+                    ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, width, height);
+                } else {
+                    drawFallbackRaster(scale);
+                }
+            } catch(e) {
+                drawFallbackRaster(scale);
+            }
+
+            // Grid overlay to highlight pixel structures when zoomed
+            if (zoom >= 200) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                const step = Math.max(6, 24 * (scale / 4));
+                for (let x = 0; x < width; x += step) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+                }
+                for (let y = 0; y < height; y += step) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // 2. SVG Vector Simulation
+            const centerOffset = (1 - scale) * 125;
+            vectorSvg.innerHTML = `
+                <g transform="translate(${centerOffset}, ${centerOffset}) scale(${scale})">
+                    <image href="${imageUrl}" x="0" y="0" width="250" height="250" preserveAspectRatio="xMidYMid slice" />
+                    <rect x="2" y="2" width="246" height="246" fill="none" stroke="#10b981" stroke-width="${2 / scale}" />
+                    <circle cx="125" cy="125" r="90" fill="none" stroke="#6366f1" stroke-width="${2 / scale}" />
+                    <line x1="0" y1="0" x2="250" y2="250" stroke="#f59e0b" stroke-width="${1.5 / scale}" />
+                </g>
+            `;
+        }
+
+        img.onload = renderGraphicsSim;
+        img.onerror = renderGraphicsSim;
+        zoomRange.addEventListener('input', renderGraphicsSim);
+
+        // --- SECTION 2: COLOR MODELS LOGIC ---
+        // RGB Sliders
+        const sliderR = document.getElementById('sliderR');
+        const sliderG = document.getElementById('sliderG');
+        const sliderB = document.getElementById('sliderB');
+        const rgbPreview = document.getElementById('rgbPreview');
+
+        function updateRGB() {
+            const r = sliderR.value;
+            const g = sliderG.value;
+            const b = sliderB.value;
+            document.getElementById('rVal').innerText = r;
+            document.getElementById('gVal').innerText = g;
+            document.getElementById('bVal').innerText = b;
+
+            rgbPreview.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            rgbPreview.innerText = `rgb(${r}, ${g}, ${b})`;
+            
+            // Text color contrast check
+            const brightness = (r*299 + g*587 + b*114) / 1000;
+            rgbPreview.style.color = brightness > 128 ? '#000000' : '#ffffff';
+        }
+
+        [sliderR, sliderG, sliderB].forEach(s => s.addEventListener('input', updateRGB));
+
+        // CMYK Sliders
+        const sliderC = document.getElementById('sliderC');
+        const sliderM = document.getElementById('sliderM');
+        const sliderY = document.getElementById('sliderY');
+        const sliderK = document.getElementById('sliderK');
+        const cmykPreview = document.getElementById('cmykPreview');
+
+        function updateCMYK() {
+            const c = sliderC.value / 100;
+            const m = sliderM.value / 100;
+            const y = sliderY.value / 100;
+            const k = sliderK.value / 100;
+
+            document.getElementById('cVal').innerText = sliderC.value + '%';
+            document.getElementById('mVal').innerText = sliderM.value + '%';
+            document.getElementById('yVal').innerText = sliderY.value + '%';
+            document.getElementById('kVal').innerText = sliderK.value + '%';
+
+            // Convert CMYK to RGB for Display
+            const r = Math.round(255 * (1 - c) * (1 - k));
+            const g = Math.round(255 * (1 - m) * (1 - k));
+            const b = Math.round(255 * (1 - y) * (1 - k));
+
+            cmykPreview.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+            cmykPreview.innerText = `cmyk(${sliderC.value}%, ${sliderM.value}%, ${sliderY.value}%, ${sliderK.value}%)`;
+
+            const brightness = (r*299 + g*587 + b*114) / 1000;
+            cmykPreview.style.color = brightness > 128 ? '#000000' : '#ffffff';
+        }
+
+        [sliderC, sliderM, sliderY, sliderK].forEach(s => s.addEventListener('input', updateCMYK));
+
+        // --- SECTION 3: GAME SIMULATION LOGIC ---
+        const tasks = [
+            {
+                title: "Компанияның бренд логотипі",
+                desc: "Тапсырыс беруші компанияның логотипін жасатуды сұрады. Бұл логотип үлкен баннерге де, визиткаларға да сапасы бұзылмай басылуы керек.",
+                correctType: "vector",
+                correctColor: "cmyk",
+                explain: "Логотип шексіз масштабталуы үшін ВЕКТОРЛЫҚ, ал қағазға басып шығарылатындықтан CMYK моделі таңдалады."
+            },
+            {
+                title: "Инстаграмға арналған сапалы фото-пост",
+                desc: "Фотограф өзінің түсірген суретін әлеуметтік желіге (Instagram/Web) жариялау үшін өңдемекші. Түстер мен реңктер өте көп.",
+                correctType: "raster",
+                correctColor: "rgb",
+                explain: "Күрделі фотосуреттер РАСТРЛЫҚ графикада сақталады, ал экранда көрсетілетіндіктен RGB түстік моделі қажет."
+            },
+            {
+                title: "Жарнамалық қағаз флаер/буклет",
+                desc: "Типографияда 1000 дана етіп басып шығарылатын жарнамалық флаердің макеті.",
+                correctType: "vector",
+                correctColor: "cmyk",
+                explain: "Флаердегі мәтін мен макет анық болу үшін ВЕКТОРЛЫҚ, ал типографиялық баспа үшін CMYK таңдалады."
+            },
+            {
+                title: "Веб-сайттың басты баннері",
+                desc: "Интернет дүкеннің басты бетінде тұратын және пайдаланушылардың мониторынан көрінетін динамикалық сурет.",
+                correctType: "raster",
+                correctColor: "rgb",
+                explain: "Веб-сайт баннерлері көбіне РАСТРЛЫҚ (немесе веб-вектор), ал экрандық дисплей үшін міндетті түрде RGB қолданылады."
+            },
+            {
+                title: "Ғимараттағы үлкен сыртқы көрнекі билборд",
+                desc: "Көшедегі үлкен билбордқа басылатын типографиялық векторлық иллюстрациалық сурет.",
+                correctType: "vector",
+                correctColor: "cmyk",
+                explain: "Үлкен көлемге сапасыз созылу үшін ВЕКТОРЛЫҚ, баспа өнімдері үшін CMYK талап етіледі."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedType = null;
+        let selectedColor = null;
+
+        function loadQuestion() {
+            const q = tasks[currentQuestion];
+            document.getElementById('taskTitle').innerText = q.title;
+            document.getElementById('taskDesc').innerText = q.desc;
+            document.getElementById('progressText').innerText = `${currentQuestion + 1}/${tasks.length}`;
+
+            // Reset Selections
+            selectedType = null;
+            selectedColor = null;
+            document.getElementById('submitBtn').disabled = true;
+
+            // Reset Button Styles
+            ['type-raster', 'type-vector', 'color-rgb', 'color-cmyk'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                btn.classList.remove('border-indigo-500', 'bg-indigo-950/50');
+                btn.querySelector('.check-icon').className = 'fa-regular fa-circle text-slate-500 check-icon';
+            });
+
+            document.getElementById('orderContent').classList.remove('hidden');
+            document.getElementById('feedbackBox').classList.add('hidden');
+        }
+
+        function selectChoice(category, value) {
+            if (category === 'type') {
+                selectedType = value;
+                ['raster', 'vector'].forEach(v => {
+                    const btn = document.getElementById(`btn-type-${v}`);
+                    if (v === value) {
+                        btn.classList.add('border-indigo-500', 'bg-indigo-950/50');
+                        btn.querySelector('.check-icon').className = 'fa-solid fa-circle-check text-indigo-400 check-icon';
+                    } else {
+                        btn.classList.remove('border-indigo-500', 'bg-indigo-950/50');
+                        btn.querySelector('.check-icon').className = 'fa-regular fa-circle text-slate-500 check-icon';
+                    }
+                });
+            } else if (category === 'color') {
+                selectedColor = value;
+                ['rgb', 'cmyk'].forEach(v => {
+                    const btn = document.getElementById(`btn-color-${v}`);
+                    if (v === value) {
+                        btn.classList.add('border-indigo-500', 'bg-indigo-950/50');
+                        btn.querySelector('.check-icon').className = 'fa-solid fa-circle-check text-indigo-400 check-icon';
+                    } else {
+                        btn.classList.remove('border-indigo-500', 'bg-indigo-950/50');
+                        btn.querySelector('.check-icon').className = 'fa-regular fa-circle text-slate-500 check-icon';
+                    }
+                });
+            }
+
+            if (selectedType && selectedColor) {
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        function submitAnswer() {
+            const q = tasks[currentQuestion];
+            const isTypeCorrect = selectedType === q.correctType;
+            const isColorCorrect = selectedColor === q.correctColor;
+            const isFullyCorrect = isTypeCorrect && isColorCorrect;
+
+            document.getElementById('orderContent').classList.add('hidden');
+            const feedbackBox = document.getElementById('feedbackBox');
+            feedbackBox.classList.remove('hidden');
+
+            const icon = document.getElementById('feedbackIcon');
+            const title = document.getElementById('feedbackTitle');
+            const text = document.getElementById('feedbackText');
+
+            if (isFullyCorrect) {
+                score += 100;
+                document.getElementById('scoreText').innerText = score;
+                icon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                title.innerText = "Өте тамаша! Дұрыс шешім!";
+                title.className = "text-xl font-bold text-emerald-400";
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-500"></i>';
+                title.innerText = "Қателік жіберілді!";
+                title.className = "text-xl font-bold text-rose-400";
+            }
+
+            text.innerHTML = `<strong>Түсініктеме:</strong> ${q.explain}`;
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < tasks.length) {
+                loadQuestion();
+            } else {
+                document.getElementById('feedbackBox').classList.add('hidden');
+                document.getElementById('orderContent').classList.add('hidden');
+                document.getElementById('gameEndBox').classList.remove('hidden');
+                document.getElementById('finalScore').innerText = score;
+            }
+        }
+
+        function restartGame() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('scoreText').innerText = score;
+            document.getElementById('gameEndBox').classList.add('hidden');
+            loadQuestion();
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            renderGraphicsSim();
+            updateRGB();
+            updateCMYK();
+            loadQuestion();
+        };
+    </script>
+</body>
+</html>
