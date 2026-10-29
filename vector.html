@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Векторлық графикалық редактор - Интерактивті тапсырма</title>
+    <style>
+        :root {
+            --primary-blue: #1e40af;
+            --light-blue: #dbeafe;
+            --border-blue: #3b82f6;
+            --primary-green: #15803d;
+            --light-green: #dcfce7;
+            --border-green: #22c55e;
+            --primary-orange: #c2410c;
+            --light-orange: #ffedd5;
+            --border-orange: #f97316;
+            --dark-gray: #1f2937;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--dark-gray);
+            line-height: 1.5;
+            padding: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Header Styling */
+        .header-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+            border: 2px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .header-card h1 {
+            color: var(--primary-blue);
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.95rem;
+            background: #f1f5f9;
+            padding: 12px 16px;
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .meta-info div {
+            flex: 1 1 40%;
+        }
+
+        /* Step Navigation Tabs */
+        .tab-navigation {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: white;
+            border: 2px solid #cbd5e1;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--dark-gray);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--primary-blue);
+            background: #f1f5f9;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+            box-shadow: var(--card-shadow);
+        }
+
+        /* Task Block Styling */
+        .task-card {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            border: 2px solid transparent;
+            display: none; /* Controlled by JS navigation */
+        }
+
+        .task-card.active-tab {
+            display: block;
+        }
+
+        .task-1 { border-color: var(--border-blue); }
+        .task-2 { border-color: var(--border-green); }
+        .task-3 { border-color: var(--border-orange); }
+
+        .task-header {
+            padding: 14px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .task-1 .task-header { background-color: var(--primary-blue); }
+        .task-2 .task-header { background-color: var(--primary-green); }
+        .task-3 .task-header { background-color: var(--primary-orange); }
+
+        .task-body {
+            padding: 20px;
+        }
+
+        /* Interactive Elements */
+        .badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Demo Zoom Section */
+        .demo-container {
+            background: #ffffff;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .demo-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            background: #f8fafc;
+            padding: 10px 16px;
+            border-radius: 8px;
+        }
+
+        .demo-views {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .demo-box {
+            text-align: center;
+            border: 1fr solid #e2e8f0;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .demo-box h4 {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .canvas-wrapper {
+            width: 100%;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Task 1 Table & Drag Drop */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            border: 1px solid #cbd5e1;
+            padding: 12px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .comparison-table th {
+            background-color: #f1f5f9;
+            color: var(--dark-gray);
+            width: 40%;
+        }
+
+        .comparison-table th:first-child {
+            width: 20%;
+        }
+
+        .drop-zone {
+            min-height: 80px;
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            transition: all 0.2s;
+        }
+
+        .drop-zone.drag-over {
+            background: #e0f2fe;
+            border-color: var(--border-blue);
+        }
+
+        .drop-zone.selected-zone {
+            border-color: var(--primary-orange);
+            background: #fff7ed;
+        }
+
+        .cards-pool {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            min-height: 90px;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .drag-card {
+            background: white;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: grab;
+            user-select: none;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.1s, border-color 0.2s;
+        }
+
+        .drag-card:active {
+            cursor: grabbing;
+        }
+
+        .drag-card.selected {
+            border-color: var(--primary-blue);
+            background-color: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Task 2 Choice Elements */
+        .scenario-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .scenario-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .btn-choice {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #cbd5e1;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-choice:hover {
+            border-color: #94a3b8;
+        }
+
+        .btn-choice.active {
+            background-color: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+
+        .select-reason {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .select-reason:focus {
+            border-color: var(--primary-green);
+        }
+
+        /* Task 3 Sentence Builder & Cards */
+        .sentence-builder-container {
+            margin: 16px 0;
+        }
+
+        .builder-result-area {
+            min-height: 54px;
+            border: 2px dashed var(--border-orange);
+            background: #fff7ed;
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .builder-fragments-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .fragment-chip {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .fragment-chip:hover {
+            border-color: var(--border-orange);
+            transform: translateY(-1px);
+        }
+
+        .fragment-chip.used {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+            background: #e2e8f0;
+        }
+
+        .radio-card-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .radio-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-card:hover {
+            border-color: var(--border-orange);
+        }
+
+        .radio-card.selected {
+            border-color: var(--primary-orange);
+            background-color: #fff7ed;
+        }
+
+        .radio-card input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-orange);
+        }
+
+        /* Self Check Section */
+        .self-check-card {
+            background: white;
+            border-radius: 16px;
+            border: 2px dashed #64748b;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #f1f5f9;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-item input {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Actions & Feedback */
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .btn-action {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--card-shadow);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-submit { background-color: var(--primary-blue); color: white; }
+        .btn-submit:hover { background-color: #1d4ed8; }
+        .btn-reset { background-color: #64748b; color: white; }
+        .btn-reset:hover { background-color: #475569; }
+        .btn-show { background-color: #0284c7; color: white; display: none; }
+        .btn-show:hover { background-color: #0369a1; }
+
+        .feedback-box {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .feedback-box.show {
+            display: block;
+        }
+
+        .feedback-correct {
+            background-color: #dcfce7;
+            color: #14532d;
+            border: 1px solid #86efac;
+        }
+
+        .feedback-incorrect {
+            background-color: #fee2e2;
+            color: #7f1d1d;
+            border: 1px solid #fca5a5;
+        }
+
+        /* Score & Descriptors Modal/Section */
+        .score-board {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 2px solid #cbd5e1;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            display: none;
+        }
+
+        .score-board.show {
+            display: block;
+        }
+
+        .score-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .descriptors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .descriptor-card {
+            background: #f8fafc;
+            padding: 14px;
+            border-radius: 10px;
+            border-left: 4px solid #cbd5e1;
+            font-size: 0.85rem;
+        }
+
+        .descriptor-card.d1 { border-color: var(--primary-blue); }
+        .descriptor-card.d2 { border-color: var(--primary-green); }
+        .descriptor-card.d3 { border-color: var(--primary-orange); }
+
+        .descriptor-card h5 {
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        /* Icons */
+        .icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            fill: currentColor;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .header-card { padding: 14px; }
+            .task-header { font-size: 1rem; }
+            .demo-views { grid-template-columns: 1fr; }
+            .meta-info div { flex: 1 1 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="header-card">
+        <h1>ҚАЛЫПТАСТЫРУШЫ БАҒАЛАУ ТАПСЫРМАСЫ</h1>
+        <div class="meta-info">
+            <div><strong>Сынып:</strong> 6-сынып</div>
+            <div><strong>Пән:</strong> Информатика</div>
+            <div><strong>Тақырыбы:</strong> Векторлық графикалық редактор</div>
+            <div><strong>Оқу мақсаты:</strong> 6.2.2.1 растрлық және векторлық графиканың артықшылықтары мен кемшіліктерін бағалау</div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs (1, 2, 3...) -->
+    <nav class="tab-navigation">
+        <button class="tab-btn active" onclick="switchTab('demo')">🔍 Демонстрация</button>
+        <button class="tab-btn" onclick="switchTab('task1')">1-тапсырма</button>
+        <button class="tab-btn" onclick="switchTab('task2')">2-тапсырма</button>
+        <button class="tab-btn" onclick="switchTab('task3')">3-тапсырма</button>
+        <button class="tab-btn" onclick="switchTab('selfcheck')">💡 Өзіңді тексер</button>
+        <button class="tab-btn" onclick="switchTab('score')" id="tabScoreBtn" style="display: none;">🏆 Нәтиже</button>
+    </nav>
+
+    <!-- Visual Demonstration Block -->
+    <section class="task-card active-tab" id="page-demo" style="border-color: var(--border-blue);">
+        <div class="task-header" style="background-color: var(--primary-blue);">
+            <span>🔍 Демонстрация: «Үлкейтіп көр»</span>
+        </div>
+        <div class="task-body">
+            <p style="font-size: 0.95rem; color: #64748b; text-align: center; margin-bottom: 16px;">
+                Масштаб ползуногын жылжытып, бейне сапасының қалай өзгеретінін байқаңыз.
+            </p>
+            <div class="demo-controls">
+                <label for="zoomRange" style="font-weight: 600; font-size: 0.9rem;">Масштаб:</label>
+                <input type="range" id="zoomRange" min="1" max="8" value="1" step="0.5" style="flex: 1; cursor: pointer;">
+                <span id="zoomVal" style="font-weight: bold; min-width: 45px;">1x</span>
+            </div>
+            <div class="demo-views">
+                <div class="demo-box">
+                    <h4>Растрлық бейне (Пиксельді)</h4>
+                    <div class="canvas-wrapper">
+                        <canvas id="rasterCanvas" width="120" height="120"></canvas>
+                    </div>
+                </div>
+                <div class="demo-box">
+                    <h4>Векторлық бейне (SVG)</h4>
+                    <div class="canvas-wrapper">
+                        <svg id="vectorSvg" width="120" height="120" viewBox="0 0 100 100" style="transition: transform 0.1s;">
+                            <circle cx="50" cy="50" r="35" fill="none" stroke="#2563eb" stroke-width="6" />
+                            <path d="M 30 50 L 45 65 L 70 35" fill="none" stroke="#16a34a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right; margin-top: 16px;">
+                <button class="btn-action btn-submit" onclick="switchTab('task1')">Келесі: 1-тапсырма ➔</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Task 1 -->
+    <section class="task-card task-1" id="page-task1">
+        <div class="task-header">
+            <span>1-тапсырма. «Салыстыр»</span>
+            <span class="badge">4 балл</span>
+        </div>
+        <div class="task-body">
+            <p style="margin-bottom: 12px; font-size: 0.95rem;">
+                Төмендегі сипаттама карточкаларын тиісті ұяшықтарға орналастырыңыз. <br>
+                <small style="color: #64748b;">(Карточканы ұяшыққа сүйреңіз немесе алдымен карточканы, содан кейін ұяшықты басыңыз)</small>
+            </p>
+
+            <div class="cards-pool" id="cardsPool">
+                <!-- Cards will be shuffled & dynamically inserted -->
+            </div>
+
+            <div class="table-responsive">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Сипаттама</th>
+                            <th>Растрлық графика</th>
+                            <th>Векторлық графика</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Артықшылығы</th>
+                            <td><div class="drop-zone" data-target="raster-advantage"></div></td>
+                            <td><div class="drop-zone" data-target="vector-advantage"></div></td>
+                        </tr>
+                        <tr>
+                            <th>Кемшілігі</th>
+                            <td><div class="drop-zone" data-target="raster-disadvantage"></div></td>
+                            <td><div class="drop-zone" data-target="vector-disadvantage"></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="feedback-box" id="fb-t1"></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+                <button class="btn-action btn-reset" onclick="switchTab('demo')">⬅ Артқа</button>
+                <button class="btn-action btn-submit" onclick="switchTab('task2')">Келесі: 2-тапсырма ➔</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Task 2 -->
+    <section class="task-card task-2" id="page-task2">
+        <div class="task-header">
+            <span>2-тапсырма. «Дұрыс таңдау жаса»</span>
+            <span class="badge">3 балл</span>
+        </div>
+        <div class="task-body">
+            <p style="margin-bottom: 16px; font-size: 0.95rem;">
+                Әр жағдаят үшін графика түрін батырма арқылы таңдап, сәйкес түсіндірмені ашылмалы тізімнен белгілеңіз.
+            </p>
+
+            <!-- Scenario 1 -->
+            <div class="scenario-item" id="sc1">
+                <div class="scenario-title">1. Фотографияны өңдеу</div>
+                <div class="btn-group">
+                    <button type="button" class="btn-choice" data-task="2" data-sc="1" data-type="raster">Растрлық</button>
+                    <button type="button" class="btn-choice" data-task="2" data-sc="1" data-type="vector">Векторлық</button>
+                </div>
+                <select class="select-reason" id="sc1-reason">
+                    <option value="">-- Түсіндірмені таңдаңыз --</option>
+                    <option value="1">фотосуреттің бөлшектері мен түс реңктерін дәл береді</option>
+                    <option value="2">өлшемін өзгерткенде анықтығы сақталады</option>
+                    <option value="3">файл өлшемі әрдайым өте кішкентай болады</option>
+                </select>
+                <div class="feedback-box" id="fb-t2-1"></div>
+            </div>
+
+            <!-- Scenario 2 -->
+            <div class="scenario-item" id="sc2">
+                <div class="scenario-title">2. Кез келген өлшемге масштабталатын логотип жасау</div>
+                <div class="btn-group">
+                    <button type="button" class="btn-choice" data-task="2" data-sc="2" data-type="raster">Растрлық</button>
+                    <button type="button" class="btn-choice" data-task="2" data-sc="2" data-type="vector">Векторлық</button>
+                </div>
+                <select class="select-reason" id="sc2-reason">
+                    <option value="">-- Түсіндірмені таңдаңыз --</option>
+                    <option value="1">пиксельдерден тұратындықтан өңдеуге ыңғайлы</option>
+                    <option value="2">өлшемін өзгерткенде анықтығы сақталады</option>
+                    <option value="3">күрделі түсті өтулерді шынайы көрсетеді</option>
+                </select>
+                <div class="feedback-box" id="fb-t2-2"></div>
+            </div>
+
+            <!-- Scenario 3 -->
+            <div class="scenario-item" id="sc3">
+                <div class="scenario-title">3. Әртүрлі өлшемде басып шығарылатын белгіше жасау</div>
+                <div class="btn-group">
+                    <button type="button" class="btn-choice" data-task="2" data-sc="3" data-type="raster">Растрлық</button>
+                    <button type="button" class="btn-choice" data-task="2" data-sc="3" data-type="vector">Векторлық</button>
+                </div>
+                <select class="select-reason" id="sc3-reason">
+                    <option value="">-- Түсіндірмені таңдаңыз --</option>
+                    <option value="1">әртүрлі өлшемде анық басып шығаруға болады</option>
+                    <option value="2">тек экранда қарауға арналған формат</option>
+                    <option value="3">фотоаппараттан алынған суреттерге сәйкес келеді</option>
+                </select>
+                <div class="feedback-box" id="fb-t2-3"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+                <button class="btn-action btn-reset" onclick="switchTab('task1')">⬅ Артқа</button>
+                <button class="btn-action btn-submit" onclick="switchTab('task3')">Келесі: 3-тапсырма ➔</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Task 3 -->
+    <section class="task-card task-3" id="page-task3">
+        <div class="task-header">
+            <span>3-тапсырма. «Шешіміңді дәлелде»</span>
+            <span class="badge">3 балл</span>
+        </div>
+        <div class="task-body">
+            <div style="background: #fff7ed; border-left: 4px solid var(--primary-orange); padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+                <strong>Жағдаят:</strong> «Мектеп эмблемасын кішкентай белгішеге де, үлкен баннерге де орналастыру керек».
+            </div>
+
+            <!-- Step 1 -->
+            <div style="margin-bottom: 20px;">
+                <p style="font-weight: 600; margin-bottom: 8px;">1) Қолайлы графика түрін таңдаңыз (1 балл):</p>
+                <div class="btn-group">
+                    <button type="button" class="btn-choice" data-task="3" data-step="1" data-type="raster">Растрлық графика</button>
+                    <button type="button" class="btn-choice" data-task="3" data-step="1" data-type="vector">Векторлық графика</button>
+                </div>
+                <div class="feedback-box" id="fb-t3-1"></div>
+            </div>
+
+            <!-- Step 2 -->
+            <div style="margin-bottom: 20px;">
+                <p style="font-weight: 600; margin-bottom: 8px;">2) Таңдауыңыздың артықшылығын сөздерден құрастырыңыз (1 балл):</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 6px;">Фрагментті басу арқылы сөйлем құраңыз. Таңдалған сөзді өшіру үшін үстінен қайта басыңыз.</p>
+                <div class="sentence-builder-container">
+                    <div class="builder-result-area" id="builderResult">
+                        <span style="color: #94a3b8; font-size: 0.88rem;" id="builderPlaceholder">Сөйлем осы жерде жиналады...</span>
+                    </div>
+                    <div class="builder-fragments-pool" id="fragmentsPool">
+                        <!-- Shuffled chips -->
+                    </div>
+                </div>
+                <div class="feedback-box" id="fb-t3-2"></div>
+            </div>
+
+            <!-- Step 3 -->
+            <div>
+                <p style="font-weight: 600; margin-bottom: 8px;">3) Таңдалған графика түрінің бір кемшілігін белгілеңіз (1 балл):</p>
+                <div class="radio-card-group" id="disadvGroup">
+                    <label class="radio-card">
+                        <input type="radio" name="t3_disadvantage" value="opt1">
+                        <span>Үлкейткенде сурет сапасы пиксельденіп нашарлайды</span>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="t3_disadvantage" value="opt2">
+                        <span>Күрделі фотосуреттерді шынайы бейнелеу қиын</span>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="t3_disadvantage" value="opt3">
+                        <span>Файлдарды компьютерде ашу мүмкін емес</span>
+                    </label>
+                </div>
+                <div class="feedback-box" id="fb-t3-3"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+                <button class="btn-action btn-reset" onclick="switchTab('task2')">⬅ Артқа</button>
+                <button class="btn-action btn-submit" onclick="switchTab('selfcheck')">Өзіңді тексер ➔</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Self-Check Optional Training -->
+    <section class="task-card self-check-card" id="page-selfcheck" style="border-style: dashed; border-color: #64748b;">
+        <div class="task-header" style="background-color: #475569;">
+            <span>💡 «Өзіңді тексер» (Қосымша жаттығу)</span>
+        </div>
+        <div class="task-body">
+            <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 12px;">
+                Төмендегі дұрыс тұжырымдарды таңдаңыз (бұл бөлім негізгі 10 баллға әсер етпейді):
+            </p>
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="chk1">
+                    <span>Векторлық бейнелер математикалық формулалар мен сызықтардан тұрады.</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="chk2">
+                    <span>Растрлық суретті қанша үлкейтсе де сапасы мүлдем өзгермейді.</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="chk3">
+                    <span>Логотиптер мен белгішелерді векторлық форматта жасаған тиімді.</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="chk4">
+                    <span>Растрлық графиканың басты элементі — пиксель.</span>
+                </label>
+            </div>
+            <div class="feedback-box" id="fb-self"></div>
+            <div style="display: flex; justify-content: flex-start; margin-top: 16px;">
+                <button class="btn-action btn-reset" onclick="switchTab('task3')">⬅ Артқа</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Controls -->
+    <div class="action-bar">
+        <button class="btn-action btn-submit" onclick="checkAll()">
+            ✓ Тексеру
+        </button>
+        <button class="btn-action btn-reset" onclick="resetAll()">
+            ↺ Қайта орындау
+        </button>
+        <button class="btn-action btn-show" id="btnShowAnswers" onclick="showAnswers()">
+            👁 Жауаптарды көрсету
+        </button>
+    </div>
+
+    <!-- Results Section -->
+    <section class="task-card score-board" id="page-score" style="border-color: #cbd5e1;">
+        <div class="task-body" style="text-align: center;">
+            <h2>ЖҰМЫС НӘТИЖЕСІ</h2>
+            <div class="score-number" id="totalScoreText">0 / 10</div>
+            <p id="scoreComment" style="font-size: 1.1rem; margin-top: 6px; font-weight: 500;"></p>
+
+            <h4 style="margin-top: 20px; text-align: left;">Бағалау дескрипторлары:</h4>
+            <div class="descriptors-grid">
+                <div class="descriptor-card d1">
+                    <h5>1-тапсырма (4 балл)</h5>
+                    <p id="desc-t1">Растрлық және векторлық графиканың артықшылықтары мен кемшіліктерін дұрыс салыстырады (әр ұяшық 1 балл).</p>
+                </div>
+                <div class="descriptor-card d2">
+                    <h5>2-тапсырма (3 балл)</h5>
+                    <p id="desc-t2">Әр жағдаятқа сәйкес графика түрін және оның негіздемесін дұрыс таңдайды (әр жағдаят 1 балл).</p>
+                </div>
+                <div class="descriptor-card d3">
+                    <h5>3-тапсырма (3 балл)</h5>
+                    <p id="desc-t3">Эмблема үшін векторлық графиканы таңдайды (1б), себебін дәлелдейді (1б) және кемшілігін көрсетеді (1б).</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        /* Tab Navigation Logic */
+        function switchTab(tabId) {
+            document.querySelectorAll('.task-card').forEach(card => {
+                card.classList.remove('active-tab');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            const activeCard = document.getElementById('page-' + tabId);
+            if (activeCard) {
+                activeCard.classList.add('active-tab');
+            }
+
+            // Update Tab active style
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabMap = { 'demo': 0, 'task1': 1, 'task2': 2, 'task3': 3, 'selfcheck': 4, 'score': 5 };
+            if (tabMap[tabId] !== undefined && tabButtons[tabMap[tabId]]) {
+                tabButtons[tabMap[tabId]].classList.add('active');
+            }
+        }
+
+        /* Global Data & State */
+        const cardsData = [
+            { id: 'c1', text: 'Фотосуреттегі ұсақ бөлшектер мен түс реңктерін дәл береді', target: 'raster-advantage' },
+            { id: 'c2', text: 'Үлкейткенде пиксельдері көрініп, кескіннің анықтығы төмендейді', target: 'raster-disadvantage' },
+            { id: 'c3', text: 'Үлкейткенде кескіннің анықтығы сақталады', target: 'vector-advantage' },
+            { id: 'c4', text: 'Күрделі фотосуреттерді шынайы бейнелеу қиын', target: 'vector-disadvantage' }
+        ];
+
+        const sentenceFragments = [
+            { id: 'f1', text: 'Векторлық графика', correct: true, order: 1 },
+            { id: 'f2', text: 'өлшемін өзгерткенде', correct: true, order: 2 },
+            { id: 'f3', text: 'кескіннің анықтығын сақтайды', correct: true, order: 3 },
+            { id: 'f4', text: 'пиксельдерге бөлінеді', correct: false },
+            { id: 'f5', text: 'түстерді жоғалтады', correct: false }
+        ];
+
+        let selectedCardElement = null;
+        let selectedSentenceFragments = [];
+        let task2Selections = { sc1: null, sc2: null, sc3: null };
+        let task3Step1Selection = null;
+        let isChecked = false;
+
+        /* Initialization */
+        window.onload = function() {
+            initDemoCanvas();
+            initTask1();
+            initTask3Sentence();
+            initTask2Buttons();
+            initRadioCards();
+        };
+
+        /* Demo Canvas Rendering */
+        function initDemoCanvas() {
+            const canvas = document.getElementById('rasterCanvas');
+            const ctx = canvas.getContext('2d');
+            const slider = document.getElementById('zoomRange');
+            const zoomVal = document.getElementById('zoomVal');
+            const vectorSvg = document.getElementById('vectorSvg');
+
+            function drawRaster(scale) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.imageSmoothingEnabled = false; // Show pixels clearly
+
+                // Create low-res offscreen render
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = 16;
+                offCanvas.height = 16;
+                const offCtx = offCanvas.getContext('2d');
+
+                // Draw simple circle & check mark low-res
+                offCtx.fillStyle = '#ffffff';
+                offCtx.fillRect(0, 0, 16, 16);
+                
+                offCtx.strokeStyle = '#2563eb';
+                offCtx.lineWidth = 2;
+                offCtx.beginPath();
+                offCtx.arc(8, 8, 5, 0, Math.PI * 2);
+                offCtx.stroke();
+
+                offCtx.strokeStyle = '#16a34a';
+                offCtx.lineWidth = 2;
+                offCtx.beginPath();
+                offCtx.moveTo(5, 8);
+                offCtx.lineTo(7, 10);
+                offCtx.lineTo(11, 5);
+                offCtx.stroke();
+
+                // Scale up low-res canvas onto main canvas
+                const size = 80 * scale;
+                const x = (canvas.width - size) / 2;
+                const y = (canvas.height - size) / 2;
+                ctx.drawImage(offCanvas, x, y, size, size);
+            }
+
+            slider.addEventListener('input', function() {
+                const val = parseFloat(this.value);
+                zoomVal.textContent = val + 'x';
+                drawRaster(val);
+                vectorSvg.style.transform = `scale(${val})`;
+            });
+
+            drawRaster(1);
+        }
+
+        /* Task 1 Implementation */
+        function initTask1() {
+            const pool = document.getElementById('cardsPool');
+            pool.innerHTML = '';
+            
+            // Clear zones
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.innerHTML = '';
+                zone.classList.remove('selected-zone');
+            });
+
+            // Shuffle cards
+            const shuffled = [...cardsData].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'drag-card';
+                cardEl.draggable = true;
+                cardEl.id = card.id;
+                cardEl.textContent = card.text;
+
+                // Drag events
+                cardEl.addEventListener('dragstart', handleDragStart);
+
+                // Touch / Click-to-select support for mobile/accessibility
+                cardEl.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if(isChecked) return;
+                    
+                    if (selectedCardElement === cardEl) {
+                        cardEl.classList.remove('selected');
+                        selectedCardElement = null;
+                        highlightZones(false);
+                    } else {
+                        if (selectedCardElement) selectedCardElement.classList.remove('selected');
+                        selectedCardElement = cardEl;
+                        cardEl.classList.add('selected');
+                        highlightZones(true);
+                    }
+                });
+
+                pool.appendChild(cardEl);
+            });
+
+            // Set up drop zones
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', e => e.preventDefault());
+                zone.addEventListener('dragenter', function() { this.classList.add('drag-over'); });
+                zone.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+                zone.addEventListener('drop', handleDrop);
+
+                // Click zone to place selected card
+                zone.addEventListener('click', function() {
+                    if (selectedCardElement && !isChecked) {
+                        if(this.children.length > 0) {
+                            // Move existing back to pool
+                            pool.appendChild(this.children[0]);
+                        }
+                        this.appendChild(selectedCardElement);
+                        selectedCardElement.classList.remove('selected');
+                        selectedCardElement = null;
+                        highlightZones(false);
+                    }
+                });
+            });
+
+            // Allow returning card to pool by clicking pool
+            pool.addEventListener('click', function() {
+                if(selectedCardElement && !isChecked) {
+                    pool.appendChild(selectedCardElement);
+                    selectedCardElement.classList.remove('selected');
+                    selectedCardElement = null;
+                    highlightZones(false);
+                }
+            });
+        }
+
+        function highlightZones(enable) {
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                if(enable) z.classList.add('selected-zone');
+                else z.classList.remove('selected-zone');
+            });
+        }
+
+        function handleDragStart(e) {
+            if(isChecked) { e.preventDefault(); return; }
+            e.dataTransfer.setData('text/plain', e.target.id);
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if(isChecked) return;
+            this.classList.remove('drag-over');
+            const cardId = e.dataTransfer.getData('text/plain');
+            const cardEl = document.getElementById(cardId);
+            if (cardEl) {
+                if(this.children.length > 0) {
+                    document.getElementById('cardsPool').appendChild(this.children[0]);
+                }
+                this.appendChild(cardEl);
+            }
+        }
+
+        /* Task 2 Button Selection logic */
+        function initTask2Buttons() {
+            document.querySelectorAll('.btn-choice').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if(isChecked) return;
+                    const task = this.dataset.task;
+                    const sc = this.dataset.sc;
+                    const step = this.dataset.step;
+
+                    if(task === '2') {
+                        const parent = this.parentElement;
+                        parent.querySelectorAll('.btn-choice').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        task2Selections['sc' + sc] = this.dataset.type;
+                    } else if(task === '3' && step === '1') {
+                        const parent = this.parentElement;
+                        parent.querySelectorAll('.btn-choice').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        task3Step1Selection = this.dataset.type;
+                    }
+                });
+            });
+        }
+
+        /* Task 3 Sentence Builder */
+        function initTask3Sentence() {
+            const pool = document.getElementById('fragmentsPool');
+            const resultArea = document.getElementById('builderResult');
+            pool.innerHTML = '';
+            
+            // Shuffle sentence fragments
+            const shuffled = [...sentenceFragments].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(frag => {
+                const chip = document.createElement('div');
+                chip.className = 'fragment-chip';
+                chip.textContent = frag.text;
+                chip.id = 'frag-' + frag.id;
+
+                chip.addEventListener('click', function() {
+                    if(isChecked) return;
+                    addFragmentToResult(frag, chip);
+                });
+
+                pool.appendChild(chip);
+            });
+        }
+
+        function addFragmentToResult(frag, chipEl) {
+            if(chipEl.classList.contains('used')) return;
+
+            chipEl.classList.add('used');
+            selectedSentenceFragments.push(frag);
+
+            renderSentenceResult();
+        }
+
+        function removeFragment(fragId) {
+            if(isChecked) return;
+            selectedSentenceFragments = selectedSentenceFragments.filter(f => f.id !== fragId);
+            const chip = document.getElementById('frag-' + fragId);
+            if(chip) chip.classList.remove('used');
+
+            renderSentenceResult();
+        }
+
+        function renderSentenceResult() {
+            const resultArea = document.getElementById('builderResult');
+            resultArea.innerHTML = '';
+
+            if(selectedSentenceFragments.length === 0) {
+                resultArea.innerHTML = '<span style="color: #94a3b8; font-size: 0.88rem;" id="builderPlaceholder">Сөйлем осы жерде жиналады...</span>';
+                return;
+            }
+
+            selectedSentenceFragments.forEach(frag => {
+                const chip = document.createElement('div');
+                chip.className = 'fragment-chip';
+                chip.style.backgroundColor = '#fed7aa';
+                chip.style.borderColor = '#f97316';
+                chip.textContent = frag.text + ' ✕';
+                chip.addEventListener('click', () => removeFragment(frag.id));
+                resultArea.appendChild(chip);
+            });
+        }
+
+        /* Radio Cards Interaction */
+        function initRadioCards() {
+            document.querySelectorAll('.radio-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    if(isChecked) return;
+                    const radio = this.querySelector('input[type="radio"]');
+                    radio.checked = true;
+                    document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+        }
+
+        /* Verification Logic */
+        function checkAll() {
+            let score = 0;
+
+            // --- TASK 1 CHECK ---
+            let scoreT1 = 0;
+            const dropZones = document.querySelectorAll('.drop-zone');
+            dropZones.forEach(zone => {
+                const target = zone.dataset.target;
+                const childCard = zone.children[0];
+                if(childCard) {
+                    const cardObj = cardsData.find(c => c.id === childCard.id);
+                    if(cardObj && cardObj.target === target) {
+                        scoreT1 += 1;
+                    }
+                }
+            });
+            score += scoreT1;
+
+            const fbT1 = document.getElementById('fb-t1');
+            fbT1.classList.add('show');
+            if(scoreT1 === 4) {
+                fbT1.className = 'feedback-box show feedback-correct';
+                fbT1.innerHTML = '✔ Өте жақсы! Растрлық және векторлық графиканың артықшылықтары мен кемшіліктерін толық дұрыс салыстырдыңыз. (4/4 балл)';
+            } else {
+                fbT1.className = 'feedback-box show feedback-incorrect';
+                fbT1.innerHTML = `✖ Тез арада тексеріңіз: ${scoreT1}/4 ұяшық дұрыс толтырылды. Растрлық суреттерді үлкейткенде пиксельденетінін, ал векторлық суреттердің анықтығы сақталатынын есте сақтаңыз.`;
+            }
+
+            // --- TASK 2 CHECK ---
+            let scoreT2 = 0;
+
+            // Scenario 1: Raster + reason 1
+            const sc1Type = task2Selections.sc1;
+            const sc1Reason = document.getElementById('sc1-reason').value;
+            const fbT2_1 = document.getElementById('fb-t2-1');
+            fbT2_1.classList.add('show');
+            if(sc1Type === 'raster' && sc1Reason === '1') {
+                scoreT2 += 1;
+                fbT2_1.className = 'feedback-box show feedback-correct';
+                fbT2_1.innerHTML = '✔ Дұрыс! Фотосуреттерді өңдеу үшін растрлық графика қолайлы (түс реңктерін дәл береді).';
+            } else {
+                fbT2_1.className = 'feedback-box show feedback-incorrect';
+                fbT2_1.innerHTML = '✖ Қате. Фотография - бұл растрлық графика, себебі ол түс реңктері мен ұсақ бөлшектерді дәл береді.';
+            }
+
+            // Scenario 2: Vector + reason 2
+            const sc2Type = task2Selections.sc2;
+            const sc2Reason = document.getElementById('sc2-reason').value;
+            const fbT2_2 = document.getElementById('fb-t2-2');
+            fbT2_2.classList.add('show');
+            if(sc2Type === 'vector' && sc2Reason === '2') {
+                scoreT2 += 1;
+                fbT2_2.className = 'feedback-box show feedback-correct';
+                fbT2_2.innerHTML = '✔ Дұрыс! Логотиптер векторлық графикада жасалады (өлшемін өзгерткенде анықтығы сақталады).';
+            } else {
+                fbT2_2.className = 'feedback-box show feedback-incorrect';
+                fbT2_2.innerHTML = '✖ Қате. Масштабталатын логотиптер үшін векторлық графика қажет, ол сапасын жоғалтпайды.';
+            }
+
+            // Scenario 3: Vector + reason 1
+            const sc3Type = task2Selections.sc3;
+            const sc3Reason = document.getElementById('sc3-reason').value;
+            const fbT2_3 = document.getElementById('fb-t2-3');
+            fbT2_3.classList.add('show');
+            if(sc3Type === 'vector' && sc3Reason === '1') {
+                scoreT2 += 1;
+                fbT2_3.className = 'feedback-box show feedback-correct';
+                fbT2_3.innerHTML = '✔ Дұрыс! Баспа белгішелері векторлық форматта әртүрлі өлшемде анық басып шығарылады.';
+            } else {
+                fbT2_3.className = 'feedback-box show feedback-incorrect';
+                fbT2_3.innerHTML = '✖ Қате. Әртүрлі өлшемде сапалы басу үшін векторлық графика таңдалады.';
+            }
+
+            score += scoreT2;
+
+            // --- TASK 3 CHECK ---
+            let scoreT3 = 0;
+
+            // Step 1: Vector
+            const fbT3_1 = document.getElementById('fb-t3-1');
+            fbT3_1.classList.add('show');
+            if(task3Step1Selection === 'vector') {
+                scoreT3 += 1;
+                fbT3_1.className = 'feedback-box show feedback-correct';
+                fbT3_1.innerHTML = '✔ Дұрыс! Эмблема мен баннерлер үшін Векторлық графика таңдалады.';
+            } else {
+                fbT3_1.className = 'feedback-box show feedback-incorrect';
+                fbT3_1.innerHTML = '✖ Қате. Үлкен баннерлер мен кішкентай белгішелерге бірдей жарайтын — векторлық графика.';
+            }
+
+            // Step 2: Sentence assembly "Векторлық графика өлшемін өзгерткенде кескіннің анықтығын сақтайды"
+            const fbT3_2 = document.getElementById('fb-t3-2');
+            fbT3_2.classList.add('show');
+            const currentIds = selectedSentenceFragments.map(f => f.id).join(',');
+            if(currentIds === 'f1,f2,f3') {
+                scoreT3 += 1;
+                fbT3_2.className = 'feedback-box show feedback-correct';
+                fbT3_2.innerHTML = '✔ Дұрыс! «Векторлық графика өлшемін өзгерткенде кескіннің анықтығын сақтайды» сөйлемі дұрыс құрастырылды.';
+            } else {
+                fbT3_2.className = 'feedback-box show feedback-incorrect';
+                fbT3_2.innerHTML = '✖ Қате. Сөйлем құрылымын тексеріңіз. Дұрыс реті: [Векторлық графика] [өлшемін өзгерткенде] [кескіннің анықтығын сақтайды].';
+            }
+
+            // Step 3: Disadvantage option 2 ("Күрделі фотосуреттерді шынайы бейнелеу қиын")
+            const fbT3_3 = document.getElementById('fb-t3-3');
+            fbT3_3.classList.add('show');
+            const selectedRadio = document.querySelector('input[name="t3_disadvantage"]:checked');
+            if(selectedRadio && selectedRadio.value === 'opt2') {
+                scoreT3 += 1;
+                fbT3_3.className = 'feedback-box show feedback-correct';
+                fbT3_3.innerHTML = '✔ Дұрыс! Векторлық графиканың басты кемшілігі — күрделі фотосуреттерді шынайы бейнелеудің қиындығы.';
+            } else {
+                fbT3_3.className = 'feedback-box show feedback-incorrect';
+                fbT3_3.innerHTML = '✖ Қате. Векторлық графиканың негізгі кемшілігі — күрделі фотосуреттерді шынайы көрсете алмауында.';
+            }
+
+            score += scoreT3;
+
+            // --- SELF CHECK (Non-graded) ---
+            const chk1 = document.getElementById('chk1').checked;
+            const chk2 = document.getElementById('chk2').checked;
+            const chk3 = document.getElementById('chk3').checked;
+            const chk4 = document.getElementById('chk4').checked;
+            const fbSelf = document.getElementById('fb-self');
+            fbSelf.classList.add('show');
+
+            if(chk1 && !chk2 && chk3 && chk4) {
+                fbSelf.className = 'feedback-box show feedback-correct';
+                fbSelf.innerHTML = '✔ Жарарайсың! Өзіңді тексеру сұрақтарының барлығына дұрыс жауап бердіңіз.';
+            } else {
+                fbSelf.className = 'feedback-box show feedback-incorrect';
+                fbSelf.innerHTML = '💡 Өзіңді тексеру: 1, 3 және 4-тұжырымдар дұрыс. (2-тұжырым қате, себебі растрлық сурет үлкейгенде сапасы төмендейді).';
+            }
+
+            // --- DISPLAY TOTAL RESULTS ---
+            isChecked = true;
+            const scoreBoard = document.getElementById('page-score');
+            const totalText = document.getElementById('totalScoreText');
+            const comment = document.getElementById('scoreComment');
+            const tabScoreBtn = document.getElementById('tabScoreBtn');
+
+            tabScoreBtn.style.display = 'inline-flex';
+            totalText.textContent = `${score} / 10`;
+
+            if(score === 10) {
+                comment.style.color = 'var(--primary-green)';
+                comment.textContent = 'Керемет! Барлық тапсырманы қалтқысыз орындадыңыз! 🌟';
+            } else if(score >= 7) {
+                comment.style.color = 'var(--primary-blue)';
+                comment.textContent = 'Жақсы нәтиже! Кейбір өңдеуді қажет ететін тұстары бар. 👍';
+            } else {
+                comment.style.color = 'var(--primary-orange)';
+                comment.textContent = 'Тақырыпты қайтадан қарап шығу ұсынылады. Қайта орындап көріңіз! 📚';
+            }
+
+            document.getElementById('btnShowAnswers').style.display = 'inline-flex';
+            switchTab('score');
+        }
+
+        /* Reset Logic */
+        function resetAll() {
+            isChecked = false;
+            selectedCardElement = null;
+            selectedSentenceFragments = [];
+            task2Selections = { sc1: null, sc2: null, sc3: null };
+            task3Step1Selection = null;
+
+            // Reset UI components
+            initTask1();
+            initTask3Sentence();
+            renderSentenceResult();
+
+            document.querySelectorAll('.btn-choice').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.select-reason').forEach(s => s.value = '');
+            document.querySelectorAll('.radio-card').forEach(r => r.classList.remove('selected'));
+            document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+
+            document.querySelectorAll('.feedback-box').forEach(fb => {
+                fb.classList.remove('show', 'feedback-correct', 'feedback-incorrect');
+                fb.innerHTML = '';
+            });
+
+            document.getElementById('tabScoreBtn').style.display = 'none';
+            document.getElementById('btnShowAnswers').style.display = 'none';
+
+            switchTab('demo');
+        }
+
+        /* Auto-Fill Correct Answers */
+        function showAnswers() {
+            if(!isChecked) return;
+
+            // 1. Task 1
+            const pool = document.getElementById('cardsPool');
+            cardsData.forEach(card => {
+                const cardEl = document.getElementById(card.id);
+                const targetZone = document.querySelector(`.drop-zone[data-target="${card.target}"]`);
+                if(cardEl && targetZone) {
+                    targetZone.appendChild(cardEl);
+                }
+            });
+
+            // 2. Task 2
+            document.querySelectorAll('[data-task="2"]').forEach(btn => {
+                if(btn.dataset.sc === '1' && btn.dataset.type === 'raster') btn.classList.add('active');
+                else if((btn.dataset.sc === '2' || btn.dataset.sc === '3') && btn.dataset.type === 'vector') btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            document.getElementById('sc1-reason').value = '1';
+            document.getElementById('sc2-reason').value = '2';
+            document.getElementById('sc3-reason').value = '1';
+
+            // 3. Task 3
+            document.querySelectorAll('[data-task="3"][data-step="1"]').forEach(btn => {
+                if(btn.dataset.type === 'vector') btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            // Sentence
+            selectedSentenceFragments = [
+                sentenceFragments.find(f => f.id === 'f1'),
+                sentenceFragments.find(f => f.id === 'f2'),
+                sentenceFragments.find(f => f.id === 'f3')
+            ];
+            document.querySelectorAll('.fragment-chip').forEach(chip => {
+                if(['frag-f1', 'frag-f2', 'frag-f3'].includes(chip.id)) chip.classList.add('used');
+                else chip.classList.remove('used');
+            });
+            renderSentenceResult();
+
+            // Radio
+            const correctRadio = document.querySelector('input[value="opt2"]');
+            if(correctRadio) {
+                correctRadio.checked = true;
+                document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+                correctRadio.closest('.radio-card').classList.add('selected');
+            }
+
+            // Checkboxes
+            document.getElementById('chk1').checked = true;
+            document.getElementById('chk2').checked = false;
+            document.getElementById('chk3').checked = true;
+            document.getElementById('chk4').checked = true;
+        }
+    </script>
+</body>
+</html>
