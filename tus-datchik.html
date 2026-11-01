@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Робот зертханасы: Түс датчигі</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #059669;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* HEADER */
+        header {
+            background-color: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #334155;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        nav {
+            display: flex;
+            gap: 0.5rem;
+            background: #0f172a;
+            padding: 0.25rem;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .nav-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-light);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-btn.active {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+        }
+
+        .badge-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #1e293b;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            border: 1px solid #334155;
+        }
+
+        /* MAIN CONTENT AREA */
+        main {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CARDS & CONTAINERS */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* TAB 1: ТАНЫСУ */
+        .grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .sensor-card {
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 1.25rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sensor-card:hover {
+            border-color: #60a5fa;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .sensor-card.selected {
+            border-color: var(--primary);
+            background: #172554;
+        }
+
+        .sensor-img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .match-game {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .match-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .match-item {
+            background: #0f172a;
+            border: 2px dashed #475569;
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .match-item:hover {
+            border-color: #94a3b8;
+            background: #1e293b;
+        }
+
+        .match-item.selected {
+            border-style: solid;
+            border-color: var(--accent-yellow);
+            background: #422006;
+        }
+
+        .match-item.matched {
+            border-style: solid;
+            border-color: var(--accent-green);
+            background: #064e3b;
+            cursor: default;
+            opacity: 0.8;
+        }
+
+        /* TAB 2: ДАТЧИК ЗЕРТХАНАСЫ */
+        .lab-modes {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .lab-stand {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        @media (max-width: 900px) {
+            .lab-stand {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stand-view {
+            background: #0f172a;
+            border-radius: 12px;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+
+        .color-samples {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .color-sample-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .color-sample-btn:hover {
+            transform: scale(1.15);
+            border-color: white;
+        }
+
+        .readings-panel {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .reading-box {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .reading-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #60a5fa;
+            margin-top: 0.25rem;
+        }
+
+        /* TAB 3: РОБОТТЫ БАҒДАРЛАМАЛА & МИССИЯЛАР */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .simulation-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sim-canvas-wrap {
+            background: #000;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            position: relative;
+            height: 280px;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .programming-area {
+            background: #0f172a;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 250px;
+        }
+
+        .blocks-palette {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .block {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.15s;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .block:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        .block-start { background-color: #16a34a; color: white; }
+        .block-move { background-color: #2563eb; color: white; }
+        .block-wait { background-color: #d97706; color: white; }
+        .block-stop { background-color: #dc2626; color: white; }
+
+        .program-dropzone {
+            flex: 1;
+            min-height: 120px;
+            background: #1e293b;
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .program-dropzone.empty::after {
+            content: 'Блоктарды осы жерге шерту немесе сүйреу арқылы қосыңыз';
+            color: #64748b;
+            font-size: 0.9rem;
+            margin: auto;
+        }
+
+        .placed-block {
+            position: relative;
+            animation: popIn 0.2s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .placed-block.active-executing {
+            outline: 3px solid #f59e0b;
+            box-shadow: 0 0 12px #f59e0b;
+        }
+
+        .placed-block .remove-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            border: none;
+        }
+
+        .block-param {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .controls-bar {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-success { background: #16a34a; color: white; }
+        .btn-success:hover { background: #15803d; }
+        .btn-warning { background: #d97706; color: white; }
+        .btn-warning:hover { background: #b45309; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-secondary { background: #475569; color: white; }
+        .btn-secondary:hover { background: #334155; }
+        .btn-help { background: #9333ea; color: white; }
+        .btn-help:hover { background: #7e22ce; }
+
+        /* MISSION CARDS */
+        .mission-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.25rem;
+        }
+
+        .mission-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            white-space: nowrap;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .mission-btn.active {
+            border-color: #60a5fa;
+            color: #60a5fa;
+            background: #1e293b;
+        }
+
+        .mission-btn.completed::after {
+            content: ' ✓';
+            color: var(--accent-green);
+        }
+
+        /* MODAL & MESSAGES */
+        .feedback-box {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+            font-weight: 500;
+        }
+
+        .feedback-box.error {
+            background: #450a0a;
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            display: block;
+        }
+
+        .feedback-box.success {
+            background: #064e3b;
+            border: 1px solid #22c55e;
+            color: #86efac;
+            display: block;
+        }
+
+        .feedback-box.info {
+            background: #1e1b4b;
+            border: 1px solid #6366f1;
+            color: #c7d2fe;
+            display: block;
+        }
+
+        .help-box {
+            background: #2e1065;
+            border: 1px solid #a855f7;
+            color: #e9d5ff;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* COLOR UTILS */
+        .c-1 { background-color: #000000; border-color: #333; }
+        .c-2 { background-color: #2563eb; }
+        .c-3 { background-color: #16a34a; }
+        .c-4 { background-color: #eab308; color: #000 !important; }
+        .c-5 { background-color: #dc2626; }
+        .c-6 { background-color: #ffffff; color: #000 !important; border-color: #ccc; }
+        .c-7 { background-color: #78350f; }
+
+        /* BADGE POPUP */
+        .badge-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            place-items: center;
+            z-index: 100;
+        }
+
+        .badge-card {
+            background: #1e293b;
+            border: 2px solid #eab308;
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 400px;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .slider-control input[type=range] {
+            flex: 1;
+        }
+
+        /* TAB 5: ОРЫНДА (DRAG & DROP TASK) */
+        .execute-task-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .drop-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .drop-slot {
+            background: #0f172a;
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            padding: 1rem;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .drop-slot.drag-over {
+            border-color: #60a5fa;
+            background: #1e293b;
+        }
+
+        .drop-slot.correct {
+            border-style: solid;
+            border-color: var(--accent-green);
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .drop-slot.incorrect {
+            border-style: solid;
+            border-color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .slot-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #60a5fa;
+            margin-bottom: 0.5rem;
+        }
+
+        .cards-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            padding: 1.25rem;
+            background: #0f172a;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            min-height: 120px;
+        }
+
+        .draggable-img-card {
+            width: 170px;
+            height: 90px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+
+        .draggable-img-card:active {
+            cursor: grabbing;
+        }
+
+        .draggable-img-card.selected-card {
+            border-color: #eab308;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+            transform: scale(1.05);
+        }
+
+        .draggable-img-card img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">EV3</div>
+            <div>
+                <h1>Робот зертханасы</h1>
+                <div style="font-size: 0.75rem; color: #94a3b8;">4-сынып: Түс датчигі</div>
+            </div>
+        </div>
+
+        <nav>
+            <button class="nav-btn active" onclick="switchTab('video')">Бейнесабақ</button>
+            <button class="nav-btn" onclick="switchTab('intro')">Танысу</button>
+            <button class="nav-btn" onclick="switchTab('lab')">Датчик зертханасы</button>
+            <button class="nav-btn" onclick="switchTab('program')">Роботты бағдарламала</button>
+            <button class="nav-btn" onclick="switchTab('missions')">Миссиялар</button>
+            <button class="nav-btn" onclick="switchTab('execute')">Орында</button>
+        </nav>
+
+        <div class="badge-container">
+            <span style="font-size: 1.2rem;">🏅</span>
+            <span id="badge-title" style="font-size: 0.85rem; font-weight: 600; color: #eab308;">Инженер көмекшісі</span>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+
+        <!-- TAB 0: БЕЙНЕСАБАҚ -->
+        <section id="tab-video" class="tab-content active">
+            <div class="card">
+                <div class="card-title">🎥 Бейнесабақ: Түс датчигімен жұмыс</div>
+                <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                    Роботтың түс датчигін бағдарламалау және қолдану бойынша видео нұсқаулықты қараңыз:
+                </p>
+                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 12px; border: 1px solid #334155;">
+                    <iframe 
+                        src="https://www.youtube.com/embed/V57BMjEJzwg" 
+                        title="YouTube video player" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px;">
+                    </iframe>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem; align-items: center;">
+                    <a href="https://www.youtube.com/watch?v=V57BMjEJzwg" target="_blank" class="btn btn-success" style="text-decoration: none;">
+                        ▶ YouTube-та ашып қарау
+                    </a>
+                    <span style="font-size: 0.85rem; color: #94a3b8;">Егер видео ішінде «Ошибка 153» шықса, жаңа терезеде ашу батырмасын басыңыз.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 1: ТАНЫСУ -->
+        <section id="tab-intro" class="tab-content">
+            <div class="card">
+                <div class="card-title">💡 Робот датчиктерімен танысу</div>
+                <p style="color: #cbd5e1; margin-bottom: 1rem;">
+                    Датчик — сыртқы ортадан ақпаратты (түс, арақашықтық, бұрыш, басу) жинайтын құрылғы. 
+                    LEGO MINDSTORMS EV3 роботында 4 түрлі негізгі датчик қолданылады:
+                </p>
+
+                <div class="grid-2x2">
+                    <div class="sensor-card" onclick="showSensorInfo('touch')">
+                        <img class="sensor-img" src="https://fsd.kopilkaurokov.ru/up/html/2020/05/18/k_5ec2e88c15b89/550286_4.png" alt="Жанасу датчигі" onerror="this.src='https://placehold.co/100x100/334155/ffffff?text=Жанасу'">
+                        <h3 style="margin-bottom: 0.4rem;">Жанасу датчигі</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8;">Батырманың басылғанын немесе босатылғанын анықтайды.</p>
+                    </div>
+
+                    <div class="sensor-card" onclick="showSensorInfo('ultra')">
+                        <img class="sensor-img" src="https://robot-help.ru/images/lego-mindstorms-ev3/lessons/lesson-7/001.jpg" alt="Ультрадыбыс датчигі" onerror="this.src='https://placehold.co/100x100/334155/ffffff?text=Ультрадыбыс'">
+                        <h3 style="margin-bottom: 0.4rem;">Ультрадыбыс датчигі</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8;">Кедергіге дейінгі қашықтықты дыбыс толқынымен өлшейді.</p>
+                    </div>
+
+                    <div class="sensor-card" onclick="showSensorInfo('gyro')">
+                        <img class="sensor-img" src="https://school-store.ru/upload/iblock/a05/o0hphu2uu7eavbpzbt9mbo58q7gylvz4.jpg" alt="Гироскопиялық датчик" onerror="this.src='https://placehold.co/100x100/334155/ffffff?text=Гироскоп'">
+                        <h3 style="margin-bottom: 0.4rem;">Гироскопиялық датчик</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8;">Роботтың бұрылу бұрышын және айналу жылдамдығын өлшейді.</p>
+                    </div>
+
+                    <div class="sensor-card" onclick="showSensorInfo('color')">
+                        <img class="sensor-img" src="https://simg.marwin.kz/media/catalog/product/4/5/45506-1_0.jpg" alt="Түс датчигі" onerror="this.src='https://placehold.co/100x100/334155/ffffff?text=Түс+датчигі'">
+                        <h3 style="margin-bottom: 0.4rem;">Түс датчигі</h3>
+                        <p style="font-size: 0.85rem; color: #94a3b8;">Түсті және жарық деңгейін анықтайды.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🧩 Тапсырма: Датчиктерді сәйкестендір</div>
+                <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1rem;">Сол жақтағы датчикті таңдап, оның оң жақтағы атқаратын қызметін тап:</p>
+
+                <div class="match-game">
+                    <div class="match-column" id="match-left">
+                        <div class="match-item" data-id="touch" onclick="selectMatch('left', 'touch')">Жанасу датчигі</div>
+                        <div class="match-item" data-id="ultra" onclick="selectMatch('left', 'ultra')">Ультрадыбыс датчигі</div>
+                        <div class="match-item" data-id="gyro" onclick="selectMatch('left', 'gyro')">Гироскопиялық датчик</div>
+                        <div class="match-item" data-id="color" onclick="selectMatch('left', 'color')">Түс датчигі</div>
+                    </div>
+                    <div class="match-column" id="match-right">
+                        <div class="match-item" data-id="ultra" onclick="selectMatch('right', 'ultra')">Кедергіге дейінгі қашықтықты өлшейді</div>
+                        <div class="match-item" data-id="color" onclick="selectMatch('right', 'color')">Беттің түсін және жарықтылығын біледі</div>
+                        <div class="match-item" data-id="touch" onclick="selectMatch('right', 'touch')">Батырманың басылғанын сезеді</div>
+                        <div class="match-item" data-id="gyro" onclick="selectMatch('right', 'gyro')">Бұрылу бұрышын есептейді</div>
+                    </div>
+                </div>
+                <div id="match-feedback" class="feedback-box"></div>
+            </div>
+        </section>
+
+        <!-- TAB 2: ДАТЧИК ЗЕРТХАНАСЫ -->
+        <section id="tab-lab" class="tab-content">
+            <div class="card">
+                <div class="card-title">🔬 Түс датчигінің 3 жұмыс режимі</div>
+                
+                <div class="lab-modes">
+                    <button class="mode-btn active" onclick="setLabMode('color')">1. Түсті анықтау (Color)</button>
+                    <button class="mode-btn" onclick="setLabMode('reflected')">2. Шағылысқан жарық (Reflected)</button>
+                    <button class="mode-btn" onclick="setLabMode('ambient')">3. Сыртқы жарық (Ambient)</button>
+                </div>
+
+                <div class="lab-stand">
+                    <div class="stand-view">
+                        <!-- SENSOR GRAPHIC -->
+                        <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+                            <svg width="120" height="120" viewBox="0 0 100 100">
+                                <rect x="25" y="10" width="50" height="60" rx="8" fill="#334155" stroke="#64748b" stroke-width="2"/>
+                                <circle id="sensor-led" cx="50" cy="35" r="10" fill="#ef4444" opacity="0.8"/>
+                                <circle cx="50" cy="55" r="8" fill="#0f172a"/>
+                                <polygon points="35,70 65,70 50,95" fill="rgba(239, 68, 68, 0.2)" id="light-beam"/>
+                            </svg>
+                        </div>
+
+                        <!-- SAMPLE PLACEHOLDER -->
+                        <div id="sample-target" style="width: 140px; height: 35px; border: 2px dashed #64748b; border-radius: 8px; margin-top: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                            Үлгі жоқ (0)
+                        </div>
+
+                        <button class="btn btn-secondary" style="margin-top: 15px; font-size: 0.85rem;" onclick="clearSample()">Үлгіні алып тастау</button>
+                    </div>
+
+                    <div class="readings-panel">
+                        <h3 id="lab-mode-title" style="font-size: 1rem; color: #60a5fa;">Түсті анықтау режимі</h3>
+                        <p id="lab-mode-desc" style="font-size: 0.85rem; color: #94a3b8;">
+                            Датчик өзінен 1 см қашықтықтағы заттың түсін кодын анықтайды.
+                        </p>
+
+                        <div class="reading-box">
+                            <div style="font-size: 0.8rem; color: #94a3b8;">ДАТЧИК КӨРСЕТКІШІ</div>
+                            <div id="lab-reading-num" class="reading-value">0</div>
+                            <div id="lab-reading-text" style="font-weight: 600; color: #f8fafc; margin-top: 0.2rem;">Түс анықталмады</div>
+                        </div>
+
+                        <div id="ambient-controls" style="display: none;">
+                            <label style="font-size: 0.85rem; color: #cbd5e1;">Сыртқы бөлме жарығы:</label>
+                            <div class="slider-control">
+                                <input type="range" id="ambient-range" min="0" max="100" value="45" oninput="updateAmbient(this.value)">
+                                <span id="ambient-val" style="font-weight: bold;">45%</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 0.5rem;">Сынау үшін үлгіні таңдаңыз:</div>
+                            <div class="color-samples">
+                                <button class="color-sample-btn c-1" title="Қара" onclick="testColor(1, 'Қара', '#000000')">1</button>
+                                <button class="color-sample-btn c-2" title="Көк" onclick="testColor(2, 'Көк', '#2563eb')">2</button>
+                                <button class="color-sample-btn c-3" title="Жасыл" onclick="testColor(3, 'Жасыл', '#16a34a')">3</button>
+                                <button class="color-sample-btn c-4" title="Сары" onclick="testColor(4, 'Сары', '#eab308')">4</button>
+                                <button class="color-sample-btn c-5" title="Қызыл" onclick="testColor(5, 'Қызыл', '#dc2626')">5</button>
+                                <button class="color-sample-btn c-6" title="Ақ" onclick="testColor(6, 'Ақ', '#ffffff')">6</button>
+                                <button class="color-sample-btn c-7" title="Қоңыр" onclick="testColor(7, 'Қоңыр', '#78350f')">7</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem; padding: 0.75rem; background: #0f172a; border-radius: 8px; font-size: 0.8rem; color: #94a3b8;">
+                    ⚠️ <b>Ескерту:</b> Жарықтылық режимдеріндегі 0–100% мәндері — оқу симуляторының шартты көрсеткіштері. Түс коды (1-7) жарық пайыздығы болып саналмайды.
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: РОБОТТЫ БАҒДАРЛАМАЛА -->
+        <section id="tab-program" class="tab-content">
+            <div class="workspace">
+                <div class="simulation-container">
+                    <!-- CANVAS SIMULATOR -->
+                    <div class="card" style="padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div class="card-title" style="margin: 0;">🏎️ Робот симуляторы</div>
+                            <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+                                <span>Мотор: <b id="tele-motor" style="color: #ef4444;">ӨШІРУЛІ</b></span>
+                                <span>Датчик түсі: <b id="tele-color" style="color: #60a5fa;">Ақ (6)</b></span>
+                            </div>
+                        </div>
+
+                        <div class="sim-canvas-wrap">
+                            <canvas id="simCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- PROGRAMMING ZONE -->
+                    <div class="programming-area">
+                        <div style="font-weight: 600; color: #cbd5e1; font-size: 0.9rem;">Бағдарламалау блоктары (Басу арқылы қос):</div>
+                        <div class="blocks-palette">
+                            <div class="block block-start" onclick="addBlock('start')">🚩 Бастау</div>
+                            <div class="block block-move" onclick="addBlock('move')">
+                                ⚙️ Алға жүру 
+                                <select id="palette-power-select" class="block-param" onclick="event.stopPropagation()">
+                                    <option value="20">20%</option>
+                                    <option value="40" selected>40%</option>
+                                    <option value="70">70%</option>
+                                    <option value="100">100%</option>
+                                </select>
+                            </div>
+                            <div class="block block-wait" onclick="addBlock('wait')">
+                                ⏳ Түсті күту:
+                                <select id="palette-color-select" class="block-param" onclick="event.stopPropagation()">
+                                    <option value="5" selected>🔴 Қызыл (5)</option>
+                                    <option value="3">🟢 Жасыл (3)</option>
+                                    <option value="2">🔵 Көк (2)</option>
+                                    <option value="4">🟡 Сары (4)</option>
+                                    <option value="1">⚫ Қара (1)</option>
+                                    <option value="6">⚪ Ақ (6)</option>
+                                    <option value="7">🟤 Қоңыр (7)</option>
+                                </select>
+                            </div>
+                            <div class="block block-stop" onclick="addBlock('stop')">🛑 Моторды тоқтату</div>
+                        </div>
+
+                        <div style="font-weight: 600; color: #cbd5e1; font-size: 0.9rem;">Сенің бағдарламаң:</div>
+                        <div id="program-zone" class="program-dropzone empty"></div>
+
+                        <div class="controls-bar">
+                            <button class="btn btn-success" onclick="runProgram()">▶ Іске қосу</button>
+                            <button class="btn btn-warning" onclick="pauseProgram()">⏸ Кідірту</button>
+                            <button class="btn btn-secondary" onclick="resetSimulation()">🔄 Қайта бастау</button>
+                            <button class="btn btn-danger" onclick="clearProgram()">🗑 Тазалау</button>
+                        </div>
+                    </div>
+
+                    <div id="sim-feedback" class="feedback-box"></div>
+                </div>
+
+                <!-- RIGHT PANEL: HELP & INFO -->
+                <div class="card" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div class="card-title">📖 Нұсқаулық & Көмек</div>
+                    <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+                        <p style="margin-bottom: 0.5rem;"><b>Дұрыс алгоритм реті:</b></p>
+                        <ol style="padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem;">
+                            <li><b style="color: #4ade80;">Бастау</b> блогын қой.</li>
+                            <li><b style="color: #60a5fa;">Алға жүру</b> блогымен моторды қос (қуатын таңда).</li>
+                            <li><b style="color: #fbbf24;">Түсті күту</b> блогымен тоқтау керек түсті орнат.</li>
+                            <li><b style="color: #f87171;">Моторды тоқтату</b> блогын соңына қос.</li>
+                        </ol>
+                    </div>
+
+                    <button class="btn btn-help" onclick="getHelp()">💡 Көмек алу</button>
+                    <div id="help-display" class="help-box"></div>
+
+                    <div style="margin-top: auto; padding: 0.75rem; background: #0f172a; border-radius: 8px; border: 1px solid #334155;">
+                        <div style="font-size: 0.8rem; font-weight: bold; color: #eab308; margin-bottom: 0.3rem;">📌 Есте сақта!</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">
+                            Робот түсті өз корпусының ортасымен емес, алдыңғы жағындағы қызыл нүктемен (датчикпен) считывает етеді.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: МИССИЯЛАР -->
+        <section id="tab-missions" class="tab-content">
+            <div class="card">
+                <div class="card-title">🎯 Инженерлік Миссиялар</div>
+                
+                <div class="mission-nav">
+                    <button class="mission-btn active" id="mbtn-1" onclick="loadMission(1)">1-Миссия: Қызыл түсте тоқта</button>
+                    <button class="mission-btn" id="mbtn-2" onclick="loadMission(2)">2-Миссия: Жасыл белгіні тап</button>
+                    <button class="mission-btn" id="mbtn-3" onclick="loadMission(3)">3-Миссия: Қатені түзет</button>
+                    <button class="mission-btn" id="mbtn-4" onclick="loadMission(4)">4-Миссия: Өз жолыңды құрастыр</button>
+                </div>
+
+                <div id="mission-info" style="background: #0f172a; padding: 1rem; border-radius: 8px; border: 1px solid #334155; margin-bottom: 1rem;">
+                    <h3 id="mission-title" style="color: #60a5fa; margin-bottom: 0.4rem;">1-Миссия: Қызыл түсте тоқта</h3>
+                    <p id="mission-desc" style="font-size: 0.9rem; color: #cbd5e1;">
+                        Оқулықтағы негізгі тапсырма: Робот 40% қуатпен алға жүріп, жолындағы қызыл түсті көргенде моторды тоқтатуы керек.
+                    </p>
+                </div>
+
+                <div id="custom-track-builder" style="display: none; background: #0f172a; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border: 1px dashed #60a5fa;">
+                    <h4 style="color: #eab308; margin-bottom: 0.5rem; font-size: 0.9rem;">🎨 Өз жолыңдағы жолақтарды реттеу:</h4>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="custom-stripes-selector">
+                        <!-- Dynamic controls -->
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-success" style="font-size: 1.05rem; padding: 0.75rem 2rem;" onclick="switchToWorkspaceForMission()">
+                        🚀 Осы миссияны орындауға өту
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: ОРЫНДА -->
+        <section id="tab-execute" class="tab-content">
+            <div class="card execute-task-container">
+                <div>
+                    <div class="card-title">🧩 Төмендегі дайын болған программаны роботқа жүкте</div>
+                    <p style="color: #cbd5e1; font-size: 0.95rem;">
+                        Төмендегі 4 блокқа сәйкес суреттерді сүйреп апарыңыз (немесе суретті шертіп, кейін блокты шертіңіз) және программаның дұрыс кезектілігін құрастырыңыз:
+                    </p>
+                </div>
+
+                <!-- SLOTS FOR DROP -->
+                <div>
+                    <div style="font-weight: 600; color: #cbd5e1; margin-bottom: 0.5rem;">Программа блоктары (1-4):</div>
+                    <div class="drop-slots-grid">
+                        <div class="drop-slot" data-slot="1" onclick="slotClicked(1)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 1)">
+                            <div class="slot-label">1-Блок</div>
+                            <div class="slot-content"></div>
+                        </div>
+                        <div class="drop-slot" data-slot="2" onclick="slotClicked(2)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 2)">
+                            <div class="slot-label">2-Блок</div>
+                            <div class="slot-content"></div>
+                        </div>
+                        <div class="drop-slot" data-slot="3" onclick="slotClicked(3)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 3)">
+                            <div class="slot-label">3-Блок</div>
+                            <div class="slot-content"></div>
+                        </div>
+                        <div class="drop-slot" data-slot="4" onclick="slotClicked(4)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 4)">
+                            <div class="slot-label">4-Блок</div>
+                            <div class="slot-content"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARDS POOL -->
+                <div>
+                    <div style="font-weight: 600; color: #cbd5e1; margin-bottom: 0.5rem;">Шашыраңқы суреттер:</div>
+                    <div class="cards-pool" id="cards-pool" onclick="poolClicked()" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
+                        <!-- Shuffled images loaded dynamically -->
+                    </div>
+                </div>
+
+                <div class="controls-bar" style="justify-content: center; margin-top: 0.5rem;">
+                    <button class="btn btn-success" onclick="checkExecuteTask()">✔️ Тексеру</button>
+                    <button class="btn btn-secondary" onclick="resetExecuteTask()">🔄 Қайта бастау</button>
+                </div>
+
+                <div id="execute-feedback" class="feedback-box"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- BADGE MODAL -->
+    <div id="badge-modal" class="badge-modal">
+        <div class="badge-card">
+            <div style="font-size: 4rem; margin-bottom: 0.5rem;">🏆</div>
+            <h2 style="color: #eab308; margin-bottom: 0.5rem;">ҚҰТТЫҚТАЙМЫЗ!</h2>
+            <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                Барлық миссияларды сәтті аяқтап, <b>«Жас робот инженері»</b> атағын жеңіп алдың!
+            </p>
+            <button class="btn btn-success" onclick="closeBadgeModal()">Керемет!</button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT SIMULATION & LOGIC -->
+    <script>
+        // --- CONSTANTS & DATA ---
+        const COLOR_MAP = {
+            0: { name: 'Жол жоқ', hex: '#0f172a', reflected: 0 },
+            1: { name: 'Қара', hex: '#000000', reflected: 5 },
+            2: { name: 'Көк', hex: '#2563eb', reflected: 15 },
+            3: { name: 'Жасыл', hex: '#16a34a', reflected: 25 },
+            4: { name: 'Сары', hex: '#eab308', reflected: 65 },
+            5: { name: 'Қызыл', hex: '#dc2626', reflected: 40 },
+            6: { name: 'Ақ', hex: '#ffffff', reflected: 85 },
+            7: { name: 'Қоңыр', hex: '#78350f', reflected: 20 }
+        };
+
+        // --- GAME STATE ---
+        const STATE = {
+            currentTab: 'video',
+            labMode: 'color',
+            sampleColor: null,
+            ambientLight: 45,
+            program: [], // Array of block objects
+            isRunning: false,
+            isPaused: false,
+            activeBlockIndex: -1,
+            robot: {
+                x: 40,
+                y: 140,
+                speed: 0,
+                power: 40,
+                targetColor: 5,
+                waitingForColor: false
+            },
+            currentMission: 1,
+            completedMissions: new Set(),
+            helpStep: 0,
+            trackStripeColors: [2, 4, 5, 3], // Default mission 1 stripes
+            assemblyStep: 1
+        };
+
+        let canvas, ctx;
+        let animFrameId = null;
+
+        // --- TAB SWITCHING ---
+        function switchTab(tabId) {
+            STATE.currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.add('active');
+
+            // Find button by onclick attribute text
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(btn => {
+                if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabId)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (tabId === 'program') {
+                setTimeout(() => {
+                    resizeCanvas();
+                    drawSimulation();
+                }, 50);
+            }
+        }
+
+        // --- CANVAS RESIZING ---
+        function resizeCanvas() {
+            canvas = document.getElementById('simCanvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+            const wrap = canvas.parentElement;
+            if (wrap) {
+                canvas.width = wrap.clientWidth;
+                canvas.height = wrap.clientHeight;
+            }
+            drawSimulation();
+        }
+
+        // LOCAL STORAGE LOAD
+        window.onload = function() {
+            canvas = document.getElementById('simCanvas');
+            if (canvas) ctx = canvas.getContext('2d');
+
+            try {
+                const saved = localStorage.getItem('robot_lab_progress');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    parsed.forEach(m => STATE.completedMissions.add(m));
+                    updateBadgeStatus();
+                }
+            } catch(e) { console.warn('Storage disabled'); }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            resetSimulation();
+            renderProgram();
+            loadMission(1);
+            initExecuteTask();
+        };
+
+        // --- TAB 5: EXECUTE TASK (DRAG & DROP) ---
+        const EXECUTE_DATA = [
+            { id: 1, url: 'https://i.ibb.co.com/zVXfmtMv/1.jpg', label: '1-сурет' },
+            { id: 2, url: 'https://i.ibb.co.com/tTvC6tpZ/2.png', label: '2-сурет' },
+            { id: 3, url: 'https://i.ibb.co.com/bj2cDL6Z/3.jpg', label: '3-сурет' },
+            { id: 4, url: 'https://i.ibb.co.com/2zFh89x/4.jpg', label: '4-сурет' }
+        ];
+
+        let executeSlotState = { 1: null, 2: null, 3: null, 4: null };
+        let selectedCardId = null;
+
+        function initExecuteTask() {
+            executeSlotState = { 1: null, 2: null, 3: null, 4: null };
+            selectedCardId = null;
+            
+            // Clear feedback
+            const fb = document.getElementById('execute-feedback');
+            if (fb) fb.style.display = 'none';
+
+            // Reset slots visuals
+            document.querySelectorAll('.drop-slot').forEach(s => {
+                s.className = 'drop-slot';
+                s.querySelector('.slot-content').innerHTML = '';
+            });
+
+            // Shuffle cards
+            const pool = document.getElementById('cards-pool');
+            if (!pool) return;
+            pool.innerHTML = '';
+
+            const shuffled = [...EXECUTE_DATA].sort(() => Math.random() - 0.5);
+            shuffled.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'draggable-img-card';
+                card.draggable = true;
+                card.dataset.id = item.id;
+                card.innerHTML = `<img src="${item.url}" alt="${item.label}" onerror="this.onerror=null; this.src='https://placehold.co/160x80/1e293b/ffffff?text=${item.label}'">`;
+
+                // Drag events
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    card.classList.add('selected-card');
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('selected-card');
+                });
+
+                // Click selection (for touch/easy mobile use)
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectCard(item.id);
+                });
+
+                pool.appendChild(card);
+            });
+        }
+
+        function selectCard(cardId) {
+            document.querySelectorAll('.draggable-img-card').forEach(c => c.classList.remove('selected-card'));
+            if (selectedCardId === cardId) {
+                selectedCardId = null;
+            } else {
+                selectedCardId = cardId;
+                const cardEl = document.querySelector(`.draggable-img-card[data-id="${cardId}"]`);
+                if (cardEl) cardEl.classList.add('selected-card');
+            }
+        }
+
+        function slotClicked(slotNum) {
+            if (selectedCardId !== null) {
+                moveCardToSlot(selectedCardId, slotNum);
+                selectedCardId = null;
+                document.querySelectorAll('.draggable-img-card').forEach(c => c.classList.remove('selected-card'));
+            } else if (executeSlotState[slotNum] !== null) {
+                // Return to pool if clicked on filled slot
+                moveCardToPool(executeSlotState[slotNum]);
+            }
+        }
+
+        function poolClicked() {
+            if (selectedCardId !== null && isCardInSlot(selectedCardId)) {
+                moveCardToPool(selectedCardId);
+                selectedCardId = null;
+                document.querySelectorAll('.draggable-img-card').forEach(c => c.classList.remove('selected-card'));
+            }
+        }
+
+        function isCardInSlot(cardId) {
+            return Object.values(executeSlotState).includes(cardId);
+        }
+
+        function moveCardToSlot(cardId, slotNum) {
+            // Remove card from previous slot if any
+            for (let s in executeSlotState) {
+                if (executeSlotState[s] === cardId) {
+                    executeSlotState[s] = null;
+                    const prevSlot = document.querySelector(`.drop-slot[data-slot="${s}"] .slot-content`);
+                    if (prevSlot) prevSlot.innerHTML = '';
+                }
+            }
+
+            // If slot already has a card, return it to pool
+            if (executeSlotState[slotNum] !== null) {
+                moveCardToPool(executeSlotState[slotNum]);
+            }
+
+            executeSlotState[slotNum] = cardId;
+            const cardData = EXECUTE_DATA.find(d => d.id === cardId);
+            const slotEl = document.querySelector(`.drop-slot[data-slot="${slotNum}"]`);
+            slotEl.className = 'drop-slot'; // reset status
+            
+            const content = slotEl.querySelector('.slot-content');
+            content.innerHTML = `<div class="draggable-img-card" style="width: 100%; height: 80px;" data-id="${cardId}">
+                <img src="${cardData.url}" alt="${cardData.label}" onerror="this.onerror=null; this.src='https://placehold.co/160x80/1e293b/ffffff?text=${cardData.label}'">
+            </div>`;
+
+            // Remove card element from pool view
+            const poolCard = document.querySelector(`#cards-pool .draggable-img-card[data-id="${cardId}"]`);
+            if (poolCard) poolCard.remove();
+        }
+
+        function moveCardToPool(cardId) {
+            // Remove from slot state
+            for (let s in executeSlotState) {
+                if (executeSlotState[s] === cardId) {
+                    executeSlotState[s] = null;
+                    const slotContent = document.querySelector(`.drop-slot[data-slot="${s}"] .slot-content`);
+                    if (slotContent) slotContent.innerHTML = '';
+                    const slotEl = document.querySelector(`.drop-slot[data-slot="${s}"]`);
+                    if (slotEl) slotEl.className = 'drop-slot';
+                }
+            }
+
+            // Append back to pool if not already there
+            const pool = document.getElementById('cards-pool');
+            if (pool && !pool.querySelector(`[data-id="${cardId}"]`)) {
+                const item = EXECUTE_DATA.find(d => d.id === cardId);
+                const card = document.createElement('div');
+                card.className = 'draggable-img-card';
+                card.draggable = true;
+                card.dataset.id = item.id;
+                card.innerHTML = `<img src="${item.url}" alt="${item.label}" onerror="this.onerror=null; this.src='https://placehold.co/160x80/1e293b/ffffff?text=${item.label}'">`;
+
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    card.classList.add('selected-card');
+                });
+                card.addEventListener('dragend', () => card.classList.remove('selected-card'));
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectCard(item.id);
+                });
+
+                pool.appendChild(card);
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            if (e.currentTarget.classList.contains('drop-slot')) {
+                e.currentTarget.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.currentTarget.classList.contains('drop-slot')) {
+                e.currentTarget.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e, slotNum) {
+            e.preventDefault();
+            const slotEl = document.querySelector(`.drop-slot[data-slot="${slotNum}"]`);
+            if (slotEl) slotEl.classList.remove('drag-over');
+
+            const cardId = parseInt(e.dataTransfer.getData('text/plain'));
+            if (!isNaN(cardId)) {
+                moveCardToSlot(cardId, slotNum);
+            }
+        }
+
+        function handleDropToPool(e) {
+            e.preventDefault();
+            const cardId = parseInt(e.dataTransfer.getData('text/plain'));
+            if (!isNaN(cardId)) {
+                moveCardToPool(cardId);
+            }
+        }
+
+        function checkExecuteTask() {
+            let correctCount = 0;
+            const fb = document.getElementById('execute-feedback');
+
+            for (let i = 1; i <= 4; i++) {
+                const slotEl = document.querySelector(`.drop-slot[data-slot="${i}"]`);
+                if (executeSlotState[i] === i) {
+                    slotEl.className = 'drop-slot correct';
+                    correctCount++;
+                } else {
+                    slotEl.className = 'drop-slot incorrect';
+                }
+            }
+
+            if (correctCount === 4) {
+                fb.className = 'feedback-box success';
+                fb.innerText = 'Керемет! Барлық 4 блок дұрыс ретпен қойылды! Программа дайын!';
+            } else {
+                fb.className = 'feedback-box error';
+                fb.innerText = `Қате бар! Сәйкестік: ${correctCount}/4. Қызыл түспен белгіленген блоктарды қайта тексеріңіз.`;
+            }
+        }
+
+        function resetExecuteTask() {
+            initExecuteTask();
+        }
+
+        // --- TAB 1: MATCHING GAME ---
+        let matchSelection = { left: null, right: null };
+
+        function showSensorInfo(type) {
+            document.querySelectorAll('.sensor-card').forEach(c => c.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+
+        function selectMatch(side, id) {
+            matchSelection[side] = id;
+            
+            document.querySelectorAll(`#match-${side} .match-item`).forEach(i => {
+                if (!i.classList.contains('matched')) i.classList.remove('selected');
+            });
+            
+            const el = document.querySelector(`#match-${side} [data-id="${id}"]`);
+            if (el && !el.classList.contains('matched')) el.classList.add('selected');
+
+            if (matchSelection.left && matchSelection.right) {
+                const fb = document.getElementById('match-feedback');
+                if (matchSelection.left === matchSelection.right) {
+                    document.querySelectorAll(`[data-id="${matchSelection.left}"]`).forEach(i => {
+                        i.classList.remove('selected');
+                        i.classList.add('matched');
+                    });
+                    fb.className = 'feedback-box success';
+                    fb.innerText = 'Өте жақсы! Дұрыс сәйкестендірдің!';
+                } else {
+                    fb.className = 'feedback-box error';
+                    fb.innerText = 'Қате! Датчиктің қызметін қайта ойланып көр.';
+                    setTimeout(() => {
+                        document.querySelectorAll('.match-item.selected').forEach(i => i.classList.remove('selected'));
+                    }, 1000);
+                }
+                matchSelection = { left: null, right: null };
+            }
+        }
+
+        // --- TAB 2: LAB STAND ---
+        function setLabMode(mode) {
+            STATE.labMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const title = document.getElementById('lab-mode-title');
+            const desc = document.getElementById('lab-mode-desc');
+            const ambCtrl = document.getElementById('ambient-controls');
+
+            ambCtrl.style.display = (mode === 'ambient') ? 'block' : 'none';
+
+            if (mode === 'color') {
+                title.innerText = '1. Түсті анықтау режимі (Color Mode)';
+                desc.innerText = 'Датчик беттің нақты түсін танып, оған сәйкес 1-ден 7-ге дейінгі кодты қайтарады.';
+            } else if (mode === 'reflected') {
+                title.innerText = '2. Шағылысқан жарық жарықтылығы (Reflected Light)';
+                desc.innerText = 'Датчик өзінің қызыл жарығын бағыттап, беттен кері шағылысқан жарық пайызын (0–100%) өлшейді.';
+            } else {
+                title.innerText = '3. Сыртқы жарық жарықтылығы (Ambient Light)';
+                desc.innerText = 'Датчик өзінің жарығын өшіріп, бөлмедегі сыртқы жарық деңгейін (0–100%) өлшейді.';
+            }
+
+            updateLabReadings();
+        }
+
+        function testColor(id, name, hex) {
+            STATE.sampleColor = { id, name, hex };
+            const target = document.getElementById('sample-target');
+            target.style.background = hex;
+            target.style.color = (id === 6 || id === 4) ? '#000' : '#fff';
+            target.innerText = `${name} (${id})`;
+            updateLabReadings();
+        }
+
+        function clearSample() {
+            STATE.sampleColor = null;
+            const target = document.getElementById('sample-target');
+            target.style.background = 'transparent';
+            target.style.color = '#fff';
+            target.innerText = 'Үлгі жоқ (0)';
+            updateLabReadings();
+        }
+
+        function updateAmbient(val) {
+            STATE.ambientLight = parseInt(val);
+            document.getElementById('ambient-val').innerText = val + '%';
+            if (STATE.labMode === 'ambient') updateLabReadings();
+        }
+
+        function updateLabReadings() {
+            const numEl = document.getElementById('lab-reading-num');
+            const textEl = document.getElementById('lab-reading-text');
+            const led = document.getElementById('sensor-led');
+            const beam = document.getElementById('light-beam');
+
+            if (STATE.labMode === 'color') {
+                led.setAttribute('fill', '#ef4444');
+                beam.setAttribute('fill', 'rgba(239, 68, 68, 0.2)');
+                if (STATE.sampleColor) {
+                    numEl.innerText = STATE.sampleColor.id;
+                    textEl.innerText = STATE.sampleColor.name;
+                } else {
+                    numEl.innerText = '0';
+                    textEl.innerText = 'Түс анықталмады';
+                }
+            } else if (STATE.labMode === 'reflected') {
+                led.setAttribute('fill', '#ef4444');
+                beam.setAttribute('fill', 'rgba(239, 68, 68, 0.3)');
+                if (STATE.sampleColor) {
+                    const refl = COLOR_MAP[STATE.sampleColor.id].reflected;
+                    numEl.innerText = refl + '%';
+                    textEl.innerText = `Шағылысу: ${refl}%`;
+                } else {
+                    numEl.innerText = '0%';
+                    textEl.innerText = 'Шағылысу жоқ';
+                }
+            } else if (STATE.labMode === 'ambient') {
+                led.setAttribute('fill', '#475569');
+                beam.setAttribute('fill', 'transparent');
+                numEl.innerText = STATE.ambientLight + '%';
+                textEl.innerText = 'Сыртқы жарық деңгейі';
+            }
+        }
+
+        // --- TAB 3: PROGRAMMING & SIMULATOR ---
+        function addBlock(type) {
+            if (STATE.isRunning) return;
+            let blockObj = { id: Date.now(), type };
+            if (type === 'move') {
+                const powerSel = document.getElementById('palette-power-select');
+                blockObj.power = powerSel ? parseInt(powerSel.value) : 40;
+            }
+            if (type === 'wait') {
+                const colorSel = document.getElementById('palette-color-select');
+                blockObj.color = colorSel ? parseInt(colorSel.value) : 5;
+            }
+
+            STATE.program.push(blockObj);
+            renderProgram();
+        }
+
+        function removeBlock(index) {
+            if (STATE.isRunning) return;
+            STATE.program.splice(index, 1);
+            renderProgram();
+        }
+
+        function updateBlockParam(selectEl, paramType) {
+            const blockEl = selectEl.closest('.placed-block');
+            if (!blockEl) return;
+            const idx = parseInt(blockEl.dataset.index);
+            if (STATE.program[idx]) {
+                STATE.program[idx][paramType] = parseInt(selectEl.value);
+            }
+        }
+
+        function clearProgram() {
+            if (STATE.isRunning) return;
+            STATE.program = [];
+            renderProgram();
+            hideFeedback();
+        }
+
+        function renderProgram() {
+            const zone = document.getElementById('program-zone');
+            zone.innerHTML = '';
+            
+            if (STATE.program.length === 0) {
+                zone.classList.add('empty');
+                return;
+            }
+            zone.classList.remove('empty');
+
+            STATE.program.forEach((b, idx) => {
+                const el = document.createElement('div');
+                el.className = `block block-${b.type} placed-block`;
+                if (idx === STATE.activeBlockIndex) el.classList.add('active-executing');
+                el.dataset.index = idx;
+
+                let content = '';
+                if (b.type === 'start') {
+                    content = '🚩 Бастау';
+                } else if (b.type === 'move') {
+                    content = `⚙️ Алға <select class="block-param" onclick="event.stopPropagation()" onchange="updateBlockParam(this, 'power')">
+                        <option value="20" ${b.power === 20 ? 'selected' : ''}>20%</option>
+                        <option value="40" ${b.power === 40 ? 'selected' : ''}>40%</option>
+                        <option value="70" ${b.power === 70 ? 'selected' : ''}>70%</option>
+                        <option value="100" ${b.power === 100 ? 'selected' : ''}>100%</option>
+                    </select>`;
+                } else if (b.type === 'wait') {
+                    content = `⏳ Түсті күту: <select class="block-param" onclick="event.stopPropagation()" onchange="updateBlockParam(this, 'color')">
+                        <option value="1" ${b.color === 1 ? 'selected' : ''}>⚫ Қара (1)</option>
+                        <option value="2" ${b.color === 2 ? 'selected' : ''}>🔵 Көк (2)</option>
+                        <option value="3" ${b.color === 3 ? 'selected' : ''}>🟢 Жасыл (3)</option>
+                        <option value="4" ${b.color === 4 ? 'selected' : ''}>🟡 Сары (4)</option>
+                        <option value="5" ${b.color === 5 ? 'selected' : ''}>🔴 Қызыл (5)</option>
+                        <option value="6" ${b.color === 6 ? 'selected' : ''}>⚪ Ақ (6)</option>
+                        <option value="7" ${b.color === 7 ? 'selected' : ''}>🟤 Қоңыр (7)</option>
+                    </select>`;
+                } else if (b.type === 'stop') {
+                    content = '🛑 Тоқтату';
+                }
+
+                el.innerHTML = `${content} <button class="remove-btn" onclick="removeBlock(${idx})">✕</button>`;
+                zone.appendChild(el);
+            });
+        }
+
+        // --- SIMULATION ENGINE ---
+        function getSensorColorUnderRobot() {
+            // Front sensor position (x + width)
+            const sensorX = STATE.robot.x + 50; 
+            const trackStartX = 120;
+            const stripeWidth = 80;
+            
+            // Base background is white road (6)
+            if (sensorX < trackStartX) return 6;
+
+            const stripeIndex = Math.floor((sensorX - trackStartX) / stripeWidth);
+            if (stripeIndex >= 0 && stripeIndex < STATE.trackStripeColors.length) {
+                return STATE.trackStripeColors[stripeIndex];
+            }
+
+            // Off track
+            if (sensorX > trackStartX + STATE.trackStripeColors.length * stripeWidth + 50) {
+                return 0; // Off road / No target
+            }
+
+            return 6; // White road default
+        }
+
+        function drawSimulation() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw Track / Road
+            const roadY = 90;
+            const roadH = 100;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, roadY, canvas.width, roadH);
+
+            // Draw Stripes
+            const trackStartX = 120;
+            const stripeWidth = 80;
+
+            STATE.trackStripeColors.forEach((colorId, idx) => {
+                const sx = trackStartX + idx * stripeWidth;
+                ctx.fillStyle = COLOR_MAP[colorId].hex;
+                ctx.fillRect(sx, roadY, stripeWidth, roadH);
+                
+                // Color label
+                ctx.fillStyle = (colorId === 6 || colorId === 4) ? '#000' : '#fff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(COLOR_MAP[colorId].name, sx + 10, roadY + roadH / 2);
+            });
+
+            // Finish Line / Boundary
+            const endX = trackStartX + STATE.trackStripeColors.length * stripeWidth;
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(endX + 40, roadY, 10, roadH);
+
+            // 2. Draw Robot (Top-down view)
+            const rx = STATE.robot.x;
+            const ry = STATE.robot.y;
+            const rw = 60;
+            const rh = 40;
+
+            // Wheels
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(rx + 10, ry - 6, 18, 6);
+            ctx.fillRect(rx + 10, ry + rh, 18, 6);
+
+            // Body
+            ctx.fillStyle = '#cbd5e1';
+            ctx.beginPath();
+            ctx.roundRect(rx, ry, rw, rh, 8);
+            ctx.fill();
+            ctx.strokeStyle = '#475569';
+            ctx.stroke();
+
+            // EV3 Brick Screen
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(rx + 8, ry + 10, 22, 20);
+
+            // Color Sensor attachment at front
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(rx + rw, ry + 12, 10, 16);
+
+            // Sensor Light Dot (Point of reading)
+            const currentColor = getSensorColorUnderRobot();
+            ctx.fillStyle = COLOR_MAP[currentColor]?.hex || '#ef4444';
+            ctx.beginPath();
+            ctx.arc(rx + rw + 5, ry + 20, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Telemetry UI
+            document.getElementById('tele-motor').innerText = STATE.robot.speed > 0 ? `ҚОСУЛЫ (${STATE.robot.power}%)` : 'ӨШІРУЛІ';
+            document.getElementById('tele-motor').style.color = STATE.robot.speed > 0 ? '#22c55e' : '#ef4444';
+            document.getElementById('tele-color').innerText = `${COLOR_MAP[currentColor].name} (${currentColor})`;
+        }
+
+        function runProgram() {
+            if (STATE.program.length === 0) {
+                showFeedback('error', 'Бағдарлама бос! Әуелі блоктарды қосыңыз.');
+                return;
+            }
+
+            if (STATE.program[0].type !== 'start') {
+                showFeedback('error', 'Бағдарлама «Бастау» блогынан басталуы керек!');
+                return;
+            }
+
+            if (STATE.isPaused) {
+                STATE.isPaused = false;
+                STATE.isRunning = true;
+                animate();
+                return;
+            }
+
+            resetSimulation();
+            STATE.isRunning = true;
+            STATE.activeBlockIndex = 0;
+            executeStep();
+            animate();
+        }
+
+        function pauseProgram() {
+            STATE.isRunning = false;
+            STATE.isPaused = true;
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+        }
+
+        function resetSimulation() {
+            STATE.isRunning = false;
+            STATE.isPaused = false;
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            
+            STATE.robot.x = 20;
+            STATE.robot.speed = 0;
+            STATE.robot.waitingForColor = false;
+            STATE.activeBlockIndex = -1;
+            
+            renderProgram();
+            drawSimulation();
+            hideFeedback();
+        }
+
+        function executeStep() {
+            if (!STATE.isRunning) return;
+
+            if (STATE.activeBlockIndex >= STATE.program.length) {
+                // Program finished without explicit stop or completed
+                checkMissionCompletion();
+                return;
+            }
+
+            const currentBlock = STATE.program[STATE.activeBlockIndex];
+            renderProgram();
+
+            if (currentBlock.type === 'start') {
+                STATE.activeBlockIndex++;
+                executeStep();
+            } else if (currentBlock.type === 'move') {
+                STATE.robot.power = currentBlock.power;
+                STATE.robot.speed = (currentBlock.power / 100) * 3 + 0.5; // Smooth scale
+                STATE.activeBlockIndex++;
+                executeStep();
+            } else if (currentBlock.type === 'wait') {
+                STATE.robot.waitingForColor = true;
+                STATE.robot.targetColor = currentBlock.color;
+                // Motor keeps running while waiting!
+            } else if (currentBlock.type === 'stop') {
+                STATE.robot.speed = 0;
+                STATE.robot.waitingForColor = false;
+                STATE.isRunning = false;
+                checkMissionCompletion();
+            }
+        }
+
+        function animate() {
+            if (!STATE.isRunning) return;
+
+            // Move Robot if motor speed > 0
+            if (STATE.robot.speed > 0) {
+                STATE.robot.x += STATE.robot.speed;
+
+                // Check Sensor Reading during motion
+                const currentColor = getSensorColorUnderRobot();
+
+                // Boundary check: Out of bounds
+                if (currentColor === 0 && STATE.robot.x > 500) {
+                    STATE.robot.speed = 0;
+                    STATE.isRunning = false;
+                    showFeedback('error', 'Робот жолдан шығып кетті! Мақсатты түс анықталмады немесе тоқтату блогы қойылмаған.');
+                    return;
+                }
+
+                // Wait for color logic
+                if (STATE.robot.waitingForColor) {
+                    if (currentColor === STATE.robot.targetColor) {
+                        // Color detected! Advance to next block
+                        STATE.robot.waitingForColor = false;
+                        STATE.activeBlockIndex++;
+                        executeStep();
+                    }
+                }
+            }
+
+            drawSimulation();
+            animFrameId = requestAnimationFrame(animate);
+        }
+
+        // --- MISSIONS & VALIDATION ---
+        function loadMission(mId) {
+            STATE.currentMission = mId;
+            STATE.helpStep = 0;
+            document.getElementById('help-display').style.display = 'none';
+
+            document.querySelectorAll('.mission-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mbtn-${mId}`).classList.add('active');
+
+            const mTitle = document.getElementById('mission-title');
+            const mDesc = document.getElementById('mission-desc');
+            const customBuilder = document.getElementById('custom-track-builder');
+
+            customBuilder.style.display = (mId === 4) ? 'block' : 'none';
+
+            if (mId === 1) {
+                mTitle.innerText = '1-Миссия: Қызыл түсте тоқта';
+                mDesc.innerText = 'Оқулықтағы бағдарлама: Робот 40% қуатпен жүріп, ҚЫЗЫЛ (5) түсті күтіп, моторын тоқтатуы керек.';
+                STATE.trackStripeColors = [2, 4, 5, 3];
+            } else if (mId === 2) {
+                mTitle.innerText = '2-Миссия: Жасыл белгіні тап';
+                mDesc.innerText = 'Тапсырма: Бағдарламаны робот басқа түстерден өтіп, ЖАСЫЛ (3) түсте тоқтайтындай етіп өзгерт.';
+                STATE.trackStripeColors = [2, 5, 4, 3];
+            } else if (mId === 3) {
+                mTitle.innerText = '3-Миссия: Қатені түзет';
+                mDesc.innerText = 'Қателігі бар бағдарлама берілген (қызылдың орнына көк күтіп тұр немесе тоқтату блогы жоқ). Қатені тауып түзет!';
+                STATE.trackStripeColors = [4, 5, 2, 3];
+                // Pre-load flawed program
+                STATE.program = [
+                    { id: 1, type: 'start' },
+                    { id: 2, type: 'move', power: 40 },
+                    { id: 3, type: 'wait', color: 2 } // Wrong color (Blue)
+                ];
+                renderProgram();
+            } else if (mId === 4) {
+                mTitle.innerText = '4-Миссия: Өз жолыңды құрастыр';
+                mDesc.innerText = 'Жолақтар түсін қалауыңша баптап, өзіңнің жеке жүру алгоритміңді сынап көр!';
+                renderCustomTrackControls();
+            }
+
+            resetSimulation();
+        }
+
+        function renderCustomTrackControls() {
+            const container = document.getElementById('custom-stripes-selector');
+            container.innerHTML = '';
+            STATE.trackStripeColors.forEach((cId, idx) => {
+                const sel = document.createElement('select');
+                sel.className = 'block-param';
+                sel.style.padding = '0.4rem';
+                for (let key in COLOR_MAP) {
+                    if (key == 0) continue;
+                    sel.innerHTML += `<option value="${key}" ${key == cId ? 'selected' : ''}>${COLOR_MAP[key].name}</option>`;
+                }
+                sel.onchange = (e) => {
+                    STATE.trackStripeColors[idx] = parseInt(e.target.value);
+                    resetSimulation();
+                };
+                container.appendChild(sel);
+            });
+        }
+
+        function switchToWorkspaceForMission() {
+            switchTab('program');
+        }
+
+        function checkMissionCompletion() {
+            const lastColor = getSensorColorUnderRobot();
+            const hasStop = STATE.program.some(b => b.type === 'stop');
+            
+            if (STATE.currentMission === 1) {
+                if (lastColor === 5 && hasStop) {
+                    passMission(1, 'Өте жақсы! Робот қызыл түсті тапты және дәл тоқтады!');
+                } else if (!hasStop) {
+                    showFeedback('error', 'Робот түсті анықтады, бірақ моторларды тоқтату блогы (🛑) жоқ!');
+                } else if (lastColor !== 5) {
+                    showFeedback('error', `Робот қызыл түсте тоқтамады. Сенің бағдарламаңда түс: ${COLOR_MAP[STATE.robot.targetColor]?.name}`);
+                }
+            } else if (STATE.currentMission === 2) {
+                if (lastColor === 3 && hasStop) {
+                    passMission(2, 'Тамаша! Робот басқа түстерден өтіп, жасыл түсте тоқтады!');
+                } else {
+                    showFeedback('error', 'Робот жасыл түсте тоқтамады. Күту блогында ЖАСЫЛ (3) түсі таңдалғанын тексер.');
+                }
+            } else if (STATE.currentMission === 3) {
+                if (lastColor === 5 && hasStop) {
+                    passMission(3, 'Жарайсың! Қатені таптың: тоқтату блогын қосып, түсті қызылға өзгерттің!');
+                } else {
+                    showFeedback('error', 'Қате әлі де бар. Күту блогы ҚЫЗЫЛ (5) болып, соңында ТОҚТАТУ блогы тұруы керек.');
+                }
+            } else if (STATE.currentMission === 4) {
+                if (hasStop && STATE.robot.speed === 0) {
+                    passMission(4, 'Керемет! Өз бағдарламаң сәтті орындалды!');
+                }
+            }
+        }
+
+        function passMission(mId, message) {
+            showFeedback('success', message);
+            STATE.completedMissions.add(mId);
+            
+            const btn = document.getElementById(`mbtn-${mId}`);
+            if (btn) btn.classList.add('completed');
+
+            updateBadgeStatus();
+
+            try {
+                localStorage.setItem('robot_lab_progress', JSON.stringify(Array.from(STATE.completedMissions)));
+            } catch(e) {}
+
+            if (STATE.completedMissions.size >= 4) {
+                setTimeout(showBadgeModal, 1000);
+            }
+        }
+
+        function updateBadgeStatus() {
+            const count = STATE.completedMissions.size;
+            const titleEl = document.getElementById('badge-title');
+            if (count >= 4) {
+                titleEl.innerText = 'Жас робот инженері 🏆';
+            } else if (count >= 2) {
+                titleEl.innerText = 'Тәжірибелі техник 🛠️';
+            } else {
+                titleEl.innerText = 'Инженер көмекшісі 👶';
+            }
+        }
+
+        function showBadgeModal() {
+            document.getElementById('badge-modal').style.display = 'grid';
+        }
+
+        function closeBadgeModal() {
+            document.getElementById('badge-modal').style.display = 'none';
+        }
+
+        // --- FEEDBACK & HELP ---
+        function showFeedback(type, text) {
+            const fb = document.getElementById('sim-feedback');
+            fb.className = `feedback-box ${type}`;
+            fb.innerText = text;
+        }
+
+        function hideFeedback() {
+            const fb = document.getElementById('sim-feedback');
+            fb.style.display = 'none';
+        }
+
+        function getHelp() {
+            STATE.helpStep++;
+            const display = document.getElementById('help-display');
+            display.style.display = 'block';
+
+            if (STATE.helpStep === 1) {
+                display.innerText = '💡 1-Көмек: Бағдарлама блоғының ретіне және күту блогындағы түске назар аудар.';
+            } else if (STATE.helpStep === 2) {
+                display.innerText = '💡 2-Көмек: «Бастау» -> «Алға жүру (40%)» -> «Түсті күту (Қызыл)» -> «Моторды тоқтату» блоктарын тізбектей қой.';
+            } else {
+                display.innerText = '💡 3-Көмек: Дайын мысал: Жоғарыдағы ТАЗАЛАУ батырмасын басып, блоктарды басып ретімен қос.';
+            }
+        }
+    </script>
+</body>
+</html>
