@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>§9. Пернетақтамен танысу — Интерактивті симулятор</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --secondary: #10B981;
+            --bg-color: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-color: #1E293B;
+            --scratch-events: #FFBF00;
+            --scratch-control: #FFAB19;
+            --scratch-sensing: #4CBFD6;
+            --scratch-motion: #4C97FF;
+            --scratch-looks: #9966FF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ДЕНЕ ЖӘНЕ ХЕДЕР */
+        header {
+            background: linear-gradient(135deg, #4F46E5, #3B82F6);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .score-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-reset {
+            background: #EF4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-reset:active {
+            transform: scale(0.95);
+        }
+
+        /* НАВИГАЦИЯ (ТАБТАР) */
+        nav {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            background: white;
+            border: 2px solid #E2E8F0;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #64748B;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        /* ТАПСЫРМАЛАР АЙМАҒЫ */
+        main {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #E2E8F0;
+            position: relative;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 1-ТАПСЫРМА: ИНТЕРАКТИВТІ ПЕРНЕТАҚТА */
+        .keyboard-grid {
+            display: flex;
+            gap: 12px;
+            background: #1E293B;
+            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            overflow-x: auto;
+        }
+
+        .keyboard-main-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .keyboard-numpad-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #0F172A;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+        }
+
+        .key-row {
+            display: flex;
+            gap: 5px;
+            justify-content: flex-start;
+        }
+
+        .key {
+            background: #334155;
+            color: white;
+            border-radius: 6px;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 3px 0 #0F172A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 36px;
+        }
+
+        .key:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #0F172A;
+        }
+
+        .key-group-func { background: #E11D48; } /* Функционалдық */
+        .key-group-ctrl { background: #0284C7; } /* Басқару */
+        .key-group-input { background: #475569; } /* Енгізу */
+        .key-group-arrow { background: #D97706; } /* Бағыттаушы */
+        .key-group-num { background: #059669; } /* Сандық */
+        .key-group-extra { background: #7C3AED; } /* Қосымша */
+
+        .keyboard-legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .legend-card {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 2px solid #E2E8F0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .legend-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        /* 2-ТАПСЫРМА ЖӘНЕ САХНАЛАР */
+        .stage-wrapper {
+            width: 100%;
+            height: 320px;
+            background: linear-gradient(to bottom, #87CEEB 60%, #5D9CEC 60%, #4A89DC 100%);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid #334155;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .school-building {
+            position: absolute;
+            width: 120px;
+            height: 100px;
+            background: #E11D48;
+            border: 3px solid #9F1239;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .school-roof {
+            position: absolute;
+            top: -30px;
+            left: -10px;
+            width: 140px;
+            height: 30px;
+            background: #9F1239;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+
+        .school-door {
+            position: absolute;
+            bottom: 0;
+            left: 45px;
+            width: 30px;
+            height: 45px;
+            background: #78350F;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .obstacle {
+            position: absolute;
+            background: #78350F;
+            border-radius: 8px;
+        }
+
+        .obstacle.tree {
+            width: 35px;
+            height: 50px;
+            background: #15803D;
+            border-radius: 50%;
+            box-shadow: inset 0 -10px 0 #166534;
+        }
+
+        .obstacle.bench {
+            height: 20px;
+            background: #B45309;
+            border-radius: 4px;
+        }
+
+        .sprite-character {
+            position: absolute;
+            width: 40px;
+            height: 50px;
+            transition: left 0.1s linear, top 0.1s linear, transform 0.1s linear;
+            z-index: 10;
+        }
+
+        .sprite-body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sprite-head {
+            width: 24px;
+            height: 24px;
+            background: #FDE047;
+            border-radius: 50%;
+            border: 2px solid #CA8A04;
+            position: relative;
+        }
+
+        .sprite-eye {
+            position: absolute;
+            top: 6px;
+            right: 4px;
+            width: 4px;
+            height: 4px;
+            background: #000;
+            border-radius: 50%;
+        }
+
+        .sprite-torso {
+            width: 20px;
+            height: 18px;
+            background: #2563EB;
+            border-radius: 4px;
+            margin-top: -2px;
+        }
+
+        .sprite-legs {
+            width: 16px;
+            height: 10px;
+            border-left: 4px solid #1E40AF;
+            border-right: 4px solid #1E40AF;
+        }
+
+        /* 3-ТАПСЫРМА: SCRATCH СИМУЛЯТОРЫ */
+        .scratch-ui {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 15px;
+            min-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .scratch-ui {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .block-palette {
+            background: #F1F5F9;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid #E2E8F0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .category-header {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        .scratch-block {
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .block-hat {
+            background: var(--scratch-events);
+            border-radius: 16px 16px 6px 6px;
+        }
+
+        .block-control {
+            background: var(--scratch-control);
+        }
+
+        .block-sensing {
+            background: var(--scratch-sensing);
+        }
+
+        .block-motion {
+            background: var(--scratch-motion);
+        }
+
+        .block-looks {
+            background: var(--scratch-looks);
+        }
+
+        .script-workspace {
+            background: #FAF8F5;
+            border: 2px dashed #CBD5E1;
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .btn-run {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            width: 100%;
+        }
+
+        .btn-run:active {
+            transform: scale(0.98);
+        }
+
+        /* ВИРТУАЛДЫ ДЖОЙСТИК ТАҚТАҒА АРНАЛҒАН */
+        .touch-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin-top: 15px;
+        }
+
+        .touch-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .touch-btn {
+            background: #4F46E5;
+            color: white;
+            border: none;
+            width: 55px;
+            height: 55px;
+            border-radius: 12px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #3730A3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .touch-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #3730A3;
+        }
+
+        /* ТАПСЫРМА 4 & 5 ЭЛЕМЕНТТЕРІ */
+        .quiz-option {
+            background: #F1F5F9;
+            border: 2px solid #CBD5E1;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .quiz-option:hover {
+            background: #E2E8F0;
+        }
+
+        .match-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .match-item {
+            background: white;
+            border: 2px solid #CBD5E1;
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .match-item.selected {
+            border-color: var(--primary);
+            background: #EEF2FF;
+        }
+
+        .match-item.matched {
+            background: #D1FAE5;
+            border-color: #10B981;
+            color: #065F46;
+            cursor: default;
+        }
+
+        /* ТОАСТ ЖӘНЕ СТЕППЕР */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            background: #1E293B;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 100;
+        }
+
+        .level-stepper {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .step-pill {
+            width: 35px;
+            height: 10px;
+            background: #E2E8F0;
+            border-radius: 5px;
+        }
+
+        .step-pill.active { background: var(--primary); }
+        .step-pill.completed { background: var(--secondary); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">§9. Пернетақтамен танысу</div>
+        <div class="header-controls">
+            <div class="score-badge">⭐ Ұпай: <span id="score-counter">0</span></div>
+            <button class="btn-reset" onclick="resetGameProgress()">Қайта бастау 🔄</button>
+        </div>
+    </header>
+
+    <nav>
+        <button class="tab-btn active" onclick="switchTab('tab1', this)">1. Пернетақтаны зертте</button>
+        <button class="tab-btn" onclick="switchTab('tab2', this)">2. Спрайтты басқар</button>
+        <button class="tab-btn" onclick="switchTab('tab3', this)">3. Scratch Симуляторы (§9)</button>
+        <button class="tab-btn" onclick="switchTab('tab4', this)">4. Бағдарламашы (4 деңгей)</button>
+        <button class="tab-btn" onclick="switchTab('tab5', this)">5. Қай перне?</button>
+        <button class="tab-btn" onclick="switchTab('tab6', this)">6. Сәйкестендіру</button>
+        <button class="tab-btn" onclick="switchTab('tab7', this)">7. Финалдық миссия 🏆</button>
+    </nav>
+
+    <main>
+        <!-- 1-ТАПСЫРМА: ПЕРНЕТАҚТАНЫ ЗЕРТТЕ -->
+        <section id="tab1" class="tab-content active">
+            <h2 class="section-title">⌨️ 1. Пернетақтаны зертте (46-бет)</h2>
+            <p style="margin-bottom: 10px;">Пернетақта пернелері атқаратын қызметіне қарай 6 негізгі топқа бөлінеді:</p>
+
+            <div class="keyboard-grid">
+                <!-- Негізгі пернетақта блогы -->
+                <div class="keyboard-main-section">
+                    <!-- 1-жол (F1-F12) -->
+                    <div class="key-row">
+                        <div class="key key-group-ctrl" style="min-width: 38px;">Esc</div>
+                        <div style="width: 15px;"></div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F1</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F2</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F3</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F4</div>
+                        <div style="width: 10px;"></div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F5</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F6</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F7</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F8</div>
+                        <div style="width: 10px;"></div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F9</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F10</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F11</div>
+                        <div class="key key-group-func" onclick="showGroupInfo('func')">F12</div>
+                    </div>
+                    <!-- 2-жол (Цифрлар) -->
+                    <div class="key-row">
+                        <div class="key key-group-input">~</div>
+                        <div class="key key-group-input">1</div><div class="key key-group-input">2</div>
+                        <div class="key key-group-input">3</div><div class="key key-group-input">4</div>
+                        <div class="key key-group-input">5</div><div class="key key-group-input">6</div>
+                        <div class="key key-group-input">7</div><div class="key key-group-input">8</div>
+                        <div class="key key-group-input">9</div><div class="key key-group-input">0</div>
+                        <div class="key key-group-input">-</div><div class="key key-group-input">=</div>
+                        <div class="key key-group-ctrl" style="min-width: 55px;">← Back</div>
+                    </div>
+                    <!-- 3-жол (QWERTY) -->
+                    <div class="key-row">
+                        <div class="key key-group-ctrl" style="min-width: 45px;">Tab</div>
+                        <div class="key key-group-input">Q</div><div class="key key-group-input">W</div>
+                        <div class="key key-group-input">E</div><div class="key key-group-input">R</div>
+                        <div class="key key-group-input">T</div><div class="key key-group-input">Y</div>
+                        <div class="key key-group-input">U</div><div class="key key-group-input">I</div>
+                        <div class="key key-group-input">O</div><div class="key key-group-input">P</div>
+                        <div class="key key-group-input">[</div><div class="key key-group-input">]</div>
+                        <div class="key key-group-input" style="min-width: 40px;">\</div>
+                    </div>
+                    <!-- 4-жол (ASDF) -->
+                    <div class="key-row">
+                        <div class="key key-group-ctrl" style="min-width: 55px;">Caps</div>
+                        <div class="key key-group-input">A</div><div class="key key-group-input">S</div>
+                        <div class="key key-group-input">D</div><div class="key key-group-input">F</div>
+                        <div class="key key-group-input">G</div><div class="key key-group-input">H</div>
+                        <div class="key key-group-input">J</div><div class="key key-group-input">K</div>
+                        <div class="key key-group-input">L</div><div class="key key-group-input">;</div>
+                        <div class="key key-group-input">'</div>
+                        <div class="key key-group-ctrl" style="min-width: 65px;">Enter</div>
+                    </div>
+                    <!-- 5-жол (Shift & ZXCV) -->
+                    <div class="key-row">
+                        <div class="key key-group-ctrl" style="min-width: 70px;">Shift</div>
+                        <div class="key key-group-input">Z</div><div class="key key-group-input">X</div>
+                        <div class="key key-group-input">C</div><div class="key key-group-input">V</div>
+                        <div class="key key-group-input">B</div><div class="key key-group-input">N</div>
+                        <div class="key key-group-input">M</div><div class="key key-group-input">,</div>
+                        <div class="key key-group-input">.</div><div class="key key-group-input">/</div>
+                        <div class="key key-group-ctrl" style="min-width: 75px;">Shift</div>
+                    </div>
+                    <!-- 6-жол (Ctrl/Alt/Space & Бағыттаушы пернелер) -->
+                    <div class="key-row">
+                        <div class="key key-group-ctrl">Ctrl</div>
+                        <div class="key key-group-ctrl">Win</div>
+                        <div class="key key-group-ctrl">Alt</div>
+                        <div class="key key-group-input" style="min-width: 140px;">Space (Бос орын)</div>
+                        <div class="key key-group-ctrl">Alt</div>
+                        <div class="key key-group-ctrl">Win</div>
+                        <div style="width: 10px;"></div>
+                        <div class="key key-group-arrow" id="key-left" onclick="checkArrowClick('left')" style="background: #EA580C;">←</div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <div class="key key-group-arrow" id="key-up" onclick="checkArrowClick('up')" style="background: #EA580C; height: 17px; font-size: 0.7rem;">↑</div>
+                            <div class="key key-group-arrow" id="key-down" onclick="checkArrowClick('down')" style="background: #EA580C; height: 17px; font-size: 0.7rem;">↓</div>
+                        </div>
+                        <div class="key key-group-arrow" id="key-right" onclick="checkArrowClick('right')" style="background: #EA580C;">→</div>
+                    </div>
+                </div>
+
+                <!-- Нақты Оң жақ сандық блок (Numeric Keypad) -->
+                <div class="keyboard-numpad-section">
+                    <div style="color: #94A3B8; font-size: 0.65rem; text-align: center; font-weight: bold; margin-bottom: 2px;">САНДЫҚ БЛОК</div>
+                    <div class="key-row">
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">Num</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">/</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">*</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">-</div>
+                    </div>
+                    <div class="key-row">
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">7</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">8</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">9</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')" style="height: 76px; grid-row: span 2;">+</div>
+                    </div>
+                    <div class="key-row" style="margin-top: -38px;">
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">4</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">5</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">6</div>
+                    </div>
+                    <div class="key-row">
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">1</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">2</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">3</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')" style="height: 76px;">↵</div>
+                    </div>
+                    <div class="key-row" style="margin-top: -38px;">
+                        <div class="key key-group-num" onclick="showGroupInfo('num')" style="min-width: 70px;">0</div>
+                        <div class="key key-group-num" onclick="showGroupInfo('num')">.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- БІЛГЕНГЕ МАРЖАН (47-БЕТ) -->
+            <div style="background: #FEF3C7; border: 2px solid #F59E0B; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px;">
+                💡 <strong>Білгенге маржан (47-бет):</strong> Біз қолданып жүрген пернетақтаның орналасуы — <strong>QWERTY</strong> деп аталады. Бұл макетті Кристофер Шоулз ойлап тапқан. Оң жақтағы сандық блок математикалық сандарды енгізуді тездетеді.
+            </div>
+
+            <div class="keyboard-legend">
+                <div class="legend-card" style="border-color: #E11D48;" onclick="showGroupInfo('func')">
+                    <h3 style="color: #E11D48;">🔴 Функционалдық пернелер</h3>
+                    <p style="font-size: 0.9rem; color: #475569;">F1–F12 арнайы тапсырмаларды жылдам орындайды.</p>
+                </div>
+                <div class="legend-card" style="border-color: #0284C7;" onclick="showGroupInfo('ctrl')">
+                    <h3 style="color: #0284C7;">🔵 Басқару пернелері</h3>
+                    <p style="font-size: 0.9rem; color: #475569;">Ctrl, Alt, Shift, Esc, Enter — командаларды басқарады.</p>
+                </div>
+                <div class="legend-card" style="border-color: #475569;" onclick="showGroupInfo('input')">
+                    <h3 style="color: #475569;">⚪ Енгізу пернелері</h3>
+                    <p style="font-size: 0.9rem; color: #475569;">Әріптер, цифрлар, тыныс белгілері мен бос орын пернесі.</p>
+                </div>
+                <div class="legend-card" style="border-color: #D97706;" onclick="showGroupInfo('arrow')">
+                    <h3 style="color: #D97706;">🟠 Бағыттаушы пернелер</h3>
+                    <p style="font-size: 0.9rem; color: #475569;">↑ ↓ ← → Спрайтты немесе меңзерді бағыттайды.</p>
+                </div>
+                <div class="legend-card" style="border-color: #059669;" onclick="showGroupInfo('num')">
+                    <h3 style="color: #059669;">🟢 Сандық пернелер</h3>
+                    <p style="font-size: 0.9rem; color: #475569;">Пернетақтаның оң жағындағы сандар блогы.</p>
+                </div>
+                <div class="legend-card" style="border-color: #7C3AED;" onclick="showGroupInfo('extra')">
+                    <h3 style="color: #7C3AED;">🟣 Қосымша пернелер</h3>
+                    <p style="font-size: 0.9rem; color: #475569;">PrtSc, Delete, PageUp, PageDown пернелері.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2-ТАПСЫРМА: СПРАЙТТЫ БАСҚАР -->
+        <section id="tab2" class="tab-content">
+            <h2 class="section-title">🏃 2. Спрайтты пернетақтамен басқар</h2>
+            <p style="margin-bottom: 10px;">Бағыттаушы пернелерді (↑ ↓ ← →) немесе экрандағы батырмаларды пайдаланып, кейіпкерді мектепке жеткізіңіз!</p>
+
+            <div class="stage-wrapper" id="stage-tab2">
+                <div class="school-building" style="top: 20px; right: 20px;">
+                    <div class="school-roof"></div>
+                    <div class="school-door"></div>
+                </div>
+                <div class="obstacle tree" style="top: 140px; left: 200px;"></div>
+                <div class="obstacle bench" style="top: 220px; left: 100px; width: 120px;"></div>
+                
+                <div class="sprite-character" id="sprite-tab2" style="top: 220px; left: 30px;">
+                    <div class="sprite-body">
+                        <div class="sprite-head"><div class="sprite-eye"></div></div>
+                        <div class="sprite-torso"></div>
+                        <div class="sprite-legs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="touch-controls">
+                <button class="touch-btn" onclick="handleTouchMove('ArrowUp')">↑</button>
+                <div class="touch-row">
+                    <button class="touch-btn" onclick="handleTouchMove('ArrowLeft')">←</button>
+                    <button class="touch-btn" onclick="handleTouchMove('ArrowDown')">↓</button>
+                    <button class="touch-btn" onclick="handleTouchMove('ArrowRight')">→</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3-ТАПСЫРМА: SCRATCH СИМУЛЯТОРЫ -->
+        <section id="tab3" class="tab-content">
+            <h2 class="section-title">🧩 3. Scratch 3.0 Бағдарламалау симуляторы (§9)</h2>
+            
+            <div style="background: #EFF6FF; border: 2px dashed #3B82F6; padding: 10px 16px; border-radius: 10px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div>📌 <strong>! Назар аудар (47-бет):</strong> Спрайт төңкеріліп қалмау үшін Info (Айналу стилі) мәзірінен ↔ таңдаймыз.</div>
+                <button id="info-style-btn" style="background: #3B82F6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="toggleRotationStyle()">
+                    Айналу стилі: ↔ (Солға-Оңға)
+                </button>
+            </div>
+
+            <div class="scratch-ui">
+                <div class="block-palette">
+                    <div class="category-header" style="color: var(--scratch-events);">🟡 Оқиғалар (Events)</div>
+                    <div class="scratch-block block-hat" onclick="addBlockToWorkspace('hat')">🚩 басылған кезде</div>
+
+                    <div class="category-header" style="color: var(--scratch-looks);">🟣 Келбет (Looks)</div>
+                    <div class="scratch-block block-looks" onclick="addBlockToWorkspace('say_hello')">💬 "Сәлем!" деу</div>
+                    <div class="scratch-block block-looks" onclick="addBlockToWorkspace('say_school')">💬 "Бұл - менің мектебім" деу</div>
+
+                    <div class="category-header" style="color: var(--scratch-control);">🟠 Басқару (Control)</div>
+                    <div class="scratch-block block-control" onclick="addBlockToWorkspace('forever')">әрқашан</div>
+                    <div class="scratch-block block-control" onclick="addBlockToWorkspace('if')">егер ... онда</div>
+
+                    <div class="category-header" style="color: var(--scratch-sensing);">🩵 Сенсорлар (Sensing)</div>
+                    <div class="scratch-block block-sensing" onclick="addBlockToWorkspace('key_up_pressed')">🔹 [нұсқары жоғары] басылған ба?</div>
+                    <div class="scratch-block block-sensing" onclick="addBlockToWorkspace('key_down_pressed')">🔹 [нұсқары төмен] басылған ба?</div>
+                    <div class="scratch-block block-sensing" onclick="addBlockToWorkspace('key_right_pressed')">🔹 [оң жақ нұсқары] басылған ба?</div>
+                    <div class="scratch-block block-sensing" onclick="addBlockToWorkspace('key_left_pressed')">🔹 [сол жақ нұсқары] басылған ба?</div>
+
+                    <div class="category-header" style="color: var(--scratch-motion);">🔵 Қозғалыс (Motion)</div>
+                    <div class="scratch-block block-motion" onclick="addBlockToWorkspace('point_up')">🧭 (0) бағытында бұру</div>
+                    <div class="scratch-block block-motion" onclick="addBlockToWorkspace('point_down')">🧭 (180) бағытында бұру</div>
+                    <div class="scratch-block block-motion" onclick="addBlockToWorkspace('point_right')">🧭 (90) бағытында бұру</div>
+                    <div class="scratch-block block-motion" onclick="addBlockToWorkspace('point_left')">🧭 (-90) бағытында бұру</div>
+                    <div class="scratch-block block-motion" onclick="addBlockToWorkspace('move_steps')">👟 10 қадам жылжу</div>
+                    <div class="scratch-block block-motion" onclick="addBlockToWorkspace('bounce_edge')">↩️ шетте болса, итерілу</div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="font-size: 1rem; color: #475569;">📝 Скрипт аймағы (Scratch Коды)</h3>
+                        <button style="background: #F87171; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="clearWorkspace()">Тазалау 🗑️</button>
+                    </div>
+
+                    <div class="script-workspace" id="workspace"></div>
+
+                    <button class="btn-run" onclick="runScratchProgram()">▶ Іске қосу (Бағдарламаны тексеру)</button>
+
+                    <div class="stage-wrapper" id="stage-tab3" style="height: 180px; margin-top: 10px;">
+                        <div id="speech-bubble" style="position: absolute; top: 10px; left: 70px; background: white; border: 2px solid #000; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; display: none; z-index: 20;">
+                            Бұл - менің мектебім
+                        </div>
+                        <div class="sprite-character" id="sprite-tab3" style="top: 60px; left: 50px;">
+                            <div class="sprite-body">
+                                <div class="sprite-head"><div class="sprite-eye"></div></div>
+                                <div class="sprite-torso" style="background: #059669;"></div>
+                                <div class="sprite-legs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4-ТАПСЫРМА: БАҒДАРЛАМАШЫ -->
+        <section id="tab4" class="tab-content">
+            <h2 class="section-title">💻 4. «Бағдарламашы» ойыны</h2>
+            <div class="level-stepper">
+                <div class="step-pill active" id="prog-pill-1"></div>
+                <div class="step-pill" id="prog-pill-2"></div>
+                <div class="step-pill" id="prog-pill-3"></div>
+                <div class="step-pill" id="prog-pill-4"></div>
+            </div>
+
+            <div style="background: #EEF2FF; border: 2px solid #C7D2FE; padding: 14px; border-radius: 10px; margin-bottom: 15px;">
+                <h3 id="prog-level-title" style="color: var(--primary); font-size: 1.1rem; margin-bottom: 4px;">1-деңгей: Оңға қозғалуды бағдарламалаңыз</h3>
+                <p id="prog-level-desc" style="color: #4B5563; font-size: 0.9rem;">
+                    Scratch аймағында [оң жақ нұсқары] кодын жинап, тексеріңіз.
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <button class="btn-run" onclick="checkProgrammerLevel()">▶ Деңгей кодын тексеру</button>
+                <div id="prog-level-status" style="font-weight: bold; color: #4B5563;">Прогресс: 1/4</div>
+            </div>
+
+            <div class="stage-wrapper" id="stage-tab4" style="height: 220px;">
+                <div class="school-building" style="top: 20px; right: 20px;">
+                    <div class="school-roof"></div>
+                    <div class="school-door"></div>
+                </div>
+                <div class="sprite-character" id="sprite-tab4" style="top: 80px; left: 30px;">
+                    <div class="sprite-body">
+                        <div class="sprite-head"><div class="sprite-eye"></div></div>
+                        <div class="sprite-torso" style="background: #D97706;"></div>
+                        <div class="sprite-legs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="touch-controls">
+                <button class="touch-btn" onclick="handleProgTouchMove('ArrowUp')">↑</button>
+                <div class="touch-row">
+                    <button class="touch-btn" onclick="handleProgTouchMove('ArrowLeft')">←</button>
+                    <button class="touch-btn" onclick="handleProgTouchMove('ArrowDown')">↓</button>
+                    <button class="touch-btn" onclick="handleProgTouchMove('ArrowRight')">→</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5-ТАПСЫРМА: ҚАЙ ПЕРНЕ? -->
+        <section id="tab5" class="tab-content">
+            <h2 class="section-title">❓ 5. Қай перне? (Жылдам клик)</h2>
+            <div style="text-align: center; max-width: 500px; margin: 0 auto;">
+                <div id="quiz-question-box" style="font-size: 1.3rem; font-weight: bold; background: #EEF2FF; padding: 20px; border-radius: 12px; border: 2px solid #C7D2FE; margin-bottom: 20px;">
+                    «Спрайт ЖОҒАРЫ қозғалуы керек»
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" id="quiz-options-container"></div>
+            </div>
+        </section>
+
+        <!-- 6-ТАПСЫРМА: СӘЙКЕСТЕНДІРУ -->
+        <section id="tab6" class="tab-content">
+            <h2 class="section-title">🔄 6. Перне мен бағытты сәйкестендір</h2>
+            <div class="match-container">
+                <div style="display: flex; flex-direction: column; gap: 10px;" id="match-keys">
+                    <div class="match-item" data-val="up" onclick="selectMatchLeft(this)">↑</div>
+                    <div class="match-item" data-val="down" onclick="selectMatchLeft(this)">↓</div>
+                    <div class="match-item" data-val="left" onclick="selectMatchLeft(this)">←</div>
+                    <div class="match-item" data-val="right" onclick="selectMatchLeft(this)">→</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;" id="match-words">
+                    <div class="match-item" data-val="left" onclick="selectMatchRight(this)">Солға</div>
+                    <div class="match-item" data-val="up" onclick="selectMatchRight(this)">Жоғары</div>
+                    <div class="match-item" data-val="right" onclick="selectMatchRight(this)">Оңға</div>
+                    <div class="match-item" data-val="down" onclick="selectMatchRight(this)">Төмен</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7-ТАПСЫРМА: ФИНАЛДЫҚ МИССИЯ -->
+        <section id="tab7" class="tab-content">
+            <h2 class="section-title">🏆 7. Финалдық миссия: Мектепке саяхат</h2>
+            <div style="display: flex; gap: 15px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;">
+                <button class="btn-run" style="width: auto;" onclick="setupFinalMission()">1. Бағдарламаны дайындау 🛠️</button>
+                <div id="final-status" style="font-weight: bold; color: #D97706; font-size: 1.05rem;">Күйі: Дайындалмаған</div>
+            </div>
+
+            <div class="stage-wrapper" id="stage-tab6" style="height: 350px;">
+                <div class="school-building" style="top: 20px; right: 20px;">
+                    <div class="school-roof"></div>
+                    <div class="school-door"></div>
+                </div>
+                <div class="obstacle bench" style="top: 100px; left: 100px; width: 140px;"></div>
+                <div class="obstacle bench" style="top: 200px; left: 240px; width: 150px;"></div>
+                <div class="obstacle tree" style="top: 240px; left: 100px;"></div>
+
+                <div class="sprite-character" id="sprite-tab6" style="top: 270px; left: 30px;">
+                    <div class="sprite-body">
+                        <div class="sprite-head"><div class="sprite-eye"></div></div>
+                        <div class="sprite-torso" style="background: #9333EA;"></div>
+                        <div class="sprite-legs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="touch-controls">
+                <button class="touch-btn" onclick="handleTouchMove('ArrowUp')">↑</button>
+                <div class="touch-row">
+                    <button class="touch-btn" onclick="handleTouchMove('ArrowLeft')">←</button>
+                    <button class="touch-btn" onclick="handleTouchMove('ArrowDown')">↓</button>
+                    <button class="touch-btn" onclick="handleTouchMove('ArrowRight')">→</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        /* --- ЖАЛПЫ АЙНЫМАЛЫЛАР ЖӘНЕ ОҚИҒАЛАР --- */
+        let totalScore = 0;
+        let isRotationStyleLeftRight = true;
+
+        function addScore(pts) {
+            totalScore += pts;
+            document.getElementById('score-counter').innerText = totalScore;
+        }
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.background = type === 'success' ? '#10B981' : (type === 'error' ? '#EF4444' : '#1E293B');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+            const selectedTab = document.getElementById(tabId);
+            if (selectedTab) selectedTab.classList.add('active');
+
+            if (btnElement) {
+                btnElement.classList.add('active');
+            } else if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            }
+        }
+
+        function resetGameProgress() {
+            totalScore = 0;
+            document.getElementById('score-counter').innerText = '0';
+            sprite2Pos = { x: 30, y: 220 };
+            sprite4Pos = { x: 30, y: 80 };
+            sprite6Pos = { x: 30, y: 270 };
+            updateSpritePosition(sprite2, sprite2Pos);
+            updateSpritePosition(sprite4, sprite4Pos);
+            updateSpritePosition(sprite6, sprite6Pos);
+            clearWorkspace();
+            showToast('Барлық прогресс қайта басталынды!', 'info');
+        }
+
+        /* --- 1-ТАПСЫРМА: ПЕРНЕТАҚТА ЛОГИКАСЫ --- */
+        let arrowsClicked = { up: false, down: false, left: false, right: false };
+
+        function checkArrowClick(dir) {
+            arrowsClicked[dir] = true;
+            document.getElementById(`key-${dir}`).style.background = '#10B981';
+            
+            if (arrowsClicked.up && arrowsClicked.down && arrowsClicked.left && arrowsClicked.right) {
+                showToast('Дұрыс! Бұл — бағыттаушы пернелер. +20 ұпай!', 'success');
+                addScore(20);
+            } else {
+                showToast('Дұрыс! Келесі бағыттаушы пернені тап.', 'info');
+            }
+        }
+
+        function showGroupInfo(group) {
+            const msgs = {
+                func: '🔴 Функционалдық пернелер (F1-F12) — арнайы әрекеттерді орындайды.',
+                ctrl: '🔵 Басқару пернелері (Ctrl, Alt, Shift, Enter) — бағдарламаны басқарады.',
+                input: '⚪ Енгізу пернелері — мәтін және сандарды енгізуге арналған.',
+                arrow: '🟠 Бағыттаушы пернелер (↑ ↓ ← →) — спрайтты қозғалтуға арналған.',
+                num: '🟢 Сандық пернелер — есептеулер жүргізуге ыңғайлы.',
+                extra: '🟣 Қосымша пернелер — экраны көшіру, өшіру қызметтерін атқарады.'
+            };
+            showToast(msgs[group] || 'Пернелер тобы', 'info');
+        }
+
+        /* --- 2-ТАПСЫРМА: САХНА ЖӘНЕ ҚОЗҒАЛЫС --- */
+        const sprite2 = document.getElementById('sprite-tab2');
+        const stage2 = document.getElementById('stage-tab2');
+        let sprite2Pos = { x: 30, y: 220 };
+        let stage2Completed = false;
+
+        function updateSpritePosition(elem, pos, angle = 90) {
+            if (!elem) return;
+            elem.style.left = pos.x + 'px';
+            elem.style.top = pos.y + 'px';
+            let scaleX = (angle === -90) ? -1 : 1;
+            elem.style.transform = isRotationStyleLeftRight ? `scaleX(${scaleX})` : `rotate(${angle}deg)`;
+        }
+
+        function moveSpriteGeneric(key, elem, pos, stageElem, checkGoalFn) {
+            let step = 15;
+            let newX = pos.x;
+            let newY = pos.y;
+            let angle = 90;
+
+            if (key === 'ArrowUp') { newY -= step; angle = 0; }
+            else if (key === 'ArrowDown') { newY += step; angle = 180; }
+            else if (key === 'ArrowRight') { newX += step; angle = 90; }
+            else if (key === 'ArrowLeft') { newX -= step; angle = -90; }
+            else return;
+
+            const maxX = stageElem.clientWidth - 45;
+            const maxY = stageElem.clientHeight - 55;
+
+            if (newX >= 0 && newX <= maxX && newY >= 0 && newY <= maxY) {
+                if (!checkObstacleCollision(newX, newY, stageElem)) {
+                    pos.x = newX;
+                    pos.y = newY;
+                    updateSpritePosition(elem, pos, angle);
+                    checkGoalFn();
+                }
+            }
+        }
+
+        function checkObstacleCollision(x, y, stageElem) {
+            const obstacles = stageElem.querySelectorAll('.obstacle');
+            for (let obs of obstacles) {
+                const ox = obs.offsetLeft;
+                const oy = obs.offsetTop;
+                const ow = obs.clientWidth;
+                const oh = obs.clientHeight;
+                if (x < ox + ow && x + 35 > ox && y < oy + oh && y + 45 > oy) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkStage2Goal() {
+            if (sprite2Pos.x > 500 && sprite2Pos.y < 100 && !stage2Completed) {
+                stage2Completed = true;
+                showToast('🎉 Жарайсың! Сен спрайтты пернетақтамен мектепке жеткіздің! +30 ұпай', 'success');
+                addScore(30);
+            }
+        }
+
+        function handleTouchMove(arrowKey) {
+            const activeTab = document.querySelector('.tab-content.active').id;
+            if (activeTab === 'tab2') moveSpriteGeneric(arrowKey, sprite2, sprite2Pos, stage2, checkStage2Goal);
+            else if (activeTab === 'tab7') handleFinalTouchMove(arrowKey);
+        }
+
+        /* --- 3-ТАПСЫРМА: SCRATCH СИМУЛЯТОРЫ --- */
+        let workspaceBlocks = [];
+        let compiledScratchControls = {};
+
+        function addBlockToWorkspace(type) {
+            workspaceBlocks.push(type);
+            renderWorkspace();
+        }
+
+        function clearWorkspace() {
+            workspaceBlocks = [];
+            compiledScratchControls = {};
+            renderWorkspace();
+        }
+
+        function toggleRotationStyle() {
+            isRotationStyleLeftRight = !isRotationStyleLeftRight;
+            const btn = document.getElementById('info-style-btn');
+            btn.innerText = isRotationStyleLeftRight ? 'Айналу стилі: ↔ (Солға-Оңға)' : 'Айналу стилі: 🔄 (360° Айналу)';
+            showToast('Айналу стилі жаңартылды!', 'info');
+        }
+
+        function renderWorkspace() {
+            const ws = document.getElementById('workspace');
+            ws.innerHTML = '';
+            
+            const blockLabels = {
+                hat: '🚩 жасыл жалауша басылған кезде',
+                say_hello: '💬 "Сәлем!" деу',
+                say_school: '💬 "Бұл - менің мектебім" деу',
+                forever: '🍊 әрқашан',
+                if: '🔸 егер ... онда',
+                key_up_pressed: '🔹 [нұсқары жоғары] басылған ба?',
+                key_down_pressed: '🔹 [нұсқары төмен] басылған ба?',
+                key_right_pressed: '🔹 [оң жақ нұсқары] басылған ба?',
+                key_left_pressed: '🔹 [сол жақ нұсқары] басылған ба?',
+                point_up: '🧭 (0) бағытында бұру',
+                point_down: '🧭 (180) бағытында бұру',
+                point_right: '🧭 (90) бағытында бұру',
+                point_left: '🧭 (-90) бағытында бұру',
+                move_steps: '👟 10 қадам жылжу',
+                bounce_edge: '↩️ шетте болса, итерілу'
+            };
+
+            const blockClasses = {
+                hat: 'block-hat',
+                say_hello: 'block-looks', say_school: 'block-looks',
+                forever: 'block-control', if: 'block-control',
+                key_up_pressed: 'block-sensing', key_down_pressed: 'block-sensing',
+                key_right_pressed: 'block-sensing', key_left_pressed: 'block-sensing',
+                point_up: 'block-motion', point_down: 'block-motion',
+                point_right: 'block-motion', point_left: 'block-motion',
+                move_steps: 'block-motion', bounce_edge: 'block-motion'
+            };
+
+            workspaceBlocks.forEach((b, idx) => {
+                const div = document.createElement('div');
+                div.className = `scratch-block ${blockClasses[b] || ''}`;
+                div.innerText = blockLabels[b] || b;
+                div.onclick = () => { workspaceBlocks.splice(idx, 1); renderWorkspace(); };
+                ws.appendChild(div);
+            });
+        }
+
+        function compileWorkspaceLogic() {
+            compiledScratchControls = {};
+            let lastKey = null;
+            let lastAngle = 90;
+
+            for (let b of workspaceBlocks) {
+                if (b === 'key_up_pressed') lastKey = 'ArrowUp';
+                else if (b === 'key_down_pressed') lastKey = 'ArrowDown';
+                else if (b === 'key_right_pressed') lastKey = 'ArrowRight';
+                else if (b === 'key_left_pressed') lastKey = 'ArrowLeft';
+
+                if (b === 'point_up') lastAngle = 0;
+                else if (b === 'point_down') lastAngle = 180;
+                else if (b === 'point_right') lastAngle = 90;
+                else if (b === 'point_left') lastAngle = -90;
+
+                if (lastKey && b === 'move_steps') {
+                    compiledScratchControls[lastKey] = { angle: lastAngle, move: 15 };
+                }
+            }
+        }
+
+        function runScratchProgram() {
+            compileWorkspaceLogic();
+            const bubble = document.getElementById('speech-bubble');
+
+            if (workspaceBlocks.includes('say_school')) {
+                bubble.innerText = 'Бұл - менің мектебім!';
+                bubble.style.display = 'block';
+                setTimeout(() => { bubble.style.display = 'none'; }, 2000);
+            }
+
+            if (Object.keys(compiledScratchControls).length > 0) {
+                showToast('▶ Бағдарлама іске қосылды! Пернетақта арқылы тексеріңіз.', 'success');
+                addScore(20);
+            } else {
+                showToast('Алдымен Сенсор және Қозғалыс блоктарын тізбектеп жинаңыз!', 'error');
+            }
+        }
+
+        /* --- 4. БАҒДАРЛАМАШЫ ОЙЫНЫ --- */
+        let progLevel = 1;
+        let sprite4Pos = { x: 30, y: 80 };
+        const sprite4 = document.getElementById('sprite-tab4');
+        const stage4 = document.getElementById('stage-tab4');
+
+        const progLevelConfig = {
+            1: { title: '1-деңгей: Оңға қозғалуды бағдарламалаңыз', reqKeys: ['ArrowRight'] },
+            2: { title: '2-деңгей: Оңға және Солға қозғалуды бағдарламалаңыз', reqKeys: ['ArrowRight', 'ArrowLeft'] },
+            3: { title: '3-деңгей: Жоғары және Төмен қозғалысты қосыңыз', reqKeys: ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'] },
+            4: { title: '4-деңгей: Мектепке жетіңіз', reqKeys: ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'] }
+        };
+
+        function checkProgrammerLevel() {
+            compileWorkspaceLogic();
+            const reqs = progLevelConfig[progLevel].reqKeys;
+            let ok = reqs.every(k => compiledScratchControls[k]);
+
+            if (ok) {
+                showToast(`Жарайсың! ${progLevel}-деңгей орындалды! +25 ұпай`, 'success');
+                addScore(25);
+                if (progLevel < 4) { progLevel++; updateProgUI(); }
+            } else {
+                showToast('3-бөлімге өтіп, қажетті бағыт блоктарын жинаңыз!', 'error');
+            }
+        }
+
+        function updateProgUI() {
+            document.getElementById('prog-level-title').innerText = progLevelConfig[progLevel].title;
+            document.getElementById('prog-level-status').innerText = `Прогресс: ${progLevel}/4`;
+            for (let i = 1; i <= 4; i++) {
+                const pill = document.getElementById(`prog-pill-${i}`);
+                if (pill) {
+                    pill.className = 'step-pill';
+                    if (i < progLevel) pill.classList.add('completed');
+                    if (i === progLevel) pill.classList.add('active');
+                }
+            }
+        }
+
+        function handleProgTouchMove(key) {
+            compileWorkspaceLogic();
+            if (compiledScratchControls[key]) {
+                const cfg = compiledScratchControls[key];
+                let newX = sprite4Pos.x + (cfg.angle === 90 ? 15 : (cfg.angle === -90 ? -15 : 0));
+                let newY = sprite4Pos.y + (cfg.angle === 180 ? 15 : (cfg.angle === 0 ? -15 : 0));
+                sprite4Pos.x = Math.max(0, Math.min(stage4.clientWidth - 45, newX));
+                sprite4Pos.y = Math.max(0, Math.min(stage4.clientHeight - 55, newY));
+                updateSpritePosition(sprite4, sprite4Pos, cfg.angle);
+            } else {
+                showToast(`«${key}» пернесі Scratch-та жиналмаған!`, 'error');
+            }
+        }
+
+        /* --- 5. ҚАЙ ПЕРНЕ? --- */
+        const quizQuestions = [
+            { q: '«Спрайт ЖОҒАРЫ қозғалуы керек»', options: ['↑ (Жоғары)', '↓ (Төмен)', '← (Солға)', '→ (Оңға)'], correct: 0 },
+            { q: '«Спрайт СОЛҒА қозғалуы керек»', options: ['→ (Оңға)', '← (Солға)', '↑ (Жоғары)', '↓ (Төмен)'], correct: 1 },
+            { q: '«Спрайт ОҢҒА қозғалуы керек»', options: ['↓ (Төмен)', '↑ (Жоғары)', '→ (Оңға)', '← (Солға)'], correct: 2 },
+            { q: '«Спрайт ТӨМЕН қозғалуы керек»', options: ['↑ (Жоғары)', '↓ (Төмен)', '← (Солға)', '→ (Оңға)'], correct: 1 }
+        ];
+        let currentQuizIdx = 0;
+
+        function renderQuizQuestion() {
+            const q = quizQuestions[currentQuizIdx];
+            document.getElementById('quiz-question-box').innerText = q.q;
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+            q.options.forEach((optText, i) => {
+                const optEl = document.createElement('div');
+                optEl.className = 'quiz-option';
+                optEl.innerText = optText;
+                optEl.onclick = () => {
+                    if (i === q.correct) {
+                        showToast('Дұрыс! Өте жақсы! +15 ұпай', 'success');
+                        addScore(15);
+                        currentQuizIdx = (currentQuizIdx + 1) % quizQuestions.length;
+                        renderQuizQuestion();
+                    } else showToast('Тағы бір рет байқап көр!', 'error');
+                };
+                container.appendChild(optEl);
+            });
+        }
+
+        /* --- 6. СӘЙКЕСТЕНДІРУ --- */
+        let selLeft = null, selRight = null;
+        function selectMatchLeft(el) {
+            if (el.classList.contains('matched')) return;
+            document.querySelectorAll('#match-keys .match-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected'); selLeft = el; checkMatch();
+        }
+        function selectMatchRight(el) {
+            if (el.classList.contains('matched')) return;
+            document.querySelectorAll('#match-words .match-item').forEach(i => i.classList.remove('selected'));
+            el.classList.add('selected'); selRight = el; checkMatch();
+        }
+        function checkMatch() {
+            if (selLeft && selRight) {
+                if (selLeft.dataset.val === selRight.dataset.val) {
+                    showToast('Дұрыс сәйкестік! +10 ұпай', 'success');
+                    selLeft.className = 'match-item matched';
+                    selRight.className = 'match-item matched';
+                    addScore(10);
+                } else showToast('Қате сәйкестік.', 'error');
+                selLeft = selRight = null;
+            }
+        }
+
+        /* --- 7. ФИНАЛДЫҚ МИССИЯ --- */
+        let finalMissionReady = false;
+        let sprite6Pos = { x: 30, y: 270 };
+        const sprite6 = document.getElementById('sprite-tab6');
+        const stage6 = document.getElementById('stage-tab6');
+
+        function setupFinalMission() {
+            compileWorkspaceLogic();
+            if (Object.keys(compiledScratchControls).length === 0) {
+                compiledScratchControls = {
+                    'ArrowUp': { angle: 0, move: 15 },
+                    'ArrowDown': { angle: 180, move: 15 },
+                    'ArrowRight': { angle: 90, move: 15 },
+                    'ArrowLeft': { angle: -90, move: 15 }
+                };
+            }
+            finalMissionReady = true;
+            document.getElementById('final-status').innerText = 'Күйі: Бағдарлама дайын! (↑ ↓ ← → басқарыңыз)';
+            document.getElementById('final-status').style.color = '#10B981';
+            showToast('Дайын! Пернелер арқылы кейіпкерді мектепке жеткізіңіз.', 'success');
+        }
+
+        function handleFinalTouchMove(key) {
+            if (!finalMissionReady) { showToast('Алдымен «1. Бағдарламаны дайындау» батырмасын басыңыз!', 'info'); return; }
+            const cfg = compiledScratchControls[key];
+            if (cfg) {
+                let newX = sprite6Pos.x + (cfg.angle === 90 ? 15 : (cfg.angle === -90 ? -15 : 0));
+                let newY = sprite6Pos.y + (cfg.angle === 180 ? 15 : (cfg.angle === 0 ? -15 : 0));
+                if (!checkObstacleCollision(newX, newY, stage6)) {
+                    sprite6Pos.x = Math.max(0, Math.min(stage6.clientWidth - 45, newX));
+                    sprite6Pos.y = Math.max(0, Math.min(stage6.clientHeight - 55, newY));
+                    updateSpritePosition(sprite6, sprite6Pos, cfg.angle);
+                    if (sprite6Pos.x > 480 && sprite6Pos.y < 80) {
+                        showToast('🏆 ФИНАЛДЫҚ МИССИЯ ОРЫНДАЛДЫ! +100 ұпай', 'success');
+                        addScore(100);
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const activeTab = document.querySelector('.tab-content.active').id;
+            if (activeTab === 'tab2') moveSpriteGeneric(e.key, sprite2, sprite2Pos, stage2, checkStage2Goal);
+            else if (activeTab === 'tab4') handleProgTouchMove(e.key);
+            else if (activeTab === 'tab7') handleFinalTouchMove(e.key);
+        });
+
+        window.onload = function() {
+            renderQuizQuestion();
+            updateProgUI();
+        };
+    </script>
+</body>
+</html>
