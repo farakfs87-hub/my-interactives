@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SketchUp 3D – Толық сенсорлы симулятор</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:13px system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:#334155;border:1px solid #475569;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+button:active{filter:brightness(1.35)}
+button.on{background:#0284c7;border-color:#38bdf8;box-shadow:0 0 10px #0284c788}
+header,footer{background:#1e293b;padding:6px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+header{border-bottom:1px solid #334155}footer{border-top:1px solid #334155}
+.logo{background:#dc2626;color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;white-space:nowrap}
+.hg{display:flex;gap:6px}.hb{height:42px;min-width:42px;padding:0 11px}
+@media(max-width:1180px){.hb span{display:none}}
+#main{flex:1;display:flex;min-height:0}
+#tools{width:76px;background:#1e293bf2;border-right:1px solid #334155;padding:6px;display:grid;grid-template-columns:1fr;gap:5px;align-content:start;overflow-y:auto}
+@media(max-height:860px){#tools{width:134px;grid-template-columns:1fr 1fr}}
+.t{flex-direction:column;gap:2px;height:clamp(48px,6.3vh,64px);font-size:10px}.t i{font-size:18px}
+#vp{flex:1;position:relative;min-width:0;cursor:crosshair}
+#vp canvas{position:absolute;left:0;top:0;outline:none;touch-action:none}
+#hintbox{position:absolute;top:10px;left:10px;right:80px;max-width:560px;background:#0f172ae6;border:1px solid #334155;border-radius:12px;padding:8px 12px;display:flex;gap:8px;align-items:center;pointer-events:none}
+#dot{width:10px;height:10px;border-radius:50%;background:#0ea5e9;flex-shrink:0}
+#ctx{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:none;gap:8px;background:#0f172af2;border:1px solid #334155;padding:8px;border-radius:14px;flex-wrap:wrap;justify-content:center;max-width:94%}
+.chip{height:46px;padding:0 16px}.ok{background:#16a34a;border-color:#4ade80}.no{background:#b91c1c;border-color:#f87171}
+.sw{width:42px;height:42px;border-radius:10px}.sw.on{outline:3px solid #fff}
+#ctx input[type=color]{width:46px;height:46px;border:0;background:none;padding:0}
+#views{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px}
+#views button{height:38px;width:66px;font-size:11px;background:#1e293bf0}
+#side{width:252px;background:#1e293bf2;border-left:1px solid #334155;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+#side.hide{display:none}
+h3{font-size:11px;color:#94a3b8;font-weight:600;margin-top:4px}
+.pr{display:grid;grid-template-columns:1fr 1fr;gap:6px}.pr label{display:flex;flex-direction:column;gap:2px;font-size:10px;color:#94a3b8}
+input[type=number],#vcb{background:#0f172a;border:1px solid #475569;border-radius:8px;color:#7dd3fc;padding:8px;font:inherit;width:100%;user-select:text;-webkit-user-select:text}
+input[type=color]{width:100%;height:36px;border:0;background:none;padding:0}
+.mini{height:44px;font-size:12px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}.mut{color:#64748b}
+footer label{display:flex;align-items:center;gap:8px;color:#cbd5e1}#vcb{width:170px;font-weight:700;text-align:right}.sp{flex:1}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo"><i class="fa-solid fa-cube"></i> SketchUp Pro</span>
+  <div class="hg">
+    <button class="hb" id="bu" onclick="undo()" title="Ctrl+Z"><i class="fa-solid fa-rotate-left"></i><span>Қайтару</span></button>
+    <button class="hb" id="br" onclick="redo()" title="Ctrl+Y"><i class="fa-solid fa-rotate-right"></i><span>Қайта</span></button>
+  </div>
+  <div class="hg">
+    <button class="hb" onclick="saveFile()"><i class="fa-solid fa-floppy-disk"></i><span>Сақтау</span></button>
+    <button class="hb" onclick="$('file').click()"><i class="fa-solid fa-folder-open"></i><span>Ашу</span></button>
+    <button class="hb" onclick="shot()"><i class="fa-solid fa-camera"></i><span>Сурет</span></button>
+    <button class="hb" onclick="clearAll()"><i class="fa-solid fa-file"></i><span>Жаңа</span></button>
+  </div>
+  <div class="hg" style="margin-left:auto">
+    <button class="hb" id="bsn" onclick="snapOn=!snapOn;updUI()"><i class="fa-solid fa-magnet"></i><span>Тор</span></button>
+    <button class="hb" onclick="cycStyle()"><i class="fa-solid fa-eye"></i><span id="sty">Көлемді</span></button>
+    <button class="hb" onclick="$('side').classList.toggle('hide')"><i class="fa-solid fa-sliders"></i><span>Панель</span></button>
+    <button class="hb" onclick="fs()"><i class="fa-solid fa-expand"></i></button>
+  </div>
+  <input type="file" id="file" accept=".json" hidden onchange="openFile(this)">
+</header>
+
+<div id="main">
+  <nav id="tools"></nav>
+  <main id="vp">
+    <div id="hintbox"><i id="dot"></i><span id="hint"></span></div>
+    <div id="views">
+      <button onclick="view('iso')">Изо</button><button onclick="view('top')">Жоғарыдан</button>
+      <button onclick="view('front')">Алдынан</button><button onclick="view('right')">Оңнан</button>
+      <button onclick="view('left')">Солдан</button><button onclick="fit()">Бәрін көру</button>
+    </div>
+    <div id="ctx"></div>
+  </main>
+  <aside id="side">
+    <h3>НЫСАН ҚАСИЕТТЕРІ</h3><div id="props"></div>
+    <h3>КОМПОНЕНТТЕР</h3>
+    <div class="g2">
+      <button class="mini" onclick="preset('house')"><i class="fa-solid fa-house" style="color:#fbbf24"></i>Үй</button>
+      <button class="mini" onclick="preset('tree')"><i class="fa-solid fa-tree" style="color:#34d399"></i>Ағаш</button>
+      <button class="mini" onclick="preset('cylinder')"><i class="fa-solid fa-database" style="color:#38bdf8"></i>Цилиндр</button>
+      <button class="mini" onclick="preset('box')"><i class="fa-solid fa-cube" style="color:#fb923c"></i>Текше</button>
+    </div>
+    <h3>ЖЫЛДАМ КЕҢЕС</h3>
+    <div class="mut" style="line-height:1.5">2 саусақ: масштаб және жылжыту. Тінтуір: ортаңғы түйме — айналдыру, оң — жылжыту, дөңгелек — масштаб. Сан теріп Enter басыңыз — нақты өлшем.</div>
+  </aside>
+</div>
+
+<footer>
+  <span id="st"></span><span class="sp"></span>
+  <label>Өлшем <input id="vcb" placeholder="0.00" inputmode="decimal" autocomplete="off"></label>
+</footer>
+
+<script>
+const $=id=>document.getElementById(id),fx=n=>(+n).toFixed(2),PI=Math.PI,V=(x,y,z)=>new THREE.Vector3(x,y,z),hx=n=>'#'+n.toString(16).padStart(6,'0');
+let scene,camera,renderer,controls,world,cv,objs=[],nextId=1,sel=[],tool='select',color=0x3498db,snapOn=true,style=0,lock='free',multi=false,op=null,lastOp=null,hist=[],hi=-1,lastY=0,down={x:0,y:0};
+const pointers=new Set(),ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),vcb=$('vcb');
+const TOOLS=[['select','fa-solid fa-arrow-pointer','Таңдау'],['move','fa-solid fa-arrows-up-down-left-right','Жылжыту'],['rotate','fa-solid fa-arrows-rotate','Бұру'],['eraser','fa-solid fa-eraser','Өшіргіш'],
+['line','fa-solid fa-pencil','Сызық'],['rectangle','fa-regular fa-square','Төртбұрыш'],['circle','fa-regular fa-circle','Шеңбер'],['pushpull','fa-solid fa-up-down','Push/Pull'],
+['paint','fa-solid fa-fill-drip','Бояу'],['measure','fa-solid fa-ruler-combined','Рулетка'],['orbit','fa-solid fa-globe','Орбита'],['pan','fa-solid fa-hand','Қол'],['zoom','fa-solid fa-magnifying-glass','Масштаб']];
+const NAMES={rect:'Төртбұрышты дене',circle:'Цилиндр',cone:'Конус',poly:'Көпбұрышты дене',line:'Сызық',dim:'Өлшем'};
+const PAL=[0xe74c3c,0x3498db,0x2ecc71,0xf1c40f,0xe67e22,0x9b59b6,0x95a5a6,0xf8fafc,0x78350f,0x34495e];
+const H={select:'Нысанды түртіңіз. Бірнешеуін таңдау: «Қосып таңдау».',move:'Нысанды басып сүйреңіз. Төменде ось бекіту бар.',rotate:'Нысанды таңдап, саусақты солға-оңға жылжытыңыз (15° қадам).',
+eraser:'Нысанды түртіңіз немесе үстінен сүйреңіз.',line:'Бастапқы нүктені түртіңіз. Қайтадан басына қайтсаңыз — бет пайда болады.',rectangle:'Бұрышты басып, диагональ бойымен сүйреңіз.',
+circle:'Центрді басып, радиусқа дейін сүйреңіз.',pushpull:'Бетті (төбе, қабырға) басып, сүйреңіз.',paint:'Түсті таңдап, нысанды түртіңіз.',measure:'Екі нүктені түртіңіз — қашықтық көрсетіледі.',
+orbit:'1 саусақпен айналдырыңыз.',pan:'1 саусақпен жылжытыңыз.',zoom:'Жоғары/төмен сүйреп масштабтаңыз.',
+op:'Екінші нүктені түртіңіз немесе сүйреп жіберіңіз. Нақты мән — төменгі өріске теріп Enter.',line2:'Келесі нүктені түртіңіз. Аяқтау — «Аяқтау» немесе қос түрту.'};
+
+/* ---------- Geometry ---------- */
+function mat(o){return new THREE.MeshStandardMaterial({color:o.c,roughness:.55,side:THREE.DoubleSide,wireframe:style==2,transparent:style==1,opacity:style==1?.45:1,depthWrite:style!=1})}
+function geo(o){let g;
+  if(o.k=='rect')g=new THREE.BoxGeometry(o.w,o.h,o.d);
+  else if(o.k=='circle')g=new THREE.CylinderGeometry(o.r,o.r,o.h,48);
+  else if(o.k=='cone'){g=new THREE.ConeGeometry(o.r,o.h,o.n||32);if(o.n==4)g.rotateY(PI/4)}
+  else{const s=new THREE.Shape(o.p.map(q=>new THREE.Vector2(q[0],-q[1])));g=new THREE.ExtrudeGeometry(s,{depth:o.h,bevelEnabled:false});g.rotateX(-PI/2);return g}
+  g.translate(0,o.h/2,0);return g}
+function label(t){const c=document.createElement('canvas');c.width=256;c.height=64;const x=c.getContext('2d');x.fillStyle='#0f172acc';x.fillRect(0,0,256,64);x.fillStyle='#facc15';x.font='bold 36px system-ui';x.textAlign='center';x.textBaseline='middle';x.fillText(t,128,34);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));s.scale.set(2.4,.6,1);s.renderOrder=10;return s}
+function build(o){let m;
+  if(o.a){const a=V(...o.a),b=V(...o.b),L=a.distanceTo(b)||.001;
+    if(o.k=='line'){m=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,L,6),new THREE.MeshBasicMaterial({color:o.c}));m.position.copy(a).add(b).multiplyScalar(.5);m.quaternion.setFromUnitVectors(V(0,1,0),b.clone().sub(a).normalize())}
+    else{m=new THREE.Group();m.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([a,b]),new THREE.LineBasicMaterial({color:0xfacc15})));
+      const s=label(fx(L)+' м');s.position.copy(a).add(b).multiplyScalar(.5);s.position.y+=.3;m.add(s)}
+  }else{m=new THREE.Mesh(geo(o),mat(o));m.castShadow=m.receiveShadow=true;
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry,20),new THREE.LineBasicMaterial({color:0x020617})));
+    m.position.set(o.cx,o.y0,o.cz);m.rotation.y=o.rot||0}
+  m.userData.id=o.id;o.m=m;world.add(m);return m}
+function rebuild(o){if(o.m){world.remove(o.m);o.m.traverse(c=>{c.geometry&&c.geometry.dispose()})}build(o);refreshSel()}
+function sync(o){if(o.a)rebuild(o);else{o.m.position.set(o.cx,o.y0,o.cz);o.m.rotation.y=o.rot}}
+function addObj(o){o.id=nextId++;o.rot=o.rot||0;objs.push(o);build(o);return o}
+function del(o){world.remove(o.m);objs.splice(objs.indexOf(o),1);sel=sel.filter(x=>x!=o)}
+const clone=o=>JSON.parse(JSON.stringify(o,(k,v)=>k=='m'?undefined:v)),grp=o=>o.g!=null?objs.filter(x=>x.g===o.g):[o];
+function moveObj(o,dx,dy,dz){if(o.a){o.a[0]+=dx;o.a[1]+=dy;o.a[2]+=dz;o.b[0]+=dx;o.b[1]+=dy;o.b[2]+=dz}else{o.cx+=dx;o.y0+=dy;o.cz+=dz}}
+function rotObj(o,a,px,pz){const c=Math.cos(a),s=Math.sin(a),R=(x,z)=>[px+c*(x-px)+s*(z-pz),pz-s*(x-px)+c*(z-pz)];
+  if(o.a){[o.a[0],o.a[2]]=R(o.a[0],o.a[2]);[o.b[0],o.b[2]]=R(o.b[0],o.b[2])}else{[o.cx,o.cz]=R(o.cx,o.cz);o.rot+=a}}
+function center(l){let x=0,z=0;l.forEach(o=>{x+=o.a?(o.a[0]+o.b[0])/2:o.cx;z+=o.a?(o.a[2]+o.b[2])/2:o.cz});return{x:x/l.length,z:z/l.length}}
+
+/* ---------- History / selection ---------- */
+const ser=()=>JSON.stringify({objs,nextId},(k,v)=>k=='m'?undefined:v);
+function commit(){hist=hist.slice(0,hi+1);hist.push(ser());if(hist.length>80)hist.shift();hi=hist.length-1;try{localStorage.setItem('skp3d',hist[hi])}catch(e){}updUI()}
+function restore(s){const d=JSON.parse(s);world.traverse(c=>{c.geometry&&c.geometry.dispose()});while(world.children.length)world.remove(world.children[0]);objs=d.objs;nextId=d.nextId;objs.forEach(build);sel=[];refreshSel();updUI()}
+function undo(){cancelOp();if(hi>0){hi--;restore(hist[hi])}}
+function redo(){cancelOp();if(hi<hist.length-1){hi++;restore(hist[hi])}}
+function select(l){sel=l;refreshSel();updUI()}
+function refreshSel(){objs.forEach(o=>{const m=o.m;if(!m||o.k=='dim')return;const on=sel.includes(o);
+  if(o.a)m.material.color.setHex(on?0x38bdf8:o.c);else{m.material.emissive.setHex(on?0x0c4a6e:0);m.children[0].material.color.setHex(on?0x38bdf8:0x020617)}})}
+function delSel(){if(!sel.length)return;sel.slice().forEach(del);commit()}
+function dupSel(){if(!sel.length)return;const gm={};select(sel.map(o=>{const c=clone(o);c.id=nextId++;if(c.g!=null){if(!gm[c.g])gm[c.g]=nextId++;c.g=gm[c.g]}moveObj(c,1,0,1);objs.push(c);build(c);return c}));commit()}
+function rotSel(a){if(!sel.length)return;const p=center(sel);sel.forEach(o=>{rotObj(o,a,p.x,p.z);sync(o)});commit()}
+function groupSel(on){if(!sel.length)return;const g=nextId++;sel.forEach(o=>{on?o.g=g:delete o.g});commit()}
+function clearAll(){cancelOp();objs.slice().forEach(del);commit()}
+
+/* ---------- Picking ---------- */
+function setRay(e){const r=cv.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera)}
+function ownerOf(b){while(b&&b.userData.id==null)b=b.parent;return b&&objs.find(o=>o.id===b.userData.id)}
+function hit(e){setRay(e);for(const x of ray.intersectObjects(world.children,true)){if(x.object.isLineSegments)continue;const o=ownerOf(x.object);
+  if(o)return{o,point:x.point,object:x.object,n:x.face?x.face.normal.clone().transformDirection(x.object.matrixWorld):V(0,1,0)}}return null}
+function onPlane(e,y){setRay(e);const p=V(0,0,0);return ray.ray.intersectPlane(new THREE.Plane(V(0,1,0),-y),p)?p:null}
+function snap(p){if(snapOn){p.x=Math.round(p.x/.25)*.25;p.z=Math.round(p.z/.25)*.25}return p}
+const sn=d=>snapOn?Math.round(d/.25)*.25:d,snD=d=>snapOn?Math.round(d/.05)*.05:d;
+function toScr(v){const q=v.clone().project(camera),r=cv.getBoundingClientRect();return[(q.x+1)/2*r.width,(1-q.y)/2*r.height]}
+function axisDelta(p,dir,dx,dy){const a=toScr(p),b=toScr(p.clone().add(dir)),vx=b[0]-a[0],vy=b[1]-a[1];return(dx*vx+dy*vy)/Math.max(vx*vx+vy*vy,25)}
+function vSnap(h){const g=h.object.geometry;if(!g||!g.attributes.position)return null;const P=g.attributes.position,v=V(0,0,0);let best=null,bd=.35;
+  for(let i=0;i<P.count;i++){v.fromBufferAttribute(P,i).applyMatrix4(h.object.matrixWorld);const d=v.distanceTo(h.point);if(d<bd){bd=d;best=v.clone()}}return best}
+function startPt(e){const h=hit(e);const p=h&&h.n.y>.9&&!h.o.a?h.point.clone():onPlane(e,0);if(!p)return null;const y=p.y;snap(p);p.y=y;return p}
+const vcbSet=t=>{if(document.activeElement!=vcb)vcb.value=t};
+
+/* ---------- Tool operations ---------- */
+function shapeOp(e){const s=startPt(e);if(!s)return;const t=tool,o={k:t=='circle'?'circle':'rect',cx:s.x,cz:s.z,y0:s.y,w:.05,d:.05,r:.05,h:.02,rot:0,c:color,id:0};build(o);
+  const mv=(x,z,self)=>{self.sx=x<s.x?-1:1;self.sz=z<s.z?-1:1;
+    if(t=='rect'){o.w=Math.max(.05,Math.abs(x-s.x));o.d=Math.max(.05,Math.abs(z-s.z));o.cx=(x+s.x)/2;o.cz=(z+s.z)/2}else{o.r=Math.max(.05,Math.hypot(x-s.x,z-s.z));o.cx=s.x;o.cz=s.z}
+    rebuild(o);vcbSet(t=='circle'?fx(o.r):fx(o.w)+', '+fx(o.d))};
+  op={t,sx:1,sz:1,upd(e){const p=onPlane(e,s.y);if(p){snap(p);mv(p.x,p.z,this)}},
+    num(n){t=='circle'?mv(s.x+n[0],s.z,this):mv(s.x+this.sx*n[0],s.z+this.sz*(n[1]!=null?n[1]:o.d),this)},
+    fin(){if(t=='circle'?o.r<.1:(o.w<.1&&o.d<.1)){world.remove(o.m);op=null;return}o.id=nextId++;o.m.userData.id=o.id;objs.push(o);op=null;select([o]);commit()},
+    cancel(){world.remove(o.m)}}}
+
+function lineOp(e){const s=startPt(e);if(!s)return;const pts=[s];let cur=s.clone(),pv=null;
+  const clr=()=>{if(pv){world.remove(pv.m);pv=null}};
+  op={t:'line',
+    upd(e){const p=onPlane(e,s.y);if(!p)return;snap(p);const l=pts[pts.length-1];if(pts.length>=3&&p.distanceTo(pts[0])<.3)p.copy(pts[0]);cur.copy(p);clr();
+      if(cur.distanceTo(l)>.01){pv={k:'line',id:0,c:0x93c5fd,a:[l.x,l.y,l.z],b:[cur.x,cur.y,cur.z]};build(pv)}vcbSet(fx(l.distanceTo(cur)))},
+    num(n){const l=pts[pts.length-1],d=cur.clone().sub(l);if(d.length()<1e-6)d.set(1,0,0);cur.copy(l).add(d.normalize().multiplyScalar(n[0]))},
+    add(){clr();const l=pts[pts.length-1];if(cur.distanceTo(l)<.02)return this.end();
+      const close=pts.length>=3&&cur.distanceTo(pts[0])<.3;if(close)cur.copy(pts[0]);
+      addObj({k:'line',c:0xfbbf24,a:[l.x,l.y,l.z],b:[cur.x,cur.y,cur.z]});
+      if(close){const cx=pts.reduce((a,q)=>a+q.x,0)/pts.length,cz=pts.reduce((a,q)=>a+q.z,0)/pts.length;
+        addObj({k:'poly',cx,cz,y0:s.y,h:.02,c:color,p:pts.map(q=>[q.x-cx,q.z-cz])});commit();return this.end()}
+      pts.push(cur.clone());commit()},
+    end(){clr();op=null},cancel(){clr()}}}
+
+function ppOp(e){const h=hit(e);if(!h||h.o.a)return;const o=h.o,n=h.n,c=Math.cos(o.rot),s=Math.sin(o.rot);let f,sg=1,dir;
+  if(o.k=='cone'||Math.abs(n.y)>.5){f=(n.y>=0||o.k=='cone')?'top':'bottom';dir=V(0,f=='top'?1:-1,0)}
+  else if(o.k=='rect'){const lx=n.x*c-n.z*s,lz=n.x*s+n.z*c;if(Math.abs(lx)>Math.abs(lz)){f='sx';sg=Math.sign(lx);dir=V(c*sg,0,-s*sg)}else{f='sz';sg=Math.sign(lz);dir=V(s*sg,0,c*sg)}}
+  else if(o.k=='circle'){f='rad';dir=V(n.x,0,n.z).normalize()}
+  else{$('hint').textContent='Бұл қырды созуға болмайды — төбесін таңдаңыз.';return}
+  const b=clone(o),p0=h.point.clone(),sx=e.clientX,sy=e.clientY;select(grp(o).length>1?[o]:[o]);
+  const apply=d=>{if(f=='top')o.h=Math.max(.02,b.h+d);
+    else if(f=='bottom'){const k=Math.max(d,.02-b.h);o.h=b.h+k;o.y0=b.y0-k}
+    else if(f=='rad')o.r=Math.max(.05,b.r+d);
+    else{const key=f=='sx'?'w':'d',nv=Math.max(.05,b[key]+d),sh=sg*(nv-b[key])/2;o[key]=nv;
+      if(f=='sx'){o.cx=b.cx+sh*c;o.cz=b.cz-sh*s}else{o.cx=b.cx+sh*s;o.cz=b.cz+sh*c}}
+    rebuild(o)};
+  op={t:'pp',set(d){this.d=d;apply(d);vcbSet(fx(d))},upd(e){this.set(snD(axisDelta(p0,dir,e.clientX-sx,e.clientY-sy)))},num(n){this.set(n[0])},
+    fin(){op=null;commit()},cancel(){Object.assign(o,b);rebuild(o)}}}
+
+function moveOp(e){const h=hit(e);if(!h)return;if(!sel.includes(h.o))select(grp(h.o));
+  const p0=h.point.clone(),y=p0.y,sx=e.clientX,sy=e.clientY,S=sel.map(clone),Y=V(0,1,0),X=V(1,0,0),Z=V(0,0,1);
+  const set=(self,d)=>{self.d=d;sel.forEach((o,i)=>{Object.assign(o,clone(S[i]));moveObj(o,d.x,d.y,d.z);sync(o)});vcbSet(fx(d.length()))};
+  op={t:'move',d:V(0,0,0),
+    upd(e){const d=V(0,0,0);if(lock=='y')d.y=snD(axisDelta(p0,Y,e.clientX-sx,e.clientY-sy));
+      else{const p=onPlane(e,y);if(!p)return;d.subVectors(p,p0);d.y=0;if(lock=='x')d.z=0;if(lock=='z')d.x=0;d.x=sn(d.x);d.z=sn(d.z)}set(this,d)},
+    num(n){const dir=lock=='y'?Y:lock=='x'?X:lock=='z'?Z:(this.d.length()>1e-6?this.d.clone().normalize():X);set(this,dir.clone().multiplyScalar(n[0]))},
+    fin(){op=null;commit()},cancel(){sel.forEach((o,i)=>{Object.assign(o,clone(S[i]));sync(o)})}}}
+
+function rotOp(e){if(!sel.length){const h=hit(e);if(!h)return;select(grp(h.o))}
+  const pv=center(sel),S=sel.map(clone),sx=e.clientX;
+  const set=(self,deg)=>{self.deg=deg;sel.forEach((o,i)=>{Object.assign(o,clone(S[i]));rotObj(o,deg*PI/180,pv.x,pv.z);sync(o)});vcbSet(deg+'°')};
+  op={t:'rot',upd(e){let d=(e.clientX-sx)*.5;if(snapOn)d=Math.round(d/15)*15;set(this,d)},num(n){set(this,n[0])},
+    fin(){op=null;commit()},cancel(){sel.forEach((o,i)=>{Object.assign(o,clone(S[i]));sync(o)})}}}
+
+function surf(e,y){const h=hit(e);if(h)return vSnap(h)||h.point.clone();const p=onPlane(e,y);return p&&snap(p)}
+function tapeOp(e){const a=surf(e,0);if(!a)return;let b=a.clone(),pv=null;const clr=()=>{if(pv){world.remove(pv.m);pv=null}};
+  op={t:'tape',upd(e){const p=surf(e,a.y);if(!p)return;b=p;clr();pv={k:'dim',id:0,a:[a.x,a.y,a.z],b:[b.x,b.y,b.z]};build(pv);vcbSet(fx(a.distanceTo(b))+' м')},
+    fin(){clr();if(a.distanceTo(b)>.02){addObj({k:'dim',a:[a.x,a.y,a.z],b:[b.x,b.y,b.z]});commit()}op=null},cancel(){clr()}}}
+
+function pickSel(e){const h=hit(e),m=multi||e.shiftKey||e.ctrlKey;if(!h){if(!m)select([]);return}
+  const g=grp(h.o);if(m){const all=g.every(o=>sel.includes(o));select(all?sel.filter(o=>!g.includes(o)):[...new Set([...sel,...g])])}else select(g)}
+function paintAt(e){const h=hit(e);if(!h||h.o.k=='dim')return;h.o.c=color;rebuild(h.o);commit()}
+function eraseAt(e){const h=hit(e);if(!h)return;grp(h.o).forEach(del);op.n++;updUI()}
+function begin(e){({rectangle:shapeOp,circle:shapeOp,line:lineOp,pushpull:ppOp,move:moveOp,rotate:rotOp,measure:tapeOp})[tool](e)}
+const commitOp=()=>op.t=='line'?op.add():op.fin();
+function toolDown(e){
+  if(tool=='select')return pickSel(e);if(tool=='paint')return paintAt(e);
+  if(tool=='eraser'){op={t:'erase',n:0};return eraseAt(e)}
+  if(op){op.upd(e);commitOp()}else begin(e);
+  if(op)op.fresh=true}
+function cancelOp(){if(op){op.cancel&&op.cancel();op=null}vcb.value=''}
+function finishBtn(){if(!op)return;op.end?op.end():op.fin()}
+function applyVCB(){const n=vcb.value.split(/[;,\sx]+/).map(parseFloat).filter(x=>!isNaN(x));if(!op||!n.length||!op.num)return;op.num(n);op.t=='line'?op.add():op.fin();vcb.blur()}
+
+/* ---------- Pointer events ---------- */
+function pdown(e){if(e.pointerType=='mouse'&&e.button!==0)return;pointers.add(e.pointerId);try{cv.setPointerCapture(e.pointerId)}catch(x){}
+  if(pointers.size>1){if(op&&op.fresh)cancelOp();return}
+  try{document.activeElement.blur()}catch(x){}
+  down={x:e.clientX,y:e.clientY};lastY=e.clientY;if(['orbit','pan','zoom'].includes(tool))return;toolDown(e)}
+function pmove(e){if(pointers.size>1)return;
+  if(tool=='zoom'&&pointers.has(e.pointerId)){const k=Math.exp((e.clientY-lastY)*.006),t=controls.target;lastY=e.clientY;camera.position.sub(t).multiplyScalar(k).add(t);return}
+  if(!op)return;if(op.t=='erase'){if(pointers.size)eraseAt(e);return}op.upd(e)}
+function pup(e){if(e.pointerType=='mouse'&&e.button!==0)return;pointers.delete(e.pointerId);if(!op)return;
+  if(op.t=='erase'){if(op.n)commit();op=null;return}
+  if(op.fresh){op.fresh=false;if(Math.hypot(e.clientX-down.x,e.clientY-down.y)>8&&!pointers.size){op.upd(e);commitOp()}}}
+
+/* ---------- Tools / UI ---------- */
+function setTool(t){cancelOp();tool=t;const M=THREE.MOUSE,T=THREE.TOUCH;
+  controls.mouseButtons={LEFT:-1,MIDDLE:M.ROTATE,RIGHT:M.PAN};controls.touches={ONE:-1,TWO:T.DOLLY_PAN};
+  if(t=='orbit'){controls.mouseButtons.LEFT=M.ROTATE;controls.touches.ONE=T.ROTATE}
+  if(t=='pan'){controls.mouseButtons.LEFT=M.PAN;controls.touches.ONE=T.PAN}
+  $('vp').style.cursor=['orbit','pan','zoom'].includes(t)?'grab':'crosshair';updUI()}
+function updCtx(){const c=(on,fn,t)=>`<button class="chip${on?' on':''}" onclick="${fn}">${t}</button>`;let h='';
+  if(tool=='select')h+=c(multi,'togMulti()','＋ Қосып таңдау');
+  if(tool=='move')h+=[['free','Еркін'],['x','X осі'],['y','Биіктік'],['z','Z осі']].map(([k,t])=>c(lock==k,`setLock('${k}')`,t)).join('');
+  if(tool=='paint')h+=PAL.map(n=>`<button class="sw${color==n?' on':''}" style="background:${hx(n)}" onclick="pickColor(${n})"></button>`).join('')+`<input type="color" value="${hx(color)}" onchange="pickColor(parseInt(this.value.slice(1),16))">`;
+  if(op&&op.t!='erase')h+='<button class="chip ok" onclick="finishBtn()">✓ Аяқтау</button><button class="chip no" onclick="cancelOp()">✕ Болдырмау</button>';
+  $('ctx').innerHTML=h;$('ctx').style.display=h?'flex':'none';
+  $('hint').textContent=op&&op.t!='erase'?(op.t=='line'?H.line2:H.op):H[tool]}
+const togMulti=()=>{multi=!multi;updCtx()},setLock=k=>{lock=k;updCtx()},pickColor=n=>{color=n;updCtx()};
+function props(){const el=$('props');if(!sel.length){el.innerHTML='<div class="mut">Ештеңе таңдалмаған</div>';return}
+  const o=sel[0],one=sel.length==1;let h=`<div style="margin-bottom:6px"><b style="color:#38bdf8">${one?((o.k=='rect'||o.k=='circle'||o.k=='poly')&&o.h<=.021?'Бет':NAMES[o.k]):sel.length+' нысан'}</b>${o.g!=null?' <small class="mut">(топ)</small>':''}</div>`;
+  if(one&&o.a)h+=`<div class="mut">Ұзындығы: ${fx(V(...o.a).distanceTo(V(...o.b)))} м</div>`;
+  else if(one){const F=[['X','cx'],['Z','cz'],['Деңгей','y0'],['Биіктік','h']];if(o.k=='rect')F.push(['Ені','w'],['Тереңдігі','d']);if(o.k=='circle'||o.k=='cone')F.push(['Радиус','r']);F.push(['Бұрыш °','rot']);
+    h+='<div class="pr">'+F.map(([l,k])=>`<label>${l}<input type="number" step="0.1" value="${+(k=='rot'?o.rot*180/PI:o[k]).toFixed(3)}" onchange="setProp('${k}',this.value)"></label>`).join('')+'</div>'}
+  if(!sel.every(x=>x.k=='dim'))h+=`<label style="display:block;margin-top:6px;font-size:10px;color:#94a3b8">Түс<input type="color" value="${hx(o.c||0x888888)}" oninput="setColorSel(this.value)" onchange="commit()"></label>`;
+  h+=`<div class="g2" style="margin-top:8px"><button class="mini" onclick="dupSel()"><i class="fa-solid fa-copy"></i>Көшіру</button><button class="mini no" onclick="delSel()"><i class="fa-solid fa-trash"></i>Өшіру</button>
+  <button class="mini" onclick="rotSel(Math.PI/2)"><i class="fa-solid fa-rotate-right"></i>90°</button><button class="mini" onclick="groupSel(${o.g==null})"><i class="fa-solid fa-object-group"></i>${o.g==null?'Топтау':'Ажырату'}</button></div>`;
+  el.innerHTML=h}
+function setProp(k,v){const o=sel[0];v=parseFloat(v);if(!o||isNaN(v))return;const mn={h:.02,w:.05,d:.05,r:.05};o[k]=k=='rot'?v*PI/180:Math.max(mn[k]!=null?mn[k]:-1e9,v);rebuild(o);commit()}
+function setColorSel(v){const n=parseInt(v.slice(1),16);color=n;sel.forEach(o=>{if(o.k!='dim'){o.c=n;rebuild(o)}})}
+function updUI(){TOOLS.forEach(([id])=>$('t-'+id).classList.toggle('on',id==tool));
+  $('bu').style.opacity=hi>0?1:.4;$('br').style.opacity=hi<hist.length-1?1:.4;$('bsn').classList.toggle('on',snapOn);$('sty').textContent=['Көлемді','Мөлдір','Сымдық'][style];
+  $('st').textContent=`Құрал: ${TOOLS.find(t=>t[0]==tool)[2]} · Нысан: ${objs.length} · Таңдалған: ${sel.length}`;props();updCtx()}
+function cycStyle(){style=(style+1)%3;objs.forEach(o=>{if(!o.a)rebuild(o)});updUI()}
+function view(v){const t=controls.target,d=Math.max(camera.position.distanceTo(t),8),D={iso:[.6,.6,.8],top:[0,1,.0001],front:[0,.15,1],right:[1,.15,0],left:[-1,.15,0]}[v];camera.position.copy(t).add(V(...D).normalize().multiplyScalar(d));controls.update()}
+function fit(){const b=new THREE.Box3().setFromObject(world);if(b.isEmpty())return;const c=b.getCenter(V(0,0,0)),r=b.getSize(V(0,0,0)).length()/2+1,dir=camera.position.clone().sub(controls.target).normalize();
+  controls.target.copy(c);camera.position.copy(c).add(dir.multiplyScalar(Math.max(r/Math.sin(camera.fov*PI/360),6)*1.05));controls.update()}
+function preset(n){addPreset(n);commit()}
+function addPreset(n,x,z){if(x===undefined){x=Math.round(controls.target.x);z=Math.round(controls.target.z)}const g=nextId++,P=[],add=o=>{o.g=g;P.push(addObj(o))};
+  if(n=='house'){add({k:'rect',cx:x,cz:z,y0:0,w:4,d:4,h:3,c:0xf8fafc});add({k:'cone',n:4,cx:x,cz:z,y0:3,r:3.1,h:2,c:0xef4444});
+    add({k:'rect',cx:x,cz:z+2.02,y0:0,w:1,d:.06,h:2,c:0x78350f});add({k:'rect',cx:x+1.2,cz:z+2.02,y0:1.2,w:.9,d:.06,h:.9,c:0x7dd3fc})}
+  else if(n=='tree'){add({k:'circle',cx:x,cz:z,y0:0,r:.3,h:1.6,c:0x78350f});add({k:'cone',n:12,cx:x,cz:z,y0:1.4,r:1.5,h:3.2,c:0x16a34a})}
+  else if(n=='cylinder')add({k:'circle',cx:x,cz:z,y0:0,r:1.2,h:3,c:0x0284c7});
+  else add({k:'rect',cx:x,cz:z,y0:0,w:2,d:2,h:2,c:0xe67e22});
+  select(P)}
+function saveFile(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ser()],{type:'application/json'}));a.download='model.json';a.click()}
+function openFile(i){const f=i.files[0];if(!f)return;f.text().then(t=>{try{cancelOp();restore(t);commit()}catch(e){alert('Файл оқылмады')}});i.value=''}
+function shot(){renderer.render(scene,camera);const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='sketch.png';a.click()}
+function fs(){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}
+function onResize(){const v=$('vp'),w=v.clientWidth,h=v.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}
+
+/* ---------- Init ---------- */
+function init(){
+  $('tools').innerHTML=TOOLS.map(([id,ic,l])=>`<button class="t" id="t-${id}" onclick="setTool('${id}')"><i class="${ic}"></i>${l}</button>`).join('');
+  const vp=$('vp');scene=new THREE.Scene();scene.background=new THREE.Color(0x1e293b);
+  camera=new THREE.PerspectiveCamera(45,1,.1,1000);camera.position.set(12,14,18);
+  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  cv=renderer.domElement;vp.insertBefore(cv,vp.firstChild);
+  controls=new THREE.OrbitControls(camera,cv);controls.enableDamping=true;controls.dampingFactor=.08;controls.maxPolarAngle=PI/2-.02;controls.minDistance=1;controls.maxDistance=150;
+  scene.add(new THREE.AmbientLight(0xffffff,.65));
+  const dl=new THREE.DirectionalLight(0xffffff,.85);dl.position.set(20,35,20);dl.castShadow=true;dl.shadow.mapSize.set(2048,2048);Object.assign(dl.shadow.camera,{left:-30,right:30,top:30,bottom:-30});scene.add(dl);
+  scene.add(new THREE.AxesHelper(10),new THREE.GridHelper(40,40,0x38bdf8,0x475569));
+  const gp=new THREE.Mesh(new THREE.PlaneGeometry(100,100).rotateX(-PI/2),new THREE.ShadowMaterial({opacity:.25}));gp.receiveShadow=true;scene.add(gp);
+  world=new THREE.Group();scene.add(world);ray.params.Line.threshold=.08;
+  cv.addEventListener('pointerdown',pdown);cv.addEventListener('pointermove',pmove);cv.addEventListener('pointerup',pup);
+  cv.addEventListener('pointercancel',e=>pointers.delete(e.pointerId));cv.addEventListener('contextmenu',e=>e.preventDefault());
+  new ResizeObserver(onResize).observe(vp);onResize();
+  addEventListener('keydown',e=>{
+    if(e.key=='Enter'&&e.target==vcb){applyVCB();return}
+    if(e.key=='Escape'){op?cancelOp():select([]);vcb.blur();return}
+    if(e.target.tagName=='INPUT')return;
+    const ctl=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+    if(ctl&&k=='z'){e.shiftKey?redo():undo();e.preventDefault();return}
+    if(ctl&&k=='y'){redo();return}if(ctl&&k=='d'){dupSel();e.preventDefault();return}
+    if(e.key=='Enter'){finishBtn();return}
+    if(e.key=='Delete'||e.key=='Backspace'){delSel();return}
+    if(op&&/^[0-9.,\-]$/.test(e.key)){vcb.focus();vcb.value='';return}
+    if(e.key==' ')e.preventDefault();
+    const t={' ':'select',m:'move',q:'rotate',e:'eraser',l:'line',r:'rectangle',c:'circle',p:'pushpull',b:'paint',t:'measure',o:'orbit',h:'pan',z:'zoom'}[k];if(t)setTool(t)});
+  let s=null;try{s=localStorage.getItem('skp3d')}catch(e){}
+  if(s){try{restore(s)}catch(e){s=null;objs=[]}}
+  if(!s){addPreset('house',0,0);addPreset('tree',6,-1);select([])}
+  hist=[];hi=-1;commit();setTool('select');
+  (function loop(){requestAnimationFrame(loop);controls.update();if(op!==lastOp){lastOp=op;updCtx()}renderer.render(scene,camera)})()}
+init();
+</script>
+</body>
+</html>
