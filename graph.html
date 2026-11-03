@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ақылды қала: графтар зертханасы (11-сынып)</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --border: #334155;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        input { user-select: text; -webkit-user-select: text; }
+
+        /* Top Header */
+        header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 1.25rem; font-weight: bold; color: #60a5fa; display: flex; align-items: center; gap: 8px; }
+        .score-board { display: flex; gap: 20px; align-items: center; background: #0f172a; padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); }
+        .score-item { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+        .score-val { font-weight: bold; color: var(--warning); }
+
+        /* Main Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            flex: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        /* Left Toolbar */
+        .sidebar-left {
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+        .section-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 4px; }
+        .tool-group { display: flex; flex-direction: column; gap: 8px; }
+        .tool-btn {
+            background: #334155;
+            border: 2px solid transparent;
+            color: var(--text-light);
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .tool-btn:hover { background: #475569; }
+        .tool-btn.active { background: var(--primary); border-color: #93c5fd; }
+        .action-btn {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+        }
+        .action-btn:hover { background: #1e293b; border-color: #64748b; }
+        .tool-hint { background: #0f172a; border-left: 3px solid var(--primary); padding: 8px 12px; font-size: 0.85rem; color: #cbd5e1; border-radius: 0 6px 6px 0; }
+
+        /* Canvas Area */
+        .canvas-area {
+            position: relative;
+            background: #090d16;
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 24px 24px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #graph-svg {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        .bfs-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Right Panel */
+        .sidebar-right {
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+        .mission-card {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+        .mission-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .mission-title { font-weight: bold; color: #60a5fa; font-size: 1.1rem; }
+        .mission-desc { font-size: 0.9rem; color: #cbd5e1; line-height: 1.4; margin-bottom: 12px; }
+        .mission-task { background: #1e293b; padding: 10px; border-radius: 6px; font-size: 0.85rem; border-left: 3px solid var(--warning); margin-bottom: 12px; }
+        
+        .feedback-box {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            display: none;
+        }
+        .feedback-box.info { background: #1e3a8a; border: 1px solid #3b82f6; color: #dbeafe; display: block; }
+        .feedback-box.success { background: #064e3b; border: 1px solid #10b981; color: #d1fae5; display: block; }
+        .feedback-box.error { background: #7f1d1d; border: 1px solid #ef4444; color: #fee2e2; display: block; }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        /* Data Representation Tables */
+        .data-panel {
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.8rem;
+        }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-top: 8px; text-align: center; }
+        .matrix-table th, .matrix-table td { border: 1px solid var(--border); padding: 4px; }
+        .matrix-table input { width: 24px; text-align: center; background: #1e293b; border: 1px solid #475569; color: white; border-radius: 3px; }
+
+        /* SVG Graph Styling */
+        .edge-line { stroke: #64748b; stroke-width: 3; transition: stroke 0.3s, stroke-width 0.3s; }
+        .edge-line.selected { stroke: var(--warning); stroke-width: 5; }
+        .edge-line.path { stroke: var(--accent); stroke-width: 5; }
+        .edge-text { fill: #f1f5f9; font-size: 14px; font-weight: bold; text-anchor: middle; dominant-baseline: central; }
+        .edge-bg { fill: #0f172a; rx: 4; }
+        
+        .node-group { cursor: pointer; }
+        .node-circle { fill: #1e293b; stroke: #60a5fa; stroke-width: 3; transition: all 0.2s; transform-box: fill-box; transform-origin: center; }
+        .node-group:hover .node-circle { fill: #334155; transform: scale(1.05); }
+        .node-group.selected .node-circle { fill: #2563eb; stroke: #93c5fd; stroke-width: 4; }
+        .node-group.target .node-circle { fill: #059669; stroke: #6ee7b7; }
+        .node-group.visited .node-circle { fill: #d97706; stroke: #fde68a; }
+        .node-text { fill: #ffffff; font-size: 14px; font-weight: bold; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+        .node-degree { fill: var(--warning); font-size: 11px; font-weight: bold; }
+
+        /* Modal dialog */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 450px; padding: 24px; box-shadow: 0 20px 25px rgba(0,0,0,0.5); }
+        .modal-header { font-size: 1.2rem; font-weight: bold; color: #60a5fa; margin-bottom: 12px; }
+        .modal-body { font-size: 0.9rem; line-height: 1.5; color: #cbd5e1; margin-bottom: 20px; }
+    
+        /* --- Адаптивность для встраивания на сайт --- */
+        @media (max-width: 1280px) {
+            .app-container { grid-template-columns: 220px 1fr 290px; }
+        }
+        @media (max-width: 1000px) {
+            body { height: auto; min-height: 100vh; overflow: auto; }
+            header { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+            .logo { font-size: 1rem; }
+            .app-container { display: flex; flex-direction: column; height: auto; overflow: visible; }
+            .sidebar-left { border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+            .tool-group { flex-direction: row; flex-wrap: wrap; }
+            .tool-btn { flex: 1 1 150px; }
+            .canvas-area { flex: none; height: 420px; min-height: 0; }
+            .sidebar-right { border-left: none; border-top: 1px solid var(--border); overflow: visible; }
+            .bfs-controls { flex-wrap: wrap; justify-content: center; width: 92%; border-radius: 16px; bottom: 10px; }
+            .modal { width: 92%; max-width: 450px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="7.5"/><line x1="7.5" y1="8.5" x2="10.5" y2="15.5"/><line x1="16.5" y1="8.5" x2="13.5" y2="15.5"/></svg>
+            Ақылды қала: графтар зертханасы
+        </div>
+        <div class="score-board">
+            <div class="score-item">Миссия: <span class="score-val" id="mission-step">1 / 8</span></div>
+            <div class="score-item">Ұпай: <span class="score-val" id="total-score">0</span></div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Left Sidebar: Tools -->
+        <div class="sidebar-left">
+            <div class="section-title">Құралдар тақтасы</div>
+            <div class="tool-group">
+                <button class="tool-btn active" data-tool="select" onclick="setTool('select')">
+                    <span>👆</span> Жылжыту / Таңдау
+                </button>
+                <button class="tool-btn" data-tool="add-node" onclick="setTool('add-node')">
+                    <span>➕</span> Төбе қосу
+                </button>
+                <button class="tool-btn" data-tool="add-edge" onclick="setTool('add-edge')">
+                    <span>🔗</span> Қабырға қосу
+                </button>
+                <button class="tool-btn" data-tool="direction" onclick="setTool('direction')">
+                    <span>➡️</span> Бағыт өзгерту
+                </button>
+                <button class="tool-btn" data-tool="weight" onclick="setTool('weight')">
+                    <span>⚖️</span> Салмақ орнату
+                </button>
+                <button class="tool-btn" data-tool="route" onclick="setTool('route')">
+                    <span>🚩</span> Маршрут таңдау
+                </button>
+                <button class="tool-btn" data-tool="delete" onclick="setTool('delete')">
+                    <span>🗑️</span> Жою
+                </button>
+            </div>
+
+            <div class="tool-hint" id="tool-hint-text">
+                Жылжыту режимі: Төбелерді тышқанмен сүйреп жылжытуға немесе таңдауға болады.
+            </div>
+
+            <div class="section-title" style="margin-top: 12px;">Басқару</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <button class="action-btn" onclick="undoAction()">↩️ Болдырмау</button>
+                <button class="action-btn" onclick="resetCurrentMission()">🔄 Қайта бастау</button>
+            </div>
+            <button class="action-btn" style="width:100%; margin-top:4px;" onclick="showHelpModal()">❓ Көмек / Теор. анықтама</button>
+            <button class="action-btn" id="restart-all-btn" style="width:100%; margin-top:4px;" onclick="restartGame()">🔁 Бәрін басынан бастау</button>
+
+            <div class="section-title" style="margin-top: 12px;">Режимдер</div>
+            <button class="action-btn" id="free-lab-btn" onclick="toggleFreeLab()">🧪 Еркін зертхана режимі</button>
+            
+            <div id="json-tools" style="display:none; flex-direction:column; gap:6px; margin-top:8px;">
+                <button class="action-btn" onclick="exportJSON()">📥 Схеманы экспорттау (JSON)</button>
+                <button class="action-btn" onclick="importJSON()">📤 Схеманы импорттау (JSON)</button>
+                <input type="file" id="json-input" style="display:none" onchange="loadJSONFile(event)">
+            </div>
+        </div>
+
+        <!-- Center: Interactive SVG Canvas -->
+        <div class="canvas-area">
+            <svg id="graph-svg">
+                <defs>
+                    <marker id="arrow" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M0,-5L10,0L0,5" fill="#64748b"/>
+                    </marker>
+                    <marker id="arrow-selected" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M0,-5L10,0L0,5" fill="#f59e0b"/>
+                    </marker>
+                    <marker id="arrow-path" viewBox="0 -5 10 10" refX="22" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M0,-5L10,0L0,5" fill="#10b981"/>
+                    </marker>
+                </defs>
+            </svg>
+
+            <div class="bfs-controls" id="bfs-panel" style="display:none;">
+                <span style="font-size:0.85rem; color:#94a3b8;">BFS Қадамдық іздеу:</span>
+                <button class="action-btn" onclick="nextBFSStep()">Келесі қадам ➡️</button>
+                <button class="action-btn" onclick="restartBFS()">Қайта бастау</button>
+                <span id="bfs-status" style="font-size:0.85rem; color:#60a5fa;"></span>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Mission & Data -->
+        <div class="sidebar-right">
+            <div class="mission-card">
+                <div class="mission-header">
+                    <span class="mission-title" id="m-title">Миссия 1</span>
+                    <span id="m-badge" style="font-size:0.75rem; background:#2563eb; padding:2px 8px; border-radius:10px;">Тапсырма</span>
+                </div>
+                <div class="mission-desc" id="m-desc">Жүктелуде...</div>
+                <div class="mission-task" id="m-task">Тапсырма шарты...</div>
+                
+                <div id="degree-interactive-panel" style="display:none; margin-bottom:12px;">
+                    <div style="font-size:0.85rem; margin-bottom:6px;">Төбенің дәрежесін белгілеңіз:</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;" id="degree-buttons">
+                        <!-- Dynamic degree buttons -->
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="check-btn" onclick="checkMissionSolution()">Тексеру</button>
+            </div>
+
+            <div class="feedback-box" id="feedback"></div>
+
+            <div class="data-panel" id="data-panel">
+                <div class="section-title">Граф параметрлері</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px; font-size:0.85rem;">
+                    <div>Төбелер саны (V): <b id="val-v">0</b></div>
+                    <div>Қабырғалар (E): <b id="val-e">0</b></div>
+                    <div>Байланысқан ба: <b id="val-conn">-</b></div>
+                    <div>Бөліктер (Components): <b id="val-comp">0</b></div>
+                </div>
+
+                <div class="section-title">Іргелестік матрицасы</div>
+                <div style="overflow-x:auto;">
+                    <table class="matrix-table" id="adj-matrix-table">
+                        <!-- Matrix built dynamically -->
+                    </table>
+                </div>
+
+                <div class="section-title" style="margin-top:10px;">Іргелестік тізімі</div>
+                <div id="adj-list" style="font-family:monospace; font-size:0.8rem; color:#cbd5e1;">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Help / Theory -->
+    <div class="modal-overlay" id="help-modal">
+        <div class="modal">
+            <div class="modal-header">Графтар теориясы: Анықтамалық</div>
+            <div class="modal-body" id="help-modal-body">
+                <p><b>Граф</b> — төбелер мен қабырғалардан тұратын математикалық модель.</p>
+                <p><b>Іргелес төбелер</b> — бір қабырғамен жалғанған төбелер.</p>
+                <p><b>Төбенің дәрежесі</b> — оған жалғанған қабырғалар саны.</p>
+                <p><b>Бағытталған граф</b> — қабырғаларында бағыттары (жебелері) бар граф.</p>
+                <p><b>Салмақталған граф</b> — қабырғаларында сандық мәні (салмағы) бар граф.</p>
+                <p><b>Ағаш</b> — циклсіз байланысқан бағытталмаған граф. n төбесі бар ағашта n-1 қабырға болады.</p>
+            </div>
+            <button class="btn-primary" onclick="closeHelpModal()">Түсінікті</button>
+        </div>
+    </div>
+
+    <script>
+        /* --- GAME & GRAPH STATE --- */
+        let state = {
+            nodes: [], // {id, label, x, y, color}
+            edges: [], // {from, to, weight, directed: false}
+            currentTool: 'select',
+            selectedNodeId: null,
+            routeNodes: [], // For route selection
+            currentMission: 1,
+            score: 0,
+            missionSolved: [false, false, false, false, false, false, false, false],
+            isFreeLab: false,
+            history: [],
+            // Mission specific state variables
+            m2_selectedNode: null,
+            m2_markedNeighbors: new Set(),
+            m2_degrees: {},
+            bfs: { active: false, queue: [], visited: new Set(), parent: {}, start: null, target: null, current: null }
+        };
+
+        const MISSIONS = [
+            {
+                id: 1,
+                title: "1-миссия: «Қаланы құрастыр»",
+                desc: "Қала нысандары — төбелер, ал олардың арасындағы жолдар — қабырғалар. Ереже бойынша «Мектеп», «Үй», «Кітапхана», «Саябақ» ғимараттарын орналастырып, жол санаймыз.",
+                task: "Тапсырма: 4 төбе («Мектеп», «Үй», «Кітапхана», «Саябақ») қосыңыз және оларды кемінде 4 қабырғамен өзара байланыстырыңыз.",
+                init: () => {
+                    state.nodes = [];
+                    state.edges = [];
+                },
+                check: () => {
+                    if (state.nodes.length < 4) return { ok: false, msg: "Схемада 4 төбе болуы керек!" };
+                    if (state.edges.length < 4) return { ok: false, msg: "Төбелер арасында кемінде 4 қабырға салынуы тиіс." };
+                    if (getGraphComponents().count > 1) return { ok: false, msg: "Барлық ғимараттар жолдармен байланысуы тиіс!" };
+                    return { ok: true, msg: "Тамаша! Қала желісінің негізі қаланды." };
+                }
+            },
+            {
+                id: 2,
+                title: "2-миссия: «Байланыстарды зертте»",
+                desc: "Презентациядағы граф бейнеленген: A, B, C, D төбелері және AB, AC, AD, BC, CD қабырғалары.",
+                task: "Тапсырма: Арнайы батырмалар арқылы A, B, C, D төбелерінің дәрежесін белгілеп шығыңыз (жалғанған қабырғаларды санаңыз).",
+                init: () => {
+                    state.nodes = [
+                        { id: 'A', label: 'A', x: 150, y: 150 },
+                        { id: 'B', label: 'B', x: 350, y: 100 },
+                        { id: 'C', label: 'C', x: 450, y: 250 },
+                        { id: 'D', label: 'D', x: 250, y: 320 }
+                    ];
+                    state.edges = [
+                        { from: 'A', to: 'B', weight: 1, directed: false },
+                        { from: 'A', to: 'C', weight: 1, directed: false },
+                        { from: 'A', to: 'D', weight: 1, directed: false },
+                        { from: 'B', to: 'C', weight: 1, directed: false },
+                        { from: 'C', to: 'D', weight: 1, directed: false }
+                    ];
+                    state.m2_degrees = {};
+                },
+                check: () => {
+                    const req = { 'A': 3, 'B': 2, 'C': 3, 'D': 2 };
+                    for (let n of ['A', 'B', 'C', 'D']) {
+                        if (state.m2_degrees[n] !== req[n]) {
+                            return { ok: false, msg: `Төбелердің дәрежесі қате енгізілді! ${n} төбесіне жалғанған қабырғаларды қайта санап көріңіз.` };
+                        }
+                    }
+                    return { ok: true, msg: "Өте жақсы! Дәрежелер дұрыс анықталды: A=3, B=2, C=3, D=2." };
+                }
+            },
+            {
+                id: 3,
+                title: "3-миссия: «Біржақты көшелер»",
+                desc: "Бағытталған граф — қабырғаларда қозғалыс бағыты көрсетілген граф. Курьер біржақты көше ережесін сақтауы керек.",
+                task: "Тапсырма: «Маршрут» құралын пайдаланып, A төбесінен D төбесіне дейін бағыт бағдаршасын сақтай отырып жол таңдаңыз.",
+                init: () => {
+                    state.nodes = [
+                        { id: 'A', label: 'A', x: 100, y: 200 },
+                        { id: 'B', label: 'B', x: 250, y: 100 },
+                        { id: 'C', label: 'C', x: 250, y: 300 },
+                        { id: 'D', label: 'D', x: 400, y: 200 }
+                    ];
+                    state.edges = [
+                        { from: 'A', to: 'B', weight: 1, directed: true },
+                        { from: 'B', to: 'D', weight: 1, directed: true },
+                        { from: 'A', to: 'C', weight: 1, directed: true },
+                        { from: 'D', to: 'C', weight: 1, directed: true } // D -> C (reverse)
+                    ];
+                    state.routeNodes = [];
+                },
+                check: () => {
+                    if (state.routeNodes.length < 2) return { ok: false, msg: "Маршрут құралымен төбелерді ретімен таңдаңыз." };
+                    if (state.routeNodes[0] !== 'A' || state.routeNodes[state.routeNodes.length - 1] !== 'D') {
+                        return { ok: false, msg: "Маршрут A төбесінен басталып, D төбесімен аяқталуы керек!" };
+                    }
+                    // Validate valid directed path
+                    for (let i = 0; i < state.routeNodes.length - 1; i++) {
+                        let u = state.routeNodes[i], v = state.routeNodes[i+1];
+                        let edge = state.edges.find(e => e.from === u && e.to === v);
+                        if (!edge) {
+                            return { ok: false, msg: `Қате! ${u} -> ${v} бағытында өтуге болмайды (біржақты көше ережесі).` };
+                        }
+                    }
+                    return { ok: true, msg: "Керемет! Курьер бағытты сақтай отырып мақсатқа жетті!" };
+                }
+            },
+            {
+                id: 4,
+                title: "4-миссия: «Тиімді маршрут»",
+                desc: "Салмақталған графта қабырға мәні арақашықтықты немесе уақытты білдіреді. Салмақ қосындысы ең аз жолды табу керек.",
+                task: "Тапсырма: A-дан C-ге дейінгі ең минималды салмақты маршрутты таңдаңыз. (AB=2, BC=3, AC=8, AD=4, DC=4).",
+                init: () => {
+                    state.nodes = [
+                        { id: 'A', label: 'A', x: 120, y: 200 },
+                        { id: 'B', label: 'B', x: 280, y: 100 },
+                        { id: 'C', label: 'C', x: 440, y: 200 },
+                        { id: 'D', label: 'D', x: 280, y: 300 }
+                    ];
+                    state.edges = [
+                        { from: 'A', to: 'B', weight: 2, directed: false },
+                        { from: 'B', to: 'C', weight: 3, directed: false },
+                        { from: 'A', to: 'C', weight: 8, directed: false },
+                        { from: 'A', to: 'D', weight: 4, directed: false },
+                        { from: 'D', to: 'C', weight: 4, directed: false }
+                    ];
+                    state.routeNodes = [];
+                },
+                check: () => {
+                    if (state.routeNodes.length < 2) return { ok: false, msg: "Төбелерді шерту арқылы A-дан C-ге жол таңдаңыз." };
+                    if (state.routeNodes[0] !== 'A' || state.routeNodes[state.routeNodes.length - 1] !== 'C') {
+                        return { ok: false, msg: "Жол A төбесінен С төбесіне дейін болуы тиіс." };
+                    }
+                    let totalW = 0;
+                    for (let i = 0; i < state.routeNodes.length - 1; i++) {
+                        let u = state.routeNodes[i], v = state.routeNodes[i+1];
+                        let edge = state.edges.find(e => (e.from === u && e.to === v) || (e.from === v && e.to === u));
+                        if (!edge) return { ok: false, msg: `${u} мен ${v} арасында тікелей қабырға жоқ!` };
+                        totalW += Number(edge.weight);
+                    }
+                    if (totalW === 5 && state.routeNodes.join('-') === 'A-B-C') {
+                        return { ok: true, msg: "Дұрыс! A-B-C маршрутының салмағы 5-ке тең. Тура AC жолы (8) мен ADC (8) жолынан тиімдірек." };
+                    } else {
+                        return { ok: false, msg: `Сіз таңдаған маршруттың салмағы: ${totalW}. Одан да тиімдірек (ең аз салмақты) жол бар!` };
+                    }
+                }
+            },
+            {
+                id: 5,
+                title: "5-миссия: «Жол және цикл»",
+                desc: "Цикл — бастапқы төбеге қайта келетін тұйық жол. Қарапайым жолда төбелер қайталанбайды.",
+                task: "Тапсырма: «Маршрут» құралы арқылы кемінде 3 төбеден тұратын дұрыс Цикл құрыңыз (бастапқы төбеге қайтып келіңіз).",
+                init: () => {
+                    state.nodes = [
+                        { id: 'A', label: 'A', x: 150, y: 150 },
+                        { id: 'B', label: 'B', x: 350, y: 150 },
+                        { id: 'C', label: 'C', x: 350, y: 300 },
+                        { id: 'D', label: 'D', x: 150, y: 300 }
+                    ];
+                    state.edges = [
+                        { from: 'A', to: 'B', weight: 1, directed: false },
+                        { from: 'B', to: 'C', weight: 1, directed: false },
+                        { from: 'C', to: 'D', weight: 1, directed: false },
+                        { from: 'D', to: 'A', weight: 1, directed: false }
+                    ];
+                    state.routeNodes = [];
+                },
+                check: () => {
+                    let r = state.routeNodes;
+                    if (r.length < 4) return { ok: false, msg: "Цикл болу үшін кемінде 3 әртүрлі төбе өтіліп, бастапқы орынға оралуы керек (мысалы: A-B-C-D-A)." };
+                    if (r[0] !== r[r.length - 1]) return { ok: false, msg: "Цикл бастапқы төбемен аяқталуы керек!" };
+                    
+                    let inner = r.slice(0, r.length - 1);
+                    let uniqueInner = new Set(inner);
+                    if (uniqueInner.size !== inner.length) {
+                        return { ok: false, msg: "Қарапайым циклде аралық төбелер қайталанбауы тиіс!" };
+                    }
+                    for (let i = 0; i < r.length - 1; i++) {
+                        let u = r[i], v = r[i + 1];
+                        let has = state.edges.some(e => (e.from === u && e.to === v) || (!e.directed && e.from === v && e.to === u));
+                        if (!has) return { ok: false, msg: `${u} мен ${v} арасында қабырға жоқ!` };
+                    }
+                    return { ok: true, msg: "Тамаша! Сіз графтағы тұйықталған циклды белгіледіңіз." };
+                }
+            },
+            {
+                id: 6,
+                title: "6-миссия: «Желіні қалпына келтір»",
+                desc: "Байланыспаған граф бірнеше бөлек компоненттерден тұрады. k компонентті біріктіру үшін минималды k-1 қабырға керек.",
+                task: "Тапсырма: Берілген 3 бөлек компонентті минималды санмен (2 жаңа қабырға) қосып, графты толық байланысқан етіңіз.",
+                init: () => {
+                    state.nodes = [
+                        { id: 'A1', label: 'A1', x: 100, y: 100 }, { id: 'A2', label: 'A2', x: 180, y: 160 },
+                        { id: 'B1', label: 'B1', x: 350, y: 100 }, { id: 'B2', label: 'B2', x: 430, y: 160 },
+                        { id: 'C1', label: 'C1', x: 250, y: 300 }, { id: 'C2', label: 'C2', x: 330, y: 340 }
+                    ];
+                    state.edges = [
+                        { from: 'A1', to: 'A2', weight: 1, directed: false },
+                        { from: 'B1', to: 'B2', weight: 1, directed: false },
+                        { from: 'C1', to: 'C2', weight: 1, directed: false }
+                    ];
+                },
+                check: () => {
+                    let info = getGraphComponents();
+                    if (info.count === 1 && state.edges.length > 5) {
+                        return { ok: false, msg: "Граф байланысқан, бірақ қабырға артық! Тек 2 жаңа қабырға жеткілікті." };
+                    }
+                    if (info.count === 1) {
+                        return { ok: true, msg: "Өте жақсы! Барлық оқшау желілер біріктіріліп, граф байланысқан түрге келтірілді." };
+                    } else {
+                        return { ok: false, msg: `Қазір граф тағы ${info.count} бөлек бөліктен тұрады. Барлығын қосыңыз!` };
+                    }
+                }
+            },
+            {
+                id: 7,
+                title: "7-миссия: «Ағаш құрастыр»",
+                desc: "Ағаш — циклдері жоқ байланысқан граф. n төбесі бар ағашта тура n-1 қабырға болады.",
+                task: "Тапсырма: Артық қабырғаларды «Жою» құралымен өшіріп, графты Ағашқа айналдырыңыз. Барлық 5 төбе байланыста қалуы тиіс.",
+                init: () => {
+                    state.nodes = [
+                        { id: '1', label: '1', x: 250, y: 80 },
+                        { id: '2', label: '2', x: 150, y: 180 },
+                        { id: '3', label: '3', x: 350, y: 180 },
+                        { id: '4', label: '4', x: 180, y: 300 },
+                        { id: '5', label: '5', x: 320, y: 300 }
+                    ];
+                    state.edges = [
+                        { from: '1', to: '2', weight: 1, directed: false },
+                        { from: '1', to: '3', weight: 1, directed: false },
+                        { from: '2', to: '3', weight: 1, directed: false }, // Cycle 1-2-3
+                        { from: '2', to: '4', weight: 1, directed: false },
+                        { from: '3', to: '5', weight: 1, directed: false },
+                        { from: '4', to: '5', weight: 1, directed: false }  // Cycle 2-4-5-3
+                    ];
+                },
+                check: () => {
+                    let n = state.nodes.length;
+                    let e = state.edges.length;
+                    let comp = getGraphComponents().count;
+                    
+                    if (n !== 5) return { ok: false, msg: "Барлық 5 төбе қалуы тиіс! Төбені емес, тек қабырғаны өшіріңіз." };
+                    if (comp > 1) return { ok: false, msg: "Граф байланысқан болуы тиіс! Оқшауланған төбелер қалмасын." };
+                    if (e !== n - 1) return { ok: false, msg: `${n} төбесі бар ағашта тура ${n-1} қабырға болуы керек. Қазір қабырға саны: ${e}` };
+                    
+                    return { ok: true, msg: "Керемет! Графта циклдар өшіріліп, ол Ағаш құрылымына айналды!" };
+                }
+            },
+            {
+                id: 8,
+                title: "8-миссия: «Графты компьютерге түсіндір»",
+                desc: "Компьютер графты өңдеу үшін Іргелестік Матрицасын немесе Тізімін қолданады.",
+                task: "Тапсырма: Оң жақтағы матрица кестесінде көрсетілген бос ұяшықтарды (0 немесе 1) дұрыс толтырыңыз.",
+                init: () => {
+                    state.nodes = [
+                        { id: 'A', label: 'A', x: 200, y: 120 },
+                        { id: 'B', label: 'B', x: 350, y: 200 },
+                        { id: 'C', label: 'C', x: 200, y: 280 }
+                    ];
+                    state.edges = [
+                        { from: 'A', to: 'B', weight: 1, directed: false },
+                        { from: 'B', to: 'C', weight: 1, directed: false }
+                    ];
+                },
+                check: () => {
+                    // Check matrix input fields values
+                    let ok = true;
+                    let inputs = document.querySelectorAll('.matrix-input');
+                    inputs.forEach(inp => {
+                        let r = inp.dataset.row;
+                        let c = inp.dataset.col;
+                        let expected = (r === 'A' && c === 'B') || (r === 'B' && c === 'A') || (r === 'B' && c === 'C') || (r === 'C' && c === 'B') ? "1" : "0";
+                        if (inp.value.trim() !== expected) {
+                            ok = false;
+                        }
+                    });
+                    if (ok) return { ok: true, msg: "Тамаша! Іргелестік матрицасы компьютерге дұрыс ұсынылды!" };
+                    return { ok: false, msg: "Матрицада қателіктер бар. Салыстырып қайта тексеріңіз." };
+                }
+            }
+        ];
+
+        /* --- TOOL HINTS --- */
+        const TOOL_HINTS = {
+            'select': "Жылжыту режимі: Төбелерді тышқанмен сүйреп жылжытыңыз.",
+            'add-node': "Төбе қосу: Канвастың бос орнын басып жаңа төбе орналастырыңыз.",
+            'add-edge': "Қабырға қосу: Өзара жалғайтын екі төбені кезегімен таңдаңыз.",
+            'direction': "Бағыт өзгерту: Бағытын өзгерткіңіз келетін қабырғаны шертіңіз.",
+            'weight': "Салмақ орнату: Салмағын өзгерту үшін қабырғаны шертіңіз.",
+            'route': "Маршрут таңдау: Жол бойындағы төбелерді бірінен соң бірін шертіңіз.",
+            'delete': "Жою: Өшіру үшін төбені немесе қабырғаны шертіңіз."
+        };
+
+        /* --- INITIALIZATION --- */
+        window.onload = () => {
+            loadSavedProgress();
+            loadMission(state.currentMission);
+            setupCanvasEvents();
+            render();
+        };
+
+        function setTool(toolName) {
+            state.currentTool = toolName;
+            state.selectedNodeId = null;
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tool === toolName);
+            });
+            document.getElementById('tool-hint-text').innerText = TOOL_HINTS[toolName] || "";
+            render();
+        }
+
+        /* --- MISSION SYSTEM --- */
+        function loadMission(idx) {
+            state.currentMission = idx;
+            let m = MISSIONS[idx - 1];
+            state.locked = false;
+            document.getElementById('check-btn').disabled = false;
+            state.history = [];
+            state.routeNodes = [];
+            state.selectedNodeId = null;
+            state.bfs = { active: false, queue: [], visited: new Set(), parent: {}, start: null, target: null, current: null };
+            document.getElementById('bfs-panel').style.display = 'none';
+            document.getElementById('adj-matrix-table').innerHTML = '';
+            document.getElementById('m-title').innerText = m.title;
+            document.getElementById('m-desc').innerText = m.desc;
+            document.getElementById('m-task').innerText = m.task;
+            document.getElementById('mission-step').innerText = `${idx} / 8`;
+            hideFeedback();
+            
+            // Degree buttons setup for Mission 2
+            let degPanel = document.getElementById('degree-interactive-panel');
+            if (idx === 2) {
+                degPanel.style.display = 'block';
+                renderDegreeButtons();
+            } else {
+                degPanel.style.display = 'none';
+            }
+
+            m.init();
+            fitGraphToCanvas();
+            render();
+        }
+
+        function fitGraphToCanvas() {
+            if (!state.nodes.length) return;
+            const r = document.getElementById('graph-svg').getBoundingClientRect();
+            if (r.width < 50 || r.height < 50) return;
+            const pad = 50;
+            const xs = state.nodes.map(n => n.x), ys = state.nodes.map(n => n.y);
+            const minX = Math.min(...xs), maxX = Math.max(...xs);
+            const minY = Math.min(...ys), maxY = Math.max(...ys);
+            const bw = maxX - minX || 1, bh = maxY - minY || 1;
+            let k = Math.min((r.width - 2 * pad) / bw, (r.height - 2 * pad) / bh, 1.6);
+            if (state.nodes.length === 1) k = 1;
+            const ox = (r.width - bw * k) / 2, oy = (r.height - bh * k) / 2;
+            state.nodes.forEach(n => {
+                n.x = ox + (n.x - minX) * k;
+                n.y = oy + (n.y - minY) * k;
+            });
+        }
+
+        function renderDegreeButtons() {
+            let container = document.getElementById('degree-buttons');
+            container.innerHTML = '';
+            ['A', 'B', 'C', 'D'].forEach(n => {
+                let div = document.createElement('div');
+                div.style.cssText = "display:flex; align-items:center; gap:4px; font-size:0.8rem;";
+                div.innerHTML = `<span><b>${n}:</b></span>`;
+                [1, 2, 3, 4].forEach(val => {
+                    let b = document.createElement('button');
+                    b.className = 'action-btn';
+                    b.style.padding = '2px 8px';
+                    if (state.m2_degrees[n] === val) b.style.background = '#2563eb';
+                    b.innerText = val;
+                    b.onclick = () => {
+                        state.m2_degrees[n] = val;
+                        renderDegreeButtons();
+                    };
+                    div.appendChild(b);
+                });
+                container.appendChild(div);
+            });
+        }
+
+        function checkMissionSolution() {
+            if (state.locked) return;
+            let m = MISSIONS[state.currentMission - 1];
+            let res = m.check();
+            if (res.ok) {
+                showFeedback(res.msg, 'success');
+                state.locked = true;
+                document.getElementById('check-btn').disabled = true;
+                if (!state.missionSolved[state.currentMission - 1]) {
+                    state.missionSolved[state.currentMission - 1] = true;
+                    state.score += 100;
+                    document.getElementById('total-score').innerText = state.score;
+                    saveProgress();
+                }
+                setTimeout(() => {
+                    if (state.currentMission < 8) {
+                        loadMission(state.currentMission + 1);
+                    } else {
+                        showFinalScreen();
+                    }
+                }, 1800);
+            } else {
+                showFeedback(res.msg, 'error');
+            }
+        }
+
+        let restartArmed = false, restartTimer = null;
+
+        function disarmRestart() {
+            restartArmed = false;
+            clearTimeout(restartTimer);
+            let btn = document.getElementById('restart-all-btn');
+            btn.innerText = '🔁 Бәрін басынан бастау';
+            btn.style.borderColor = '';
+        }
+
+        function restartGame() {
+            let btn = document.getElementById('restart-all-btn');
+            if (!restartArmed) {
+                restartArmed = true;
+                btn.innerText = '⚠️ Растау үшін қайта басыңыз';
+                btn.style.borderColor = '#ef4444';
+                restartTimer = setTimeout(disarmRestart, 4000);
+                return;
+            }
+            disarmRestart();
+            if (state.isFreeLab) toggleFreeLab();
+            state.score = 0;
+            state.missionSolved = [false, false, false, false, false, false, false, false];
+            state.currentMission = 1;
+            try { localStorage.removeItem('smart_city_graph_progress'); } catch (e) {}
+            document.getElementById('total-score').innerText = 0;
+            closeHelpModal();
+            loadMission(1);
+        }
+
+        function resetCurrentMission() {
+            loadMission(state.currentMission);
+        }
+
+        function showFeedback(msg, type) {
+            let fb = document.getElementById('feedback');
+            fb.className = `feedback-box ${type}`;
+            fb.style.display = 'block';
+            fb.innerText = msg;
+        }
+
+        function hideFeedback() {
+            let fb = document.getElementById('feedback');
+            fb.className = 'feedback-box';
+            fb.style.display = 'none';
+        }
+
+        function showFinalScreen() {
+            let body = document.getElementById('help-modal-body');
+            if (!helpOriginal) helpOriginal = { title: document.querySelector('#help-modal .modal-header').innerText, body: body.innerHTML };
+            document.querySelector('#help-modal .modal-header').innerText = "🎉 Құттықтаймыз! Барлық миссиялар аяқталды!";
+            body.innerHTML = `
+                <p style="font-size:1.1rem; color:#10b981; font-weight:bold;">Сіз қалалық графтар желісінің бас сарапшысы атандыңыз!</p>
+                <p>Жинаған жалпы ұпайыңыз: <b>${state.score}</b></p>
+                <br>
+                <p><b>Меңгерілген негізгі ұғымдар:</b></p>
+                <ul style="margin-left:20px; font-size:0.85rem; line-height:1.6;">
+                    <li>Төбелер, қабырғалар және олардың дәрежелері</li>
+                    <li>Бағытталған және салмақталған графтар</li>
+                    <li>Маршруттар, қарапайым жолдар және циклдар</li>
+                    <li>Байланысқан графтар, компонентер және Ағаштар</li>
+                    <li>Іргелестік матрицасы мен тізімі</li>
+                </ul>
+            `;
+            document.getElementById('help-modal').style.display = 'flex';
+        }
+
+        /* --- CANVAS INTERACTION & RENDERING --- */
+        let helpOriginal = null;
+        let draggedNode = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        function setupCanvasEvents() {
+            const svg = document.getElementById('graph-svg');
+
+            svg.addEventListener('mousedown', (e) => {
+                let coords = getSvgCoords(e);
+                if (e.target.tagName === 'svg') {
+                    if (state.currentTool === 'add-node') {
+                        saveHistory();
+                        let id = state.isFreeLab ? uniqueId('V') : getNextNodeLabel();
+                        state.nodes.push({ id, label: id, x: coords.x, y: coords.y });
+                        render();
+                    }
+                }
+            });
+
+            svg.addEventListener('mousemove', (e) => {
+                if (draggedNode && state.currentTool === 'select') {
+                    let coords = getSvgCoords(e);
+                    draggedNode.x = coords.x - dragOffset.x;
+                    draggedNode.y = coords.y - dragOffset.y;
+                    render();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                draggedNode = null;
+            });
+        }
+
+        function getSvgCoords(e) {
+            const svg = document.getElementById('graph-svg');
+            const rect = svg.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function uniqueId(prefix) {
+            let i = 1;
+            while (state.nodes.some(n => n.id === prefix + i)) i++;
+            return prefix + i;
+        }
+
+        function getNextNodeLabel() {
+            const labels = ['Мектеп', 'Үй', 'Кітапхана', 'Саябақ', 'Аурухана', 'Вокзал'];
+            for (let l of labels) {
+                if (!state.nodes.find(n => n.label === l)) return l;
+            }
+            return uniqueId('N');
+        }
+
+        function handleNodeClick(node, e) {
+            e.stopPropagation();
+            if (state.currentTool === 'select') {
+                draggedNode = node;
+                let coords = getSvgCoords(e);
+                dragOffset.x = coords.x - node.x;
+                dragOffset.y = coords.y - node.y;
+            } else if (state.currentTool === 'add-edge') {
+                if (!state.selectedNodeId) {
+                    state.selectedNodeId = node.id;
+                } else if (state.selectedNodeId !== node.id) {
+                    saveHistory();
+                    let exists = state.edges.find(e => 
+                        (e.from === state.selectedNodeId && e.to === node.id) ||
+                        (!e.directed && e.from === node.id && e.to === state.selectedNodeId)
+                    );
+                    if (!exists) {
+                        state.edges.push({ from: state.selectedNodeId, to: node.id, weight: 1, directed: false });
+                    }
+                    state.selectedNodeId = null;
+                }
+            } else if (state.currentTool === 'route') {
+                if (state.currentMission === 3) {
+                    if (state.routeNodes.length === 0 && node.id !== 'A') {
+                        showFeedback("Маршрут A төбесінен басталуы керек!", "error");
+                        return;
+                    }
+                    // Check directed path constraint on step
+                    if (state.routeNodes.length > 0) {
+                        let prev = state.routeNodes[state.routeNodes.length - 1];
+                        let validEdge = state.edges.find(e => e.from === prev && e.to === node.id);
+                        if (!validEdge) {
+                            showFeedback("Бұл жолмен тек көрсетілген бағытта жүруге болады!", "error");
+                            return;
+                        }
+                    }
+                }
+                state.routeNodes.push(node.id);
+            } else if (state.currentTool === 'delete') {
+                saveHistory();
+                state.nodes = state.nodes.filter(n => n.id !== node.id);
+                state.routeNodes = state.routeNodes.filter(id => id !== node.id);
+                state.edges = state.edges.filter(e => e.from !== node.id && e.to !== node.id);
+            }
+            render();
+        }
+
+        function handleEdgeClick(edge, e) {
+            e.stopPropagation();
+            if (state.currentTool === 'direction') {
+                saveHistory();
+                if (!edge.directed) {
+                    edge.directed = true;
+                } else {
+                    let from = edge.from;
+                    edge.from = edge.to;
+                    edge.to = from;
+                }
+            } else if (state.currentTool === 'weight') {
+                saveHistory();
+                let w = prompt("Қабырға салмағын енгізіңіз:", edge.weight);
+                if (w !== null && !isNaN(w) && w.trim() !== '') {
+                    edge.weight = Number(w);
+                }
+            } else if (state.currentTool === 'delete') {
+                saveHistory();
+                state.edges = state.edges.filter(e => e !== edge);
+            }
+            render();
+        }
+
+        /* --- RENDER GRAPH & TABLES --- */
+        function render() {
+            const svg = document.getElementById('graph-svg');
+            
+            // Clear existing elements except defs
+            const defs = svg.querySelector('defs');
+            svg.innerHTML = '';
+            svg.appendChild(defs);
+
+            let componentsInfo = getGraphComponents();
+
+            // Render Edges
+            state.edges.forEach(edge => {
+                let n1 = state.nodes.find(n => n.id === edge.from);
+                let n2 = state.nodes.find(n => n.id === edge.to);
+                if (!n1 || !n2) return;
+
+                let isRoute = false;
+                for (let i = 0; i < state.routeNodes.length - 1; i++) {
+                    let u = state.routeNodes[i], v = state.routeNodes[i+1];
+                    if ((edge.from === u && edge.to === v) || (!edge.directed && edge.from === v && edge.to === u)) {
+                        isRoute = true; break;
+                    }
+                }
+
+                let line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', n1.x);
+                line.setAttribute('y1', n1.y);
+                line.setAttribute('x2', n2.x);
+                line.setAttribute('y2', n2.y);
+                
+                let cls = 'edge-line';
+                if (isRoute) cls += ' path';
+                line.setAttribute('class', cls);
+                
+                if (edge.directed) {
+                    line.setAttribute('marker-end', isRoute ? 'url(#arrow-path)' : 'url(#arrow)');
+                }
+
+                line.addEventListener('click', (e) => handleEdgeClick(edge, e));
+                svg.appendChild(line);
+
+                // Weight Label
+                if (edge.weight !== undefined && (state.currentMission === 4 || state.isFreeLab || state.currentTool === 'weight' || edge.weight !== 1)) {
+                    let midX = (n1.x + n2.x) / 2;
+                    let midY = (n1.y + n2.y) / 2;
+
+                    let bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    bg.setAttribute('x', midX - 10);
+                    bg.setAttribute('y', midY - 10);
+                    bg.setAttribute('width', 20);
+                    bg.setAttribute('height', 20);
+                    bg.setAttribute('class', 'edge-bg');
+
+                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', midX);
+                    text.setAttribute('y', midY);
+                    text.setAttribute('class', 'edge-text');
+                    text.textContent = edge.weight;
+                    bg.addEventListener('click', (e) => handleEdgeClick(edge, e));
+                    text.addEventListener('click', (e) => handleEdgeClick(edge, e));
+                    bg.style.cursor = 'pointer';
+                    text.style.cursor = 'pointer';
+
+                    svg.appendChild(bg);
+                    svg.appendChild(text);
+                }
+            });
+
+            // Render Nodes
+            state.nodes.forEach(node => {
+                let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                g.setAttribute('class', 'node-group');
+                if (state.selectedNodeId === node.id) g.classList.add('selected');
+                if (state.routeNodes.includes(node.id)) g.classList.add('target');
+                if (state.bfs.visited.has(node.id)) g.classList.add('visited');
+
+                let circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', node.x);
+                circle.setAttribute('cy', node.y);
+                circle.setAttribute('r', node.label.length > 3 ? 30 : 20);
+                circle.setAttribute('class', 'node-circle');
+
+                // Color component code if disconnected mission
+                if (state.currentMission === 6 || state.isFreeLab) {
+                    let compIdx = componentsInfo.map[node.id];
+                    const colors = ['#2563eb', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+                    if (compIdx !== undefined) {
+                        circle.style.stroke = colors[compIdx % colors.length];
+                    }
+                }
+
+                let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', node.x);
+                text.setAttribute('y', node.y);
+                text.setAttribute('class', 'node-text');
+                text.textContent = node.label;
+                if (node.label.length > 3) text.style.fontSize = '11px';
+
+                g.appendChild(circle);
+                g.appendChild(text);
+
+                g.addEventListener('mousedown', (e) => handleNodeClick(node, e));
+                svg.appendChild(g);
+            });
+
+            updateDataPanels(componentsInfo);
+        }
+
+        /* --- GRAPH ALGORITHMS & DATA DISPLAY --- */
+        function getGraphComponents() {
+            let adj = {};
+            state.nodes.forEach(n => adj[n.id] = []);
+            state.edges.forEach(e => {
+                if (!adj[e.from] || !adj[e.to]) return;
+                adj[e.from].push(e.to);
+                adj[e.to].push(e.from);
+            });
+
+            let visited = new Set();
+            let compMap = {};
+            let count = 0;
+
+            state.nodes.forEach(n => {
+                if (!visited.has(n.id)) {
+                    let q = [n.id];
+                    visited.add(n.id);
+                    while (q.length > 0) {
+                        let curr = q.shift();
+                        compMap[curr] = count;
+                        adj[curr].forEach(neigh => {
+                            if (!visited.has(neigh)) {
+                                visited.add(neigh);
+                                q.push(neigh);
+                            }
+                        });
+                    }
+                    count++;
+                }
+            });
+
+            return { count: state.nodes.length > 0 ? count : 0, map: compMap };
+        }
+
+        function updateDataPanels(compInfo) {
+            document.getElementById('val-v').innerText = state.nodes.length;
+            document.getElementById('val-e').innerText = state.edges.length;
+            document.getElementById('val-conn').innerText = compInfo.count === 1 ? 'Иә' : 'Жоқ';
+            document.getElementById('val-comp').innerText = compInfo.count;
+
+            // Matrix Table
+            let table = document.getElementById('adj-matrix-table');
+            let saved = {};
+            table.querySelectorAll('.matrix-input').forEach(i => saved[i.dataset.row + '|' + i.dataset.col] = i.value);
+            table.innerHTML = '';
+            
+            if (state.nodes.length === 0) return;
+
+            let headerRow = document.createElement('tr');
+            headerRow.appendChild(document.createElement('th'));
+            state.nodes.forEach(n => {
+                let th = document.createElement('th');
+                th.innerText = n.label;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            state.nodes.forEach(n1 => {
+                let tr = document.createElement('tr');
+                let th = document.createElement('th');
+                th.innerText = n1.label;
+                tr.appendChild(th);
+
+                state.nodes.forEach(n2 => {
+                    let td = document.createElement('td');
+                    let isConnected = state.edges.some(e => 
+                        (e.from === n1.id && e.to === n2.id) ||
+                        (!e.directed && e.from === n2.id && e.to === n1.id)
+                    );
+
+                    if (state.currentMission === 8 && !state.isFreeLab) {
+                        // Interactive inputs for mission 8
+                        let inp = document.createElement('input');
+                        inp.className = 'matrix-input';
+                        inp.dataset.row = n1.id;
+                        inp.dataset.col = n2.id;
+                        inp.maxLength = 1;
+                        inp.value = saved[n1.id + '|' + n2.id] || '';
+                        inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^01]/g, ''); });
+                        td.appendChild(inp);
+                    } else {
+                        td.innerText = isConnected ? '1' : '0';
+                    }
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            // Adj List
+            let listDiv = document.getElementById('adj-list');
+            let listHtml = '';
+            state.nodes.forEach(n => {
+                let neighbors = [];
+                state.edges.forEach(e => {
+                    if (e.from === n.id) neighbors.push(e.to);
+                    if (!e.directed && e.to === n.id) neighbors.push(e.from);
+                });
+                listHtml += `<div><b>${n.label}</b> ➡️ [ ${neighbors.join(', ')} ]</div>`;
+            });
+            listDiv.innerHTML = (state.currentMission === 8 && !state.isFreeLab) ? '<i>Бұл миссияда жасырылған</i>' : listHtml;
+        }
+
+        /* --- BFS VISUALIZER --- */
+        function startBFS() {
+            if (state.nodes.length < 2) {
+                document.getElementById('bfs-panel').style.display = 'none';
+                showFeedback("BFS үшін кемінде 2 төбе қажет.", "info");
+                render();
+                return;
+            }
+            state.routeNodes = [];
+            state.bfs.active = true;
+            state.bfs.start = state.nodes[0].id;
+            state.bfs.target = state.nodes[state.nodes.length - 1].id;
+            state.bfs.queue = [state.bfs.start];
+            state.bfs.visited = new Set([state.bfs.start]);
+            state.bfs.parent = {};
+            
+            document.getElementById('bfs-panel').style.display = 'flex';
+            document.getElementById('bfs-status').innerText = `Басталуы: ${state.bfs.start}`;
+            render();
+        }
+
+        function nextBFSStep() {
+            if (!state.bfs.active || state.bfs.queue.length === 0) return;
+
+            let curr = state.bfs.queue.shift();
+            state.bfs.current = curr;
+
+            if (curr === state.bfs.target) {
+                document.getElementById('bfs-status').innerText = `Мақсатқа жетті! ${curr}`;
+                state.bfs.active = false;
+                reconstructBFSPath();
+                return;
+            }
+
+            let neighbors = [];
+            state.edges.forEach(e => {
+                if (e.from === curr) neighbors.push(e.to);
+                if (!e.directed && e.to === curr) neighbors.push(e.from);
+            });
+
+            neighbors.forEach(neigh => {
+                if (!state.bfs.visited.has(neigh)) {
+                    state.bfs.visited.add(neigh);
+                    state.bfs.parent[neigh] = curr;
+                    state.bfs.queue.push(neigh);
+                }
+            });
+
+            let statusTxt = `Өңделуде: ${curr} | Кезеңде: [${state.bfs.queue.join(', ')}]`;
+            if (state.bfs.queue.length === 0) { statusTxt += ' | Мақсатқа жол табылмады'; state.bfs.active = false; }
+            document.getElementById('bfs-status').innerText = statusTxt;
+            render();
+        }
+
+        function reconstructBFSPath() {
+            let path = [];
+            let curr = state.bfs.target;
+            while (curr) {
+                path.unshift(curr);
+                curr = state.bfs.parent[curr];
+            }
+            state.routeNodes = path;
+            render();
+        }
+
+        function restartBFS() {
+            resetBFS();
+            if (state.isFreeLab) startBFS();
+        }
+
+        function resetBFS() {
+            state.bfs = { active: false, queue: [], visited: new Set(), parent: {}, start: null, target: null, current: null };
+            document.getElementById('bfs-panel').style.display = 'none';
+            state.routeNodes = [];
+            render();
+        }
+
+        /* --- FREE LAB & UTILS --- */
+        function toggleFreeLab() {
+            state.isFreeLab = !state.isFreeLab;
+            let btn = document.getElementById('free-lab-btn');
+            let jsonTools = document.getElementById('json-tools');
+            if (state.isFreeLab) {
+                btn.innerText = "📋 Миссияларға оралу";
+                btn.style.background = "#10b981";
+                jsonTools.style.display = 'flex';
+                document.getElementById('m-title').innerText = "🧪 Еркін зертхана";
+                document.getElementById('m-desc').innerText = "Өз графиңізді құрастырыңыз, бағыт пен салмақтарды өзгертіңіз және іздеу алгоритмін сынап өтіңіз.";
+                document.getElementById('m-task').innerText = "Құралдар: БАРЛЫҒЫ белсенді. Боттың көмегінсіз еркін эксперимент жасау.";
+                startBFS();
+            } else {
+                btn.innerText = "🧪 Еркін зертхана режимі";
+                btn.style.background = "#0f172a";
+                jsonTools.style.display = 'none';
+                resetBFS();
+                loadMission(state.currentMission);
+            }
+        }
+
+        function saveHistory() {
+            state.history.push({
+                nodes: JSON.parse(JSON.stringify(state.nodes)),
+                edges: JSON.parse(JSON.stringify(state.edges))
+            });
+            if (state.history.length > 20) state.history.shift();
+        }
+
+        function undoAction() {
+            if (state.history.length > 0) {
+                let prev = state.history.pop();
+                state.nodes = prev.nodes;
+                state.edges = prev.edges;
+                render();
+            }
+        }
+
+        function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+        function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+        function saveProgress() {
+            safeSet('smart_city_graph_progress', JSON.stringify({
+                score: state.score,
+                missionSolved: state.missionSolved,
+                currentMission: Math.min(state.currentMission + (state.missionSolved[state.currentMission - 1] ? 1 : 0), 8)
+            }));
+        }
+
+        function loadSavedProgress() {
+            let saved = safeGet('smart_city_graph_progress');
+            if (saved) {
+                let data; try { data = JSON.parse(saved); } catch (e) { return; }
+                state.score = data.score || 0;
+                state.missionSolved = data.missionSolved || state.missionSolved;
+                state.currentMission = data.currentMission || 1;
+                document.getElementById('total-score').innerText = state.score;
+            }
+        }
+
+        function exportJSON() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ nodes: state.nodes, edges: state.edges }));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "graph_schema.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSON() {
+            document.getElementById('json-input').click();
+        }
+
+        function loadJSONFile(e) {
+            let file = e.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    let parsed = JSON.parse(evt.target.result);
+                    if (!(Array.isArray(parsed.nodes) && Array.isArray(parsed.edges) &&
+                          parsed.nodes.every(n => n.id !== undefined && typeof n.x === 'number' && typeof n.y === 'number') &&
+                          parsed.edges.every(e => parsed.nodes.some(n => n.id === e.from) && parsed.nodes.some(n => n.id === e.to)))) throw new Error('bad');
+                    if (parsed.nodes && parsed.edges) {
+                        saveHistory();
+                        state.nodes = parsed.nodes.map(n => ({ ...n, label: n.label ?? String(n.id) }));
+                        state.edges = parsed.edges;
+                        render();
+                        showFeedback("Схема сәтті жүктелді!", "success");
+                    }
+                } catch(err) {
+                    showFeedback("Файл форматы қате!", "error");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function showHelpModal() {
+            if (helpOriginal) {
+                document.querySelector('#help-modal .modal-header').innerText = helpOriginal.title;
+                document.getElementById('help-modal-body').innerHTML = helpOriginal.body;
+            }
+            document.getElementById('help-modal').style.display = 'flex';
+        }
+        function closeHelpModal() { document.getElementById('help-modal').style.display = 'none'; }
+    </script>
+</body>
+</html>
