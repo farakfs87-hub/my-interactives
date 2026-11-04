@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Логикалық амалдар: интерактивті зертхана</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Livvic:wght@600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandCrimson: '#D90368',
+                        brandDark: '#040F0F',
+                        brandPink: '#FDF2F7',
+                        brandGreen: '#2C6E49',
+                        brandBorder: '#D5CED2',
+                        brandBlue: '#2766A5',
+                    },
+                    fontFamily: {
+                        heading: ['Livvic', 'Arial', 'sans-serif'],
+                        body: ['Comic Neue', 'Comic Sans MS', 'cursive', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #FFFFFF;
+            color: #040F0F;
+            font-family: 'Comic Neue', 'Comic Sans MS', sans-serif;
+            font-size: 18px;
+            user-select: none;
+        }
+
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Livvic', sans-serif;
+            color: #D90368;
+        }
+
+        .btn-custom {
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn-custom:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .signal-active {
+            stroke: #2C6E49;
+            stroke-width: 4;
+            filter: drop-shadow(0px 0px 6px #2C6E49);
+            transition: all 0.3s;
+        }
+
+        .signal-inactive {
+            stroke: #D5CED2;
+            stroke-width: 3;
+            transition: all 0.3s;
+        }
+
+        /* Responsive canvas/diagram container */
+        .svg-container {
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FDF2F7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D5CED2;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #D90368;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-white text-[#040F0F]">
+
+    <!-- Header / Navigation Bar -->
+    <header class="border-b border-[#D5CED2] bg-[#FDF2F7] px-4 py-3 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goToStep(0)">
+                <div class="bg-[#D90368] text-white p-2 rounded-xl text-xl font-bold font-heading">
+                    <i class="fa-solid fa-microchip"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold leading-tight">Логикалық амалдар</h1>
+                    <p class="text-xs text-gray-600 font-semibold">9-сынып Информатика: Интерактивті зертхана</p>
+                </div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-full border border-[#D5CED2]">
+                <span class="text-sm font-bold text-[#2C6E49]" id="step-indicator">Кезең: 0 / 8</span>
+                <div class="w-24 md:w-36 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div id="progress-bar" class="bg-[#2C6E49] h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <span class="text-sm font-bold text-[#D90368] ml-2" id="score-display"><i class="fa-solid fa-star text-yellow-500"></i> 0 ұпай</span>
+            </div>
+
+            <!-- Utility Buttons -->
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleFullscreen()" title="Толық экран" class="p-2 rounded-lg bg-white border border-[#D5CED2] hover:bg-gray-100 text-gray-700 min-w-[44px] min-h-[44px]">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+                <button onclick="resetAllProgress()" title="Қайта бастау" class="p-2 rounded-lg bg-white border border-[#D5CED2] hover:bg-red-50 text-red-600 min-w-[44px] min-h-[44px]">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Dynamic Container -->
+    <main class="max-w-6xl mx-auto w-full p-4 md:p-6 flex-grow">
+        
+        <!-- STEP 0: WELCOME / COVER SLIDE -->
+        <section id="step-0" class="step-page">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-[#FDF2F7] p-6 md:p-10 rounded-2xl border border-[#D5CED2] shadow-sm">
+                <div class="space-y-6">
+                    <span class="inline-block px-3 py-1 bg-white border border-[#D5CED2] rounded-full text-sm font-semibold text-[#2C6E49]">
+                        <i class="fa-solid fa-graduation-cap mr-1"></i> Информатика 9-сынып
+                    </span>
+                    <h1 class="text-3xl md:text-5xl font-extrabold leading-tight">Логикалық амалдар: интерактивті зертхана</h1>
+                    <p class="text-lg md:text-xl text-gray-800 leading-relaxed">
+                        Ақиқаттық кестелері, логикалық схемалар және электрондық кестеде модельдеу бойынша интерактивті тренажер.
+                    </p>
+                    <div class="bg-white p-4 rounded-xl border-l-4 border-[#2766A5] text-sm md:text-base">
+                        <p class="font-bold text-[#2766A5] mb-1"><i class="fa-solid fa-lightbulb mr-1"></i> Не үйренесіз?</p>
+                        <ul class="list-disc list-inside space-y-1 text-gray-700">
+                            <li>6 негізгі логикалық амалды зерттеу</li>
+                            <li>Логикалық тізбектерді іске қосу</li>
+                            <li>Электрондық кестеде формула құрастыру</li>
+                        </ul>
+                    </div>
+                    <div class="pt-2">
+                        <button onclick="nextStep()" class="btn-custom w-full md:w-auto px-8 py-4 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold text-xl rounded-xl flex items-center justify-center gap-3">
+                            Ойынды бастау <i class="fa-solid fa-circle-play"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-center items-center">
+                    <!-- Embedded SVG Microchip Circuit illustration -->
+                    <div class="w-full max-w-md bg-[#040F0F] p-6 rounded-2xl shadow-xl border-2 border-[#D90368] relative overflow-hidden">
+                        <svg viewBox="0 0 400 350" class="w-full h-auto">
+                            <!-- Circuit Lines -->
+                            <path d="M 50 50 L 150 50 L 200 100 L 350 100" stroke="#2C6E49" stroke-width="3" fill="none"/>
+                            <path d="M 50 150 L 120 150 L 170 200 L 350 200" stroke="#D90368" stroke-width="3" fill="none"/>
+                            <path d="M 50 280 L 220 280 L 270 230 L 350 230" stroke="#2766A5" stroke-width="3" fill="none"/>
+                            
+                            <!-- Glowing Logic Gate Icons -->
+                            <g transform="translate(130, 30)">
+                                <rect width="60" height="40" rx="8" fill="#D90368"/>
+                                <text x="30" y="25" fill="white" font-weight="bold" text-anchor="middle" font-size="14">NOT</text>
+                            </g>
+                            <g transform="translate(200, 130)">
+                                <rect width="60" height="40" rx="8" fill="#2C6E49"/>
+                                <text x="30" y="25" fill="white" font-weight="bold" text-anchor="middle" font-size="14">AND</text>
+                            </g>
+                            <g transform="translate(110, 260)">
+                                <rect width="60" height="40" rx="8" fill="#2766A5"/>
+                                <text x="30" y="25" fill="white" font-weight="bold" text-anchor="middle" font-size="14">XOR</text>
+                            </g>
+
+                            <!-- Nodes / Microchips -->
+                            <circle cx="50" cy="50" r="8" fill="#00FF66"/>
+                            <circle cx="50" cy="150" r="8" fill="#FF0055"/>
+                            <circle cx="50" cy="280" r="8" fill="#00CCFF"/>
+
+                            <rect x="290" y="80" width="80" height="170" rx="10" fill="#1A2626" stroke="#D5CED2" stroke-width="2"/>
+                            <text x="330" y="170" fill="#00FF66" font-weight="bold" text-anchor="middle" font-size="18">CPU</text>
+                        </svg>
+                        <div class="absolute bottom-2 right-3 text-xs text-green-400 font-mono">STATUS: ONLINE</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 1: ОЙ ҚОЗҒАУ -->
+        <section id="step-1" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">1-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Ой қозғау: Екі пікірдің байланысы</h2>
+                    </div>
+                    <button onclick="showHelpModal('Параметрлерді өзгерте отырып, күрделі пікірдің ақиқаттық мәні қалай өзгеретінін бақылаңыз.')" class="text-[#2766A5] hover:underline font-semibold text-sm">
+                        <i class="fa-solid fa-circle-question mr-1"></i> Кеңес
+                    </button>
+                </div>
+
+                <p class="text-lg">Экранда берілген оқу мысалы бойынша қарапайым пікірлердің ақиқаттығын белгілеп, олардың байланысын зерттеңіз:</p>
+
+                <!-- Statements Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-[#FDF2F7] p-5 rounded-xl border border-[#D5CED2]">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-xl text-[#D90368]">А пікірі</span>
+                            <button onclick="toggleWarmup('A')" id="warmup-btn-a" class="px-4 py-2 bg-[#2C6E49] text-white font-bold rounded-lg btn-custom text-sm">
+                                1 — Ақиқат
+                            </button>
+                        </div>
+                        <p class="text-lg italic bg-white p-3 rounded-lg border border-[#D5CED2]">«Астана қаласында қар жауып тұр»</p>
+                    </div>
+
+                    <div class="bg-[#FDF2F7] p-5 rounded-xl border border-[#D5CED2]">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="font-bold text-xl text-[#D90368]">В пікірі</span>
+                            <button onclick="toggleWarmup('B')" id="warmup-btn-b" class="px-4 py-2 bg-[#2C6E49] text-white font-bold rounded-lg btn-custom text-sm">
+                                1 — Ақиқат
+                            </button>
+                        </div>
+                        <p class="text-lg italic bg-white p-3 rounded-lg border border-[#D5CED2]">«Бүгін информатика сабағы бар»</p>
+                    </div>
+                </div>
+
+                <!-- Combined Statements Interactive Dynamic Analysis -->
+                <div class="bg-[#FDF2F7] p-6 rounded-xl border border-[#D5CED2] space-y-4">
+                    <h3 class="text-xl font-bold text-[#040F0F]">Күрделі пікірлерді талдау:</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-4 rounded-xl border border-[#D5CED2] space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-[#2766A5]">ЖӘНЕ (Конъюнкция)</span>
+                                <span id="warmup-and-badge" class="px-3 py-1 rounded-full text-xs font-bold text-white bg-[#2C6E49]">1 - Ақиқат</span>
+                            </div>
+                            <p class="text-sm text-gray-700">«Астанада қар жауып тұр <b>ЖӘНЕ</b> бүгін информатика сабағы бар»</p>
+                            <p id="warmup-and-desc" class="text-sm font-semibold text-[#2C6E49]">Екі пікір де ақиқат болғандықтан, жалпы пікір де АҚИҚАТ.</p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl border border-[#D5CED2] space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-[#2766A5]">НЕМЕСЕ (Дизъюнкция)</span>
+                                <span id="warmup-or-badge" class="px-3 py-1 rounded-full text-xs font-bold text-white bg-[#2C6E49]">1 - Ақиқат</span>
+                            </div>
+                            <p class="text-sm text-gray-700">«Астанада қар жауып тұр <b>НЕМЕСЕ</b> бүгін информатика сабағы бар»</p>
+                            <p id="warmup-or-desc" class="text-sm font-semibold text-[#2C6E49]">Кемінде бір пікір ақиқат болғандықтан, жалпы пікір АҚИҚАТ.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Келесі кезең <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 2: АЛТЫ АМАЛ (ИНТЕРАКТИВТІ АНЫҚТАМАЛЫҚ) -->
+        <section id="step-2" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">2-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Алты негізгі логикалық амал</h2>
+                    </div>
+                </div>
+
+                <p class="text-lg">Әр амалды таңдап, оның ережесімен танысыңыз және интерактивті микро-үлгіде сынап көргіңіз:</p>
+
+                <!-- Operation Tabs -->
+                <div class="flex flex-wrap gap-2 border-b border-[#D5CED2] pb-3" id="ops-tab-container">
+                    <!-- Dynamic tabs rendered by JS -->
+                </div>
+
+                <!-- Tab Content Area -->
+                <div id="op-detail-card" class="bg-[#FDF2F7] p-6 rounded-xl border border-[#D5CED2] grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <!-- Dynamic details inserted by JS -->
+                </div>
+
+                <div class="flex justify-between items-center pt-4">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Зертханаға өту <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 3: MAIN LAB SIMULATION (ЛОГИКАЛЫҚ ЗЕРТХАНА) -->
+        <section id="step-3" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">3-кезең (Негізгі симуляция)</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">«Логикалық зертхана» интерактивті симуляторы</h2>
+                    </div>
+                    
+                    <!-- Mode Switcher -->
+                    <div class="flex items-center bg-[#FDF2F7] p-1 rounded-xl border border-[#D5CED2]">
+                        <button onclick="setLabMode('explore')" id="mode-explore-btn" class="px-4 py-1.5 rounded-lg font-bold text-sm bg-[#2C6E49] text-white transition-all">
+                            <i class="fa-solid fa-flask mr-1"></i> Зерттеу
+                        </button>
+                        <button onclick="setLabMode('predict')" id="mode-predict-btn" class="px-4 py-1.5 rounded-lg font-bold text-sm text-gray-700 hover:bg-white transition-all">
+                            <i class="fa-solid fa-bullseye mr-1"></i> Болжау
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Control Panel (Left Column) -->
+                    <div class="bg-[#FDF2F7] p-5 rounded-xl border border-[#D5CED2] space-y-4">
+                        <h3 class="font-bold text-lg text-[#D90368]">1. Кіріс мәндері</h3>
+                        
+                        <!-- Toggle A -->
+                        <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-[#D5CED2]">
+                            <span class="font-bold text-lg">А айнымалысы:</span>
+                            <button onclick="toggleLabInput('A')" id="lab-btn-a" class="px-5 py-2 rounded-lg font-bold text-lg bg-[#2C6E49] text-white btn-custom">
+                                1 (ақиқат)
+                            </button>
+                        </div>
+
+                        <!-- Toggle B -->
+                        <div id="lab-b-container" class="flex items-center justify-between bg-white p-3 rounded-xl border border-[#D5CED2]">
+                            <span class="font-bold text-lg">В айнымалысы:</span>
+                            <button onclick="toggleLabInput('B')" id="lab-btn-b" class="px-5 py-2 rounded-lg font-bold text-lg bg-gray-400 text-white btn-custom">
+                                0 (жалған)
+                            </button>
+                        </div>
+
+                        <h3 class="font-bold text-lg text-[#D90368] pt-2">2. Логикалық амалды таңдау</h3>
+                        <div class="grid grid-cols-2 gap-2" id="lab-ops-selector">
+                            <!-- Operation radio buttons rendered by JS -->
+                        </div>
+
+                        <!-- Prediction controls (Only visible in 'Predict' mode) -->
+                        <div id="predict-panel" class="hidden bg-white p-4 rounded-xl border-2 border-[#2766A5] space-y-3">
+                            <h4 class="font-bold text-[#2766A5] text-sm"><i class="fa-solid fa-question-circle"></i> Нәтижені болжаңыз:</h4>
+                            <div class="flex gap-2">
+                                <button onclick="selectPrediction(1)" id="pred-1-btn" class="flex-1 py-2 border-2 border-gray-300 rounded-lg font-bold hover:border-[#2C6E49]">1 (Ақиқат)</button>
+                                <button onclick="selectPrediction(0)" id="pred-0-btn" class="flex-1 py-2 border-2 border-gray-300 rounded-lg font-bold hover:border-[#D90368]">0 (Жалған)</button>
+                            </div>
+                            <button onclick="checkPrediction()" class="w-full py-2 bg-[#2766A5] text-white font-bold rounded-lg btn-custom text-sm">
+                                Тексеру
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Circuit Diagram (Center Column) -->
+                    <div class="bg-white p-4 rounded-xl border border-[#D5CED2] flex flex-col justify-between items-center min-h-[300px]">
+                        <h3 class="font-bold text-center text-gray-700 mb-2">Интерактивті логикалық схема</h3>
+                        
+                        <div class="w-full svg-container my-auto">
+                            <svg viewBox="0 0 400 220" class="w-full h-auto">
+                                <!-- Signal Path A -->
+                                <path id="svg-wire-a" d="M 50 60 L 160 60 L 180 90" class="signal-active"/>
+                                <!-- Signal Path B -->
+                                <path id="svg-wire-b" d="M 50 160 L 160 160 L 180 130" class="signal-inactive"/>
+                                <!-- Output Path -->
+                                <path id="svg-wire-out" d="M 260 110 L 330 110" class="signal-inactive"/>
+
+                                <!-- Nodes Inputs -->
+                                <circle id="svg-node-a" cx="50" cy="60" r="14" fill="#2C6E49"/>
+                                <text x="50" y="65" fill="white" font-weight="bold" text-anchor="middle" font-size="14">A</text>
+
+                                <circle id="svg-node-b" cx="50" cy="160" r="14" fill="#6B7280"/>
+                                <text x="50" y="165" fill="white" font-weight="bold" text-anchor="middle" font-size="14">B</text>
+
+                                <!-- Central Gate Box -->
+                                <rect x="170" y="70" width="90" height="80" rx="12" fill="#FDF2F7" stroke="#D90368" stroke-width="3"/>
+                                <text id="svg-gate-label" x="215" y="118" fill="#D90368" font-weight="bold" text-anchor="middle" font-size="22">AND</text>
+
+                                <!-- Output Indicator Light -->
+                                <circle id="svg-light-out" cx="340" cy="110" r="20" fill="#6B7280" stroke="#D5CED2" stroke-width="3"/>
+                                <text id="svg-out-val" x="340" y="116" fill="white" font-weight="bold" text-anchor="middle" font-size="18">0</text>
+                            </svg>
+                        </div>
+
+                        <!-- Dynamic Explanation Box -->
+                        <div id="lab-explanation-box" class="w-full p-4 rounded-xl bg-[#FDF2F7] border border-[#D5CED2] text-sm md:text-base font-semibold">
+                            Нәтиже: <span id="lab-res-text" class="text-[#D90368] font-bold">0 (Жалған)</span>. 
+                            <p id="lab-explanation-text" class="text-gray-700 font-normal mt-1">Түсініктеме осы жерде көрсетіледі.</p>
+                        </div>
+                    </div>
+
+                    <!-- Live Truth Table (Right Column) -->
+                    <div class="bg-[#FDF2F7] p-4 rounded-xl border border-[#D5CED2] space-y-3 overflow-x-auto">
+                        <h3 class="font-bold text-lg text-[#040F0F]">Сәйкес ақиқаттық кестесі</h3>
+                        <table class="w-full text-center border-collapse bg-white rounded-lg overflow-hidden border border-[#D5CED2] text-sm">
+                            <thead>
+                                <tr class="bg-[#D90368] text-white font-bold">
+                                    <th class="p-2 border">A</th>
+                                    <th id="th-lab-b" class="p-2 border">B</th>
+                                    <th id="th-lab-op" class="p-2 border">A ∧ B</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lab-truth-table-body">
+                                <!-- Dynamic rows generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t border-[#D5CED2]">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Келесі: Кесте құрастыру <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 4: АҚИҚАТТЫҚ КЕСТЕСІН ҚҰРАСТЫР -->
+        <section id="step-4" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">4-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Ақиқаттық кестесін толтыру тапсырмасы</h2>
+                    </div>
+                    <span class="text-sm bg-[#FDF2F7] text-[#D90368] px-3 py-1 rounded-full font-bold border border-[#D5CED2]">
+                        <i class="fa-solid fa-award"></i> Тапсырма: 20 ұпай
+                    </span>
+                </div>
+
+                <p class="text-lg">Кестедегі бос ұяшықтарға басып, дұрыс <b>0</b> немесе <b>1</b> мәнін таңдаңыз:</p>
+
+                <!-- Interactive Table Exercise -->
+                <div class="overflow-x-auto">
+                    <table class="w-full max-w-3xl mx-auto text-center border-collapse bg-white rounded-xl overflow-hidden border-2 border-[#D5CED2] shadow-sm">
+                        <thead>
+                            <tr class="bg-[#2766A5] text-white font-bold text-base md:text-lg">
+                                <th class="p-3 border">A</th>
+                                <th class="p-3 border">B</th>
+                                <th class="p-3 border">A ∧ B (ЖӘНЕ)</th>
+                                <th class="p-3 border">A ∨ B (НЕМЕСЕ)</th>
+                                <th class="p-3 border">A → B (Импликация)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exercise-table-body" class="text-lg font-bold">
+                            <!-- Generated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-center gap-4 pt-2">
+                    <button onclick="checkTruthTableExercise()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold text-lg rounded-xl btn-custom">
+                        <i class="fa-solid fa-check-circle mr-1"></i> Тексеру
+                    </button>
+                    <button onclick="resetTruthTableExercise()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold text-gray-700 rounded-xl btn-custom">
+                        Қайта өңдеу
+                    </button>
+                </div>
+
+                <div id="exercise-feedback" class="hidden p-4 rounded-xl border text-center font-bold text-lg"></div>
+
+                <div class="flex justify-between items-center pt-4 border-t border-[#D5CED2]">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Келесі: Логикалық тізбек <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 5: ЛОГИКАЛЫҚ ТІЗБЕКТІ ІСКЕ ҚОС (COMPLEX SCHEMES) -->
+        <section id="step-5" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">5-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Логикалық тізбектер мен өрнектер</h2>
+                    </div>
+                    <span class="text-sm bg-[#FDF2F7] text-[#D90368] px-3 py-1 rounded-full font-bold border border-[#D5CED2]">
+                        <i class="fa-solid fa-award"></i> Тапсырма: 25 ұпай
+                    </span>
+                </div>
+
+                <!-- Scheme Selector Buttons -->
+                <div class="flex flex-wrap gap-2" id="circuit-selector-btns">
+                    <!-- Circuit choices rendered by JS -->
+                </div>
+
+                <!-- Circuit Work Area -->
+                <div class="bg-[#FDF2F7] p-6 rounded-2xl border border-[#D5CED2] space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <h3 id="circuit-title" class="text-xl font-bold text-[#D90368]">Тізбек №1</h3>
+                        <div id="circuit-step-by-step" class="text-sm bg-white px-3 py-1.5 rounded-lg border border-[#D5CED2] font-mono">
+                            Қадамдық есептеу: -
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Circuit Display Area -->
+                    <div id="circuit-interactive-container" class="bg-white p-4 rounded-xl border border-[#D5CED2] min-h-[250px] flex items-center justify-center">
+                        <!-- Rendered dynamically -->
+                    </div>
+
+                    <!-- Target Goal Panel -->
+                    <div class="bg-white p-4 rounded-xl border border-[#D5CED2] flex flex-wrap justify-between items-center gap-4">
+                        <div>
+                            <span class="text-sm text-gray-600 block">Мақсатты нәтиже:</span>
+                            <span id="circuit-goal-text" class="text-lg font-bold text-[#2766A5]">Шығыста 1 (Ақиқат) мәнін алыңыздар!</span>
+                        </div>
+                        <button onclick="checkCircuitGoal()" class="px-6 py-2.5 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                            Тізбекті тексеру
+                        </button>
+                    </div>
+                    <div id="circuit-feedback" class="hidden p-3 rounded-lg text-center font-bold"></div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t border-[#D5CED2]">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Келесі: Электрондық кесте <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 6: ЭЛЕКТРОНДЫҚ КЕСТЕ (EXCEL SIMULATION) -->
+        <section id="step-6" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">6-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Электрондық кестеде модельдеу</h2>
+                    </div>
+                    <span class="text-sm bg-[#FDF2F7] text-[#D90368] px-3 py-1 rounded-full font-bold border border-[#D5CED2]">
+                        <i class="fa-solid fa-award"></i> Тапсырма: 15 ұпай
+                    </span>
+                </div>
+
+                <p class="text-lg">Кестелік процессорда (Excel) логикалық функцияны құрастырыңыз және автотолтыруды орындаңыз:</p>
+
+                <!-- Excel Simulation UI -->
+                <div class="bg-gray-100 p-4 rounded-2xl border-2 border-[#D5CED2] space-y-4">
+                    <!-- Excel Toolbar Builder -->
+                    <div class="bg-white p-3 rounded-xl border border-gray-300 flex flex-wrap items-center gap-3">
+                        <span class="font-mono font-bold text-gray-500">fx</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm">Формула конструкторы:</span>
+                            <select id="excel-func-select" onchange="updateExcelPreview()" class="p-2 border border-gray-300 rounded-lg font-bold text-sm bg-[#FDF2F7]">
+                                <option value="AND">AND (ЖӘНЕ)</option>
+                                <option value="OR">OR (НЕМЕСЕ)</option>
+                                <option value="NOT">NOT (ЕМЕС)</option>
+                            </select>
+                        </div>
+                        <button onclick="applyExcelFormula()" class="px-4 py-2 bg-[#2766A5] text-white font-bold rounded-lg text-sm btn-custom">
+                            Формуланы қолдану (=<span id="excel-formula-preview">AND(A2, B2)</span>)
+                        </button>
+                        <button onclick="autoFillExcel()" id="autofill-btn" class="px-4 py-2 bg-[#2C6E49] text-white font-bold rounded-lg text-sm btn-custom opacity-50 cursor-not-allowed" disabled>
+                            <i class="fa-solid fa-arrows-down-to-line mr-1"></i> Автотолтыру
+                        </button>
+                    </div>
+
+                    <!-- Spreadsheet Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-center border-collapse bg-white font-mono text-base border border-gray-300">
+                            <thead>
+                                <tr class="bg-gray-200 text-gray-700">
+                                    <th class="p-2 border w-12"></th>
+                                    <th class="p-2 border">A</th>
+                                    <th class="p-2 border">B</th>
+                                    <th class="p-2 border bg-yellow-50">C (Формула: =<span id="excel-col-head">AND(A;B)</span>)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2 border bg-gray-100 font-bold">2</td>
+                                    <td class="p-2 border">0</td>
+                                    <td class="p-2 border">0</td>
+                                    <td id="excel-cell-c2" class="p-2 border bg-yellow-50 font-bold text-gray-400">---</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border bg-gray-100 font-bold">3</td>
+                                    <td class="p-2 border">0</td>
+                                    <td class="p-2 border">1</td>
+                                    <td id="excel-cell-c3" class="p-2 border bg-yellow-50 font-bold text-gray-400">---</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border bg-gray-100 font-bold">4</td>
+                                    <td class="p-2 border">1</td>
+                                    <td class="p-2 border">0</td>
+                                    <td id="excel-cell-c4" class="p-2 border bg-yellow-50 font-bold text-gray-400">---</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border bg-gray-100 font-bold">5</td>
+                                    <td class="p-2 border">1</td>
+                                    <td class="p-2 border">1</td>
+                                    <td id="excel-cell-c5" class="p-2 border bg-yellow-50 font-bold text-gray-400">---</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="excel-feedback" class="p-3 rounded-lg bg-white border border-[#D5CED2] text-sm text-gray-700 font-semibold">
+                        Нұсқаулық: Формуланы таңдап, «Формуланы қолдану» батырмасын басыңыз, содан кейін барлық бағанды толтыру үшін «Автотолтыру» басыңыз.
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t border-[#D5CED2]">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Келесі: Сәйкестендіру <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 7: СӘЙКЕСТЕНДІРУ (MATCHING EXERCISE) -->
+        <section id="step-7" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">7-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Логикалық амалдарды сәйкестендіру</h2>
+                    </div>
+                    <span class="text-sm bg-[#FDF2F7] text-[#D90368] px-3 py-1 rounded-full font-bold border border-[#D5CED2]">
+                        <i class="fa-solid fa-award"></i> Тапсырма: 20 ұпай
+                    </span>
+                </div>
+
+                <p class="text-lg">Сол жақтағы амал картасын басып, содан кейін оң жақтағы тиісті анықтаманы таңдаңыз:</p>
+
+                <!-- Matching Cards Container -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left Terms -->
+                    <div class="space-y-3" id="match-terms-col">
+                        <!-- Dynamic term cards -->
+                    </div>
+                    <!-- Right Definitions -->
+                    <div class="space-y-3" id="match-defs-col">
+                        <!-- Dynamic def cards -->
+                    </div>
+                </div>
+
+                <div id="matching-feedback" class="hidden p-4 rounded-xl text-center font-bold"></div>
+
+                <div class="flex justify-between items-center pt-4 border-t border-[#D5CED2]">
+                    <button onclick="prevStep()" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Артқа
+                    </button>
+                    <button onclick="nextStep()" class="px-8 py-3 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold rounded-xl btn-custom">
+                        Шығу билеті <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- STEP 8: ШЫҒУ БИЛЕТІ (EXIT QUIZ) -->
+        <section id="step-8" class="step-page hidden">
+            <div class="bg-white p-6 rounded-2xl border border-[#D5CED2] shadow-sm space-y-6">
+                <div class="border-b border-[#D5CED2] pb-4 flex justify-between items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-sm font-bold text-[#2C6E49] uppercase tracking-wide">8-кезең</span>
+                        <h2 class="text-2xl md:text-3xl font-bold">Шығу билеті: Білімді тексеру</h2>
+                    </div>
+                    <span class="text-sm bg-[#FDF2F7] text-[#D90368] px-3 py-1 rounded-full font-bold border border-[#D5CED2]">
+                        <i class="fa-solid fa-award"></i> 6 сұрақ
+                    </span>
+                </div>
+
+                <!-- Quiz Cards Container -->
+                <div id="quiz-container" class="space-y-6">
+                    <!-- Dynamic Quiz Questions rendered by JS -->
+                </div>
+
+                <div class="flex justify-center pt-4">
+                    <button onclick="finishQuiz()" id="finish-quiz-btn" class="px-10 py-4 bg-[#2C6E49] hover:bg-[#23583A] text-white font-bold text-xl rounded-xl btn-custom">
+                        Нәтижені көру <i class="fa-solid fa-trophy ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINAL RESULTS SCREEN -->
+        <section id="step-final" class="step-page hidden">
+            <div class="bg-[#FDF2F7] p-8 rounded-2xl border-2 border-[#D90368] shadow-lg text-center space-y-6 max-w-3xl mx-auto">
+                <div class="inline-block p-4 bg-white rounded-full text-[#D90368] text-5xl shadow-sm">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-[#040F0F]">Құттықтаймыз! Ойын аяқталды!</h2>
+                <p class="text-xl">Сіз логикалық амалдар интерактивті зертханасын сәтті өттіңіз.</p>
+
+                <div class="bg-white p-6 rounded-xl border border-[#D5CED2] inline-block w-full max-w-md space-y-3">
+                    <span class="text-sm text-gray-500 uppercase font-bold tracking-wider">Сіздің жинаған ұпайыңыз:</span>
+                    <div id="final-score-val" class="text-5xl font-extrabold text-[#2C6E49]">0 / 100</div>
+                    <p id="final-rating-text" class="font-bold text-lg text-[#2766A5]">Тамаша нәтиже!</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl border border-[#D5CED2] text-left text-sm space-y-2">
+                    <h4 class="font-bold text-[#D90368] text-base"><i class="fa-solid fa-rotate-left mr-1"></i> Қайталауға ұсыныс:</h4>
+                    <ul id="recommendations-list" class="list-disc list-inside text-gray-700 space-y-1">
+                        <li>Барлық логикалық амалдарды жақсы меңгердіңіз!</li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-4 pt-2">
+                    <button onclick="goToStep(3)" class="px-6 py-3 bg-[#2766A5] text-white font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-flask mr-1"></i> Зертханаға қайта оралу
+                    </button>
+                    <button onclick="resetAllProgress()" class="px-6 py-3 bg-[#2C6E49] text-white font-bold rounded-xl btn-custom">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Ойынды қайта бастау
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for Help / Explanations -->
+    <div id="help-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white p-6 rounded-2xl max-w-md w-full border-2 border-[#D90368] space-y-4 shadow-xl">
+            <h3 class="text-xl font-bold text-[#D90368] flex items-center gap-2">
+                <i class="fa-solid fa-lightbulb"></i> Кеңес
+            </h3>
+            <p id="help-modal-text" class="text-gray-800 text-base">Көмек мәтіні...</p>
+            <div class="text-right">
+                <button onclick="closeHelpModal()" class="px-5 py-2 bg-[#2C6E49] text-white font-bold rounded-lg btn-custom">
+                    Түсінікті
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#D5CED2] bg-[#FDF2F7] px-4 py-3 text-center text-xs text-gray-600 font-semibold">
+        «Логикалық амалдар: интерактивті зертхана» — 9-сынып Информатика сабағына арналған оқу симуляторы.
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <script>
+        /* GLOBAL GAME STATE */
+        let currentStep = 0;
+        const totalSteps = 8;
+        let totalScore = 0;
+        let scoredSections = {}; // Prevent duplicate score points
+
+        /* REFERENCE TRUTH TABLE MATRIX */
+        const REFERENCE_TABLE = [
+            { A: 0, B: 0, NOT_A: 1, AND: 0, OR: 0, XOR: 0, IMPLIES: 1, EQUIV: 1 },
+            { A: 0, B: 1, NOT_A: 1, AND: 0, OR: 1, XOR: 1, IMPLIES: 1, EQUIV: 0 },
+            { A: 1, B: 0, NOT_A: 0, AND: 0, OR: 1, XOR: 1, IMPLIES: 0, EQUIV: 0 },
+            { A: 1, B: 1, NOT_A: 0, AND: 1, OR: 1, XOR: 0, IMPLIES: 1, EQUIV: 1 }
+        ];
+
+        /* OPERATIONS DEFINITIONS DATA */
+        const OPERATIONS = {
+            'NOT': {
+                name: 'ЕМЕС (Инверсия)',
+                symbol: '¬A',
+                unary: true,
+                desc: 'Пікірдің ақиқаттық мәнін қарама-қарсы мәнге ауыстырады: 1 → 0, 0 → 1.',
+                eval: (a, b) => a === 1 ? 0 : 1,
+                calcText: (a, b) => `¬${a} = ${a === 1 ? 0 : 1}`,
+                explain: (a, b, r) => `Нәтиже: ${r}. Инверсия ${a} мәнін керісінше ${r}-ге ауыстырады.`
+            },
+            'AND': {
+                name: 'ЖӘНЕ (Конъюнкция)',
+                symbol: 'A ∧ B',
+                unary: false,
+                desc: 'Екі пікір де бір мезгілде ақиқат (1) болғанда ғана нәтиже 1 болады.',
+                eval: (a, b) => (a === 1 && b === 1) ? 1 : 0,
+                calcText: (a, b) => `${a} ∧ ${b} = ${(a === 1 && b === 1) ? 1 : 0}`,
+                explain: (a, b, r) => r === 1 ? 
+                    `Нәтиже: 1. Екі пікір де ақиқат болғандықтан ЖӘНЕ амалы 1 береді.` : 
+                    `Нәтиже: 0. ЖӘНЕ амалы екі пікір де ақиқат болғанда ғана 1 мәнін береді.`
+            },
+            'OR': {
+                name: 'НЕМЕСЕ (Дизъюнкция)',
+                symbol: 'A ∨ B',
+                unary: false,
+                desc: 'Кемінде бір пікір ақиқат (1) болса, нәтиже де ақиқат (1) болады.',
+                eval: (a, b) => (a === 1 || b === 1) ? 1 : 0,
+                calcText: (a, b) => `${a} ∨ ${b} = ${(a === 1 || b === 1) ? 1 : 0}`,
+                explain: (a, b, r) => r === 1 ? 
+                    `Нәтиже: 1. Кемінде бір пікір ақиқат болғандықтан НЕМЕСЕ амалы 1 береді.` : 
+                    `Нәтиже: 0. Екі пікір де жалған (0) болғандықтан НЕМЕСЕ амалы 0 береді.`
+            },
+            'XOR': {
+                name: 'Айрықша НЕМЕСЕ (XOR)',
+                symbol: 'A ⊕ B',
+                unary: false,
+                desc: 'Екі пікірдің тек біреуі ғана ақиқат болғанда 1 шығады. Мәндері бірдей болса — 0.',
+                eval: (a, b) => (a !== b) ? 1 : 0,
+                calcText: (a, b) => `${a} ⊕ ${b} = ${(a !== b) ? 1 : 0}`,
+                explain: (a, b, r) => r === 1 ? 
+                    `Нәтиже: 1. Айнымалылардың мәндері әртүрлі болғандықтан XOR 1 береді.` : 
+                    `Нәтиже: 0. Мәндері бірдей (${a} және ${b}) болғандықтан XOR 0 береді.`
+            },
+            'IMPLIES': {
+                name: 'Импликация',
+                symbol: 'A → B',
+                unary: false,
+                desc: 'Тек алдыңғы пікір ақиқат (1), ал салдары жалған (0) болғанда ғана (1 → 0) жалған (0) болады.',
+                eval: (a, b) => (a === 1 && b === 0) ? 0 : 1,
+                calcText: (a, b) => `${a} → ${b} = ${(a === 1 && b === 0) ? 0 : 1}`,
+                explain: (a, b, r) => r === 0 ? 
+                    `Нәтиже: 0. Тек 1 → 0 жағдайында импликация жалған (0) болады!` : 
+                    `Нәтиже: 1. Бұл жағдайда импликация ережесі бойынша нәтиже ақиқат.`
+            },
+            'EQUIV': {
+                name: 'Эквиваленттілік',
+                symbol: 'A ↔ B',
+                unary: false,
+                desc: 'Екі пікірдің ақиқаттық мәндері өзара тең болғанда (1 ↔ 1 немесе 0 ↔ 0) ақиқат болады.',
+                eval: (a, b) => (a === b) ? 1 : 0,
+                calcText: (a, b) => `${a} ↔ ${b} = ${(a === b) ? 1 : 0}`,
+                explain: (a, b, r) => r === 1 ? 
+                    `Нәтиже: 1. Екі айнымалының мәні өзара тең (${a} = ${b}).` : 
+                    `Нәтиже: 0. Айнымалылардың мәні әртүрлі (${a} ≠ ${b}).`
+            }
+        };
+
+        /* INITIALIZATION ON LOAD */
+        window.onload = function() {
+            loadSavedProgress();
+            renderOpTabs();
+            initLabSimulator();
+            initTruthTableExercise();
+            initCircuitExercise();
+            initMatchingExercise();
+            initQuiz();
+            updateProgress();
+        };
+
+        /* NAVIGATION CONTROL */
+        function goToStep(stepNum) {
+            document.querySelectorAll('.step-page').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(`step-${stepNum}`);
+            if (target) {
+                target.classList.remove('hidden');
+                currentStep = stepNum;
+            } else if (stepNum > totalSteps) {
+                document.getElementById('step-final').classList.remove('hidden');
+                currentStep = totalSteps + 1;
+                renderFinalResults();
+            }
+            updateProgress();
+            saveProgress();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function nextStep() {
+            goToStep(currentStep + 1);
+        }
+
+        function prevStep() {
+            if (currentStep > 0) goToStep(currentStep - 1);
+        }
+
+        function updateProgress() {
+            const bar = document.getElementById('progress-bar');
+            const stepInd = document.getElementById('step-indicator');
+            const scoreInd = document.getElementById('score-display');
+
+            let pct = Math.min(100, Math.round((currentStep / totalSteps) * 100));
+            bar.style.width = `${pct}%`;
+            stepInd.innerText = currentStep <= totalSteps ? `Кезең: ${currentStep} / ${totalSteps}` : `Аяқталды`;
+            scoreInd.innerHTML = `<i class="fa-solid fa-star text-yellow-500"></i> ${totalScore} ұпай`;
+        }
+
+        function addScore(sectionKey, points) {
+            if (!scoredSections[sectionKey]) {
+                scoredSections[sectionKey] = points;
+                totalScore += points;
+                updateProgress();
+                saveProgress();
+            }
+        }
+
+        /* LOCAL STORAGE */
+        function saveProgress() {
+            try {
+                const data = {
+                    currentStep,
+                    totalScore,
+                    scoredSections
+                };
+                localStorage.setItem('logic_lab_progress', JSON.stringify(data));
+            } catch (e) {}
+        }
+
+        function loadSavedProgress() {
+            try {
+                const saved = localStorage.getItem('logic_lab_progress');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    totalScore = data.totalScore || 0;
+                    scoredSections = data.scoredSections || {};
+                }
+            } catch (e) {}
+        }
+
+        function resetAllProgress() {
+            if (confirm('Барлық прогресті нөлдеп, қайта бастағыңыз келе ме?')) {
+                localStorage.removeItem('logic_lab_progress');
+                totalScore = 0;
+                scoredSections = {};
+                goToStep(0);
+                location.reload();
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        function showHelpModal(text) {
+            document.getElementById('help-modal-text').innerText = text;
+            document.getElementById('help-modal').classList.remove('hidden');
+            document.getElementById('help-modal').classList.add('flex');
+        }
+
+        function closeHelpModal() {
+            document.getElementById('help-modal').classList.add('hidden');
+            document.getElementById('help-modal').classList.remove('flex');
+        }
+
+        /* STEP 1: WARMUP LOGIC */
+        let warmupState = { A: 1, B: 1 };
+
+        function toggleWarmup(varName) {
+            warmupState[varName] = warmupState[varName] === 1 ? 0 : 1;
+            const btn = document.getElementById(`warmup-btn-${varName.toLowerCase()}`);
+            btn.innerText = warmupState[varName] === 1 ? '1 — Ақиқат' : '0 — Жалған';
+            btn.className = `px-4 py-2 text-white font-bold rounded-lg btn-custom text-sm ${warmupState[varName] === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+
+            const andRes = (warmupState.A === 1 && warmupState.B === 1) ? 1 : 0;
+            const orRes = (warmupState.A === 1 || warmupState.B === 1) ? 1 : 0;
+
+            const andBadge = document.getElementById('warmup-and-badge');
+            andBadge.innerText = andRes === 1 ? '1 - Ақиқат' : '0 - Жалған';
+            andBadge.className = `px-3 py-1 rounded-full text-xs font-bold text-white ${andRes === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+            document.getElementById('warmup-and-desc').innerText = andRes === 1 ? 
+                'Екі пікір де ақиқат болғандықтан, жалпы пікір де АҚИҚАТ.' : 
+                'Кемінде бір пікір жалған болғандықтан, ЖӘНЕ байламы бойынша ЖАЛҒАН.';
+
+            const orBadge = document.getElementById('warmup-or-badge');
+            orBadge.innerText = orRes === 1 ? '1 - Ақиқат' : '0 - Жалған';
+            orBadge.className = `px-3 py-1 rounded-full text-xs font-bold text-white ${orRes === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+            document.getElementById('warmup-or-desc').innerText = orRes === 1 ? 
+                'Кемінде бір пікір ақиқат болғандықтан, НЕМЕСЕ байламы АҚИҚАТ.' : 
+                'Екі пікір де жалған болғандықтан, НЕМЕСЕ байламы ЖАЛҒАН.';
+        }
+
+        /* STEP 2: OPERATIONS TABS */
+        function renderOpTabs() {
+            const container = document.getElementById('ops-tab-container');
+            container.innerHTML = '';
+            let first = true;
+            for (let key in OPERATIONS) {
+                const op = OPERATIONS[key];
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-xl font-bold text-sm btn-custom ${first ? 'bg-[#D90368] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`;
+                btn.innerText = op.name;
+                btn.onclick = () => selectOpTab(key, btn);
+                container.appendChild(btn);
+                if (first) {
+                    selectOpTab(key, btn);
+                    first = false;
+                }
+            }
+        }
+
+        function selectOpTab(opKey, btnEl) {
+            document.querySelectorAll('#ops-tab-container button').forEach(b => {
+                b.className = 'px-4 py-2 rounded-xl font-bold text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 btn-custom';
+            });
+            btnEl.className = 'px-4 py-2 rounded-xl font-bold text-sm bg-[#D90368] text-white btn-custom';
+
+            const op = OPERATIONS[opKey];
+            const card = document.getElementById('op-detail-card');
+            card.innerHTML = `
+                <div class="space-y-4">
+                    <span class="px-3 py-1 bg-[#D90368] text-white font-bold rounded-lg text-sm">${op.symbol}</span>
+                    <h3 class="text-2xl font-bold text-[#040F0F]">${op.name}</h3>
+                    <p class="text-base text-gray-800 leading-relaxed">${op.desc}</p>
+                    <div class="bg-white p-3 rounded-lg border border-[#D5CED2] text-sm">
+                        <b>Формула үлгісі:</b> <span class="font-mono text-[#2766A5]">${op.symbol}</span>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-[#D5CED2] space-y-3 text-center">
+                    <h4 class="font-bold text-[#2C6E49] text-sm uppercase">Мини-зертхана сынағы:</h4>
+                    <div class="flex justify-center items-center gap-3">
+                        <button onclick="toggleMiniOp('A')" id="mini-a" class="px-3 py-1.5 bg-[#2C6E49] text-white font-bold rounded-lg text-sm">A = 1</button>
+                        ${!op.unary ? `<button onclick="toggleMiniOp('B')" id="mini-b" class="px-3 py-1.5 bg-gray-400 text-white font-bold rounded-lg text-sm">B = 0</button>` : ''}
+                    </div>
+                    <div class="text-lg font-bold font-mono text-[#D90368]" id="mini-res">
+                        ${op.calcText(1, 0)}
+                    </div>
+                </div>
+            `;
+            window.currentMiniOpKey = opKey;
+            window.miniA = 1;
+            window.miniB = 0;
+        }
+
+        function toggleMiniOp(varName) {
+            if (varName === 'A') window.miniA = window.miniA === 1 ? 0 : 1;
+            if (varName === 'B') window.miniB = window.miniB === 1 ? 0 : 1;
+            
+            const btnA = document.getElementById('mini-a');
+            if (btnA) {
+                btnA.innerText = `A = ${window.miniA}`;
+                btnA.className = `px-3 py-1.5 text-white font-bold rounded-lg text-sm ${window.miniA === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+            }
+            const btnB = document.getElementById('mini-b');
+            if (btnB) {
+                btnB.innerText = `B = ${window.miniB}`;
+                btnB.className = `px-3 py-1.5 text-white font-bold rounded-lg text-sm ${window.miniB === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+            }
+
+            const op = OPERATIONS[window.currentMiniOpKey];
+            document.getElementById('mini-res').innerText = op.calcText(window.miniA, window.miniB);
+        }
+
+        /* STEP 3: MAIN LAB SIMULATOR */
+        let labState = {
+            A: 1,
+            B: 0,
+            opKey: 'AND',
+            mode: 'explore', // 'explore' or 'predict'
+            revealed: false,
+            prediction: null
+        };
+
+        function initLabSimulator() {
+            const container = document.getElementById('lab-ops-selector');
+            container.innerHTML = '';
+            for (let key in OPERATIONS) {
+                const op = OPERATIONS[key];
+                container.innerHTML += `
+                    <button onclick="selectLabOp('${key}')" id="lab-op-btn-${key}" class="p-2 border border-[#D5CED2] rounded-lg font-bold text-xs md:text-sm hover:border-[#D90368] text-center transition-all bg-white">
+                        ${op.symbol}
+                    </button>
+                `;
+            }
+            selectLabOp('AND');
+        }
+
+        function setLabMode(mode) {
+            labState.mode = mode;
+            resetPrediction();
+            document.getElementById('mode-explore-btn').className = mode === 'explore' ? 
+                'px-4 py-1.5 rounded-lg font-bold text-sm bg-[#2C6E49] text-white transition-all' : 
+                'px-4 py-1.5 rounded-lg font-bold text-sm text-gray-700 hover:bg-white transition-all';
+            document.getElementById('mode-predict-btn').className = mode === 'predict' ? 
+                'px-4 py-1.5 rounded-lg font-bold text-sm bg-[#2C6E49] text-white transition-all' : 
+                'px-4 py-1.5 rounded-lg font-bold text-sm text-gray-700 hover:bg-white transition-all';
+
+            document.getElementById('predict-panel').classList.toggle('hidden', mode !== 'predict');
+            updateLabUI();
+        }
+
+        function toggleLabInput(varName) {
+            resetPrediction();
+            labState[varName] = labState[varName] === 1 ? 0 : 1;
+            updateLabUI();
+        }
+
+        function selectLabOp(opKey) {
+            resetPrediction();
+            labState.opKey = opKey;
+            for (let k in OPERATIONS) {
+                const btn = document.getElementById(`lab-op-btn-${k}`);
+                if (btn) {
+                    if (k === opKey) {
+                        btn.className = 'p-2 border-2 border-[#D90368] rounded-lg font-bold text-xs md:text-sm bg-[#FDF2F7] text-[#D90368] shadow-sm';
+                    } else {
+                        btn.className = 'p-2 border border-[#D5CED2] rounded-lg font-bold text-xs md:text-sm hover:border-[#D90368] text-center bg-white text-gray-700';
+                    }
+                }
+            }
+            updateLabUI();
+        }
+
+        function resetPrediction() {
+            labState.prediction = null;
+            labState.revealed = false;
+            const b1 = document.getElementById('pred-1-btn');
+            const b0 = document.getElementById('pred-0-btn');
+            if (b1) b1.className = 'flex-1 py-2 border-2 border-gray-300 rounded-lg font-bold hover:border-[#2C6E49]';
+            if (b0) b0.className = 'flex-1 py-2 border-2 border-gray-300 rounded-lg font-bold hover:border-[#D90368]';
+        }
+
+        function selectPrediction(val) {
+            labState.prediction = val;
+            document.getElementById('pred-1-btn').className = val === 1 ? 
+                'flex-1 py-2 border-2 border-[#2C6E49] bg-green-50 rounded-lg font-bold text-[#2C6E49]' : 
+                'flex-1 py-2 border-2 border-gray-300 rounded-lg font-bold';
+            document.getElementById('pred-0-btn').className = val === 0 ? 
+                'flex-1 py-2 border-2 border-[#D90368] bg-pink-50 rounded-lg font-bold text-[#D90368]' : 
+                'flex-1 py-2 border-2 border-gray-300 rounded-lg font-bold';
+        }
+
+        function checkPrediction() {
+            if (labState.prediction === null) {
+                showHelpModal('Өтініш, алдымен болжамды таңдаңыз (0 немесе 1)!');
+                return;
+            }
+            const op = OPERATIONS[labState.opKey];
+            const realRes = op.eval(labState.A, labState.B);
+            labState.revealed = true;
+            updateLabUI();
+            if (labState.prediction === realRes) {
+                showHelpModal('Дұрыс! Болжамыңыз дәл шықты. Тамаша!');
+                addScore('lab_prediction', 2);
+            } else {
+                showHelpModal(`Қате. Нақты нәтиже: ${realRes}. Ойланып көріңіз.`);
+            }
+        }
+
+        function updateLabUI() {
+            const op = OPERATIONS[labState.opKey];
+            
+            // Input buttons state
+            const btnA = document.getElementById('lab-btn-a');
+            btnA.innerText = labState.A === 1 ? '1 (ақиқат)' : '0 (жалған)';
+            btnA.className = `px-5 py-2 rounded-lg font-bold text-lg text-white btn-custom ${labState.A === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+
+            const containerB = document.getElementById('lab-b-container');
+            if (op.unary) {
+                containerB.classList.add('opacity-40', 'pointer-events-none');
+            } else {
+                containerB.classList.remove('opacity-40', 'pointer-events-none');
+            }
+
+            const btnB = document.getElementById('lab-btn-b');
+            btnB.innerText = labState.B === 1 ? '1 (ақиқат)' : '0 (жалған)';
+            btnB.className = `px-5 py-2 rounded-lg font-bold text-lg text-white btn-custom ${labState.B === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+
+            // Circuit diagram
+            const resultVal = op.eval(labState.A, labState.B);
+            const concealed = labState.mode === 'predict' && !labState.revealed;
+
+            document.getElementById('svg-node-a').setAttribute('fill', labState.A === 1 ? '#2C6E49' : '#D90368');
+            document.getElementById('svg-wire-a').className.baseVal = labState.A === 1 ? 'signal-active' : 'signal-inactive';
+
+            if (op.unary) {
+                document.getElementById('svg-node-b').setAttribute('fill', '#9CA3AF');
+                document.getElementById('svg-wire-b').className.baseVal = 'signal-inactive';
+            } else {
+                document.getElementById('svg-node-b').setAttribute('fill', labState.B === 1 ? '#2C6E49' : '#D90368');
+                document.getElementById('svg-wire-b').className.baseVal = labState.B === 1 ? 'signal-active' : 'signal-inactive';
+            }
+
+            document.getElementById('svg-gate-label').textContent = op.symbol;
+            document.getElementById('svg-wire-out').className.baseVal = (!concealed && resultVal === 1) ? 'signal-active' : 'signal-inactive';
+            document.getElementById('svg-light-out').setAttribute('fill', concealed ? '#6B7280' : (resultVal === 1 ? '#2C6E49' : '#D90368'));
+            document.getElementById('svg-out-val').textContent = concealed ? '?' : resultVal;
+
+            // Explanation box
+            document.getElementById('lab-res-text').innerText = concealed ? '?' : `${resultVal} (${resultVal === 1 ? 'Ақиқат' : 'Жалған'})`;
+            document.getElementById('lab-res-text').className = (!concealed && resultVal === 1) ? 'text-[#2C6E49] font-bold' : 'text-[#D90368] font-bold';
+            document.getElementById('lab-explanation-text').innerText = concealed ? 'Нәтижені болжап, «Тексеру» батырмасын басыңыз.' : op.explain(labState.A, labState.B, resultVal);
+
+            // Render live truth table
+            document.getElementById('th-lab-op').innerText = op.symbol;
+            const tbody = document.getElementById('lab-truth-table-body');
+            tbody.innerHTML = '';
+
+            REFERENCE_TABLE.forEach(row => {
+                const isActiveRow = (row.A === labState.A) && (op.unary || row.B === labState.B);
+                const val = concealed ? '?' : op.eval(row.A, row.B);
+
+                const tr = document.createElement('tr');
+                tr.className = isActiveRow ? 'bg-yellow-100 font-bold border-2 border-[#D90368]' : 'border-b';
+                tr.innerHTML = `
+                    <td class="p-2 border">${row.A}</td>
+                    <td class="p-2 border">${op.unary ? '-' : row.B}</td>
+                    <td class="p-2 border text-[#D90368]">${val}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* STEP 4: TRUTH TABLE EXERCISE */
+        let userTableAnswers = {};
+
+        function initTruthTableExercise() {
+            const tbody = document.getElementById('exercise-table-body');
+            tbody.innerHTML = '';
+            
+            REFERENCE_TABLE.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-pink-50';
+                tr.innerHTML = `
+                    <td class="p-3 border bg-gray-50">${row.A}</td>
+                    <td class="p-3 border bg-gray-50">${row.B}</td>
+                    <td class="p-3 border">
+                        <button onclick="toggleTableUserCell(${idx}, 'AND')" id="cell-${idx}-AND" class="px-4 py-1.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 min-w-[50px]">?</button>
+                    </td>
+                    <td class="p-3 border">
+                        <button onclick="toggleTableUserCell(${idx}, 'OR')" id="cell-${idx}-OR" class="px-4 py-1.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 min-w-[50px]">?</button>
+                    </td>
+                    <td class="p-3 border">
+                        <button onclick="toggleTableUserCell(${idx}, 'IMPLIES')" id="cell-${idx}-IMPLIES" class="px-4 py-1.5 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 min-w-[50px]">?</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleTableUserCell(rowIdx, opCol) {
+            const key = `${rowIdx}_${opCol}`;
+            const current = userTableAnswers[key];
+            let nextVal = current === undefined ? 0 : (current === 0 ? 1 : 0);
+            userTableAnswers[key] = nextVal;
+
+            const btn = document.getElementById(`cell-${rowIdx}-${opCol}`);
+            btn.innerText = nextVal;
+            btn.className = `px-4 py-1.5 font-bold rounded-lg text-white min-w-[50px] btn-custom ${nextVal === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}`;
+        }
+
+        function checkTruthTableExercise() {
+            let correct = 0;
+            let total = 12; // 4 rows * 3 cols
+
+            REFERENCE_TABLE.forEach((row, idx) => {
+                ['AND', 'OR', 'IMPLIES'].forEach(opCol => {
+                    const key = `${idx}_${opCol}`;
+                    const userVal = userTableAnswers[key];
+                    const expected = opCol === 'AND' ? row.AND : (opCol === 'OR' ? row.OR : row.IMPLIES);
+                    const btn = document.getElementById(`cell-${idx}-${opCol}`);
+
+                    if (btn) {
+                        if (userVal === expected) {
+                            correct++;
+                            btn.classList.add('ring-4', 'ring-green-400');
+                        } else {
+                            btn.classList.add('ring-4', 'ring-red-500');
+                        }
+                    }
+                });
+            });
+
+            const fb = document.getElementById('exercise-feedback');
+            fb.classList.remove('hidden');
+            if (correct === total) {
+                fb.className = 'p-4 rounded-xl bg-green-100 border border-green-400 text-[#2C6E49] text-center font-bold';
+                fb.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> Өте тамаша! Барлық ${total} ұяшық дұрыс толтырылды! (+20 ұпай)`;
+                addScore('truth_table_exercise', 20);
+            } else {
+                fb.className = 'p-4 rounded-xl bg-red-100 border border-red-400 text-red-700 text-center font-bold';
+                fb.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> Қателіктер бар. Сіз ${total}-тен ${correct} ұяшықты таптыңыз. Қызылмен белгіленгендерді түзетіп көріңіз.`;
+            }
+        }
+
+        function resetTruthTableExercise() {
+            userTableAnswers = {};
+            initTruthTableExercise();
+            document.getElementById('exercise-feedback').classList.add('hidden');
+        }
+
+        /* STEP 5: LOGIC CIRCUITS EXERCISE */
+        const CIRCUITS_DATA = [
+            { id: 1, name: '¬A', expr: '¬A', target: 1, goalDesc: 'A = 0 болғанда нәтиже 1 шығады.' },
+            { id: 2, name: 'A ∧ B', expr: 'A ∧ B', target: 1, goalDesc: 'A=1, B=1 болғанда нәтиже 1 шығады.' },
+            { id: 3, name: 'A ⊕ B', expr: 'A ⊕ B', target: 1, goalDesc: 'Айнымалылар әртүрлі болғанда нәтиже 1 шығады.' },
+            { id: 4, name: 'A → B', expr: 'A → B', target: 0, goalDesc: 'A=1, B=0 болғанда нәтиже 0 шығады.' },
+            { id: 5, name: '(A ∧ B) ∨ ¬C', expr: '(A ∧ B) ∨ ¬C', target: 1, goalDesc: 'Қадамдық: 1) A ∧ B есептеу, 2) ¬C терістеу, 3) НЕМЕСЕ арқылы біріктіру.' },
+            { id: 6, name: '(A ⊕ B) ∧ C', expr: '(A ⊕ B) ∧ C', target: 1, goalDesc: 'Қадамдық: 1) A ⊕ B есептеу, 2) Шыққан мәнді C-мен ЖӘНЕ амалымен байланыстыру.' }
+        ];
+
+        let selectedCircuitIdx = 0;
+        let circuitInputs = { A: 1, B: 0, C: 0 };
+        const CIRCUIT_STARTS = {
+            1: { A: 1, B: 0, C: 0 },
+            2: { A: 0, B: 0, C: 0 },
+            3: { A: 0, B: 0, C: 0 },
+            4: { A: 0, B: 0, C: 0 },
+            5: { A: 0, B: 0, C: 1 },
+            6: { A: 0, B: 0, C: 0 }
+        };
+
+        function initCircuitExercise() {
+            const selector = document.getElementById('circuit-selector-btns');
+            selector.innerHTML = '';
+            CIRCUITS_DATA.forEach((c, idx) => {
+                selector.innerHTML += `
+                    <button onclick="selectCircuit(${idx})" id="circ-btn-${idx}" class="px-4 py-2 border rounded-xl font-bold text-sm btn-custom ${idx === 0 ? 'bg-[#D90368] text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}">
+                        ${c.name}
+                    </button>
+                `;
+            });
+            selectCircuit(0);
+        }
+
+        function selectCircuit(idx) {
+            selectedCircuitIdx = idx;
+            circuitInputs = { ...CIRCUIT_STARTS[CIRCUITS_DATA[idx].id] };
+            document.getElementById('circuit-feedback').classList.add('hidden');
+            CIRCUITS_DATA.forEach((c, i) => {
+                const btn = document.getElementById(`circ-btn-${i}`);
+                if (btn) {
+                    btn.className = i === idx ? 
+                        'px-4 py-2 border rounded-xl font-bold text-sm bg-[#D90368] text-white btn-custom' : 
+                        'px-4 py-2 border rounded-xl font-bold text-sm bg-white text-gray-700 hover:bg-gray-100 btn-custom';
+                }
+            });
+            renderCircuitWorkArea();
+        }
+
+        function renderCircuitWorkArea() {
+            const c = CIRCUITS_DATA[selectedCircuitIdx];
+            document.getElementById('circuit-title').innerText = `Тізбек: ${c.expr}`;
+            document.getElementById('circuit-goal-text').innerText = c.goalDesc;
+
+            const area = document.getElementById('circuit-interactive-container');
+            
+            // Dynamic Interactive Canvas/Inputs
+            let html = `
+                <div class="flex flex-col md:flex-row items-center justify-around w-full gap-6 p-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold">A:</span>
+                            <button onclick="toggleCircInput('A')" class="px-4 py-1.5 rounded-lg text-white font-bold ${circuitInputs.A === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}">${circuitInputs.A}</button>
+                        </div>
+                        ${c.id > 1 ? `
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold">B:</span>
+                            <button onclick="toggleCircInput('B')" class="px-4 py-1.5 rounded-lg text-white font-bold ${circuitInputs.B === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}">${circuitInputs.B}</button>
+                        </div>` : ''}
+                        ${c.id >= 5 ? `
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold">C:</span>
+                            <button onclick="toggleCircInput('C')" class="px-4 py-1.5 rounded-lg text-white font-bold ${circuitInputs.C === 1 ? 'bg-[#2C6E49]' : 'bg-[#D90368]'}">${circuitInputs.C}</button>
+                        </div>` : ''}
+                    </div>
+
+                    <div class="text-center bg-[#FDF2F7] p-4 rounded-xl border border-[#D5CED2]">
+                        <span class="text-xs font-bold text-gray-500 uppercase">Есептелген нәтиже:</span>
+                        <div class="text-4xl font-extrabold text-[#D90368] my-2" id="circ-calculated-val">0</div>
+                    </div>
+                </div>
+            `;
+            area.innerHTML = html;
+            updateCircuitCalc();
+        }
+
+        function toggleCircInput(varName) {
+            circuitInputs[varName] = circuitInputs[varName] === 1 ? 0 : 1;
+            renderCircuitWorkArea();
+        }
+
+        function updateCircuitCalc() {
+            const c = CIRCUITS_DATA[selectedCircuitIdx];
+            let res = 0;
+            let stepText = '';
+
+            const { A, B, C } = circuitInputs;
+
+            switch(c.id) {
+                case 1:
+                    res = A === 1 ? 0 : 1;
+                    stepText = `¬${A} = ${res}`;
+                    break;
+                case 2:
+                    res = (A === 1 && B === 1) ? 1 : 0;
+                    stepText = `${A} ∧ ${B} = ${res}`;
+                    break;
+                case 3:
+                    res = (A !== B) ? 1 : 0;
+                    stepText = `${A} ⊕ ${B} = ${res}`;
+                    break;
+                case 4:
+                    res = (A === 1 && B === 0) ? 0 : 1;
+                    stepText = `${A} → ${B} = ${res}`;
+                    break;
+                case 5:
+                    const step1_5 = (A === 1 && B === 1) ? 1 : 0;
+                    const step2_5 = C === 1 ? 0 : 1;
+                    res = (step1_5 === 1 || step2_5 === 1) ? 1 : 0;
+                    stepText = `1-қадам: (${A} ∧ ${B}) = ${step1_5}; 2-қадам: ¬${C} = ${step2_5}; 3-қадам: ${step1_5} ∨ ${step2_5} = ${res}`;
+                    break;
+                case 6:
+                    const step1_6 = (A !== B) ? 1 : 0;
+                    res = (step1_6 === 1 && C === 1) ? 1 : 0;
+                    stepText = `1-қадам: (${A} ⊕ ${B}) = ${step1_6}; 2-қадам: ${step1_6} ∧ ${C} = ${res}`;
+                    break;
+            }
+
+            document.getElementById('circ-calculated-val').innerText = res;
+            document.getElementById('circuit-step-by-step').innerText = `Қадамдық есептеу: ${stepText}`;
+            window.currentCircRes = res;
+        }
+
+        function checkCircuitGoal() {
+            const c = CIRCUITS_DATA[selectedCircuitIdx];
+            const fb = document.getElementById('circuit-feedback');
+            fb.classList.remove('hidden');
+
+            if (window.currentCircRes === c.target) {
+                fb.className = 'p-3 rounded-lg text-center font-bold bg-green-100 text-[#2C6E49] border border-green-300';
+                fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Тамаша! Мақсатты нәтиже (${c.target}) алынды! (+25 ұпай)`;
+                addScore('circuit_exercise', 25);
+            } else {
+                fb.className = 'p-3 rounded-lg text-center font-bold bg-red-100 text-red-700 border border-red-300';
+                fb.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Мақсат орындалмады. Кіріс мәндерін өзгертіп көріңіз.`;
+            }
+        }
+
+        /* STEP 6: EXCEL SIMULATION */
+        let appliedExcelFormula = null;
+
+        function updateExcelPreview() {
+            const sel = document.getElementById('excel-func-select').value;
+            document.getElementById('excel-formula-preview').innerText = sel === 'NOT' ? 'NOT(A2)' : `${sel}(A2, B2)`;
+        }
+
+        function applyExcelFormula() {
+            const sel = document.getElementById('excel-func-select').value;
+            appliedExcelFormula = sel;
+            ['c2', 'c3', 'c4', 'c5'].forEach(id => {
+                const cell = document.getElementById('excel-cell-' + id);
+                cell.innerText = '---';
+                cell.className = 'p-2 border bg-yellow-50 font-bold text-gray-400';
+            });
+
+            document.getElementById('excel-formula-preview').innerText = sel === 'NOT' ? 'NOT(A2)' : `${sel}(A2, B2)`;
+            document.getElementById('excel-col-head').innerText = sel === 'NOT' ? 'NOT(A)' : `${sel}(A;B)`;
+
+            const btn = document.getElementById('autofill-btn');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            document.getElementById('excel-feedback').innerText = `Формула таңдалды. Енді «Автотолтыру» батырмасын басып, бағанды толтырыңыз.`;
+        }
+
+        function autoFillExcel() {
+            if (!appliedExcelFormula) return;
+
+            const func = appliedExcelFormula;
+            
+            REFERENCE_TABLE.forEach((row, i) => {
+                const cell = document.getElementById(`excel-cell-c${i+2}`);
+                let val = 0;
+                if (func === 'AND') val = row.AND;
+                if (func === 'OR') val = row.OR;
+                if (func === 'NOT') val = row.NOT_A;
+
+                cell.innerText = val;
+                cell.className = 'p-2 border bg-green-100 text-[#2C6E49] font-bold animate-pulse';
+            });
+
+            document.getElementById('excel-feedback').innerHTML = `<i class="fa-solid fa-circle-check text-[#2C6E49] mr-1"></i> Тамаша! Формула барлық қатарларға қолданылды және теориялық кестеге сәйкес келді! (+15 ұпай)`;
+            addScore('excel_simulation', 15);
+        }
+
+        /* STEP 7: MATCHING EXERCISE */
+        const MATCH_DATA = [
+            { id: 'm1', term: 'Дизъюнкция (A ∨ B)', def: 'Кемінде бір пікір ақиқат болса, ақиқат болатын амал' },
+            { id: 'm2', term: 'Инверсия (¬A)', def: 'Пікірдің ақиқаттық мәнін терістейтін амал' },
+            { id: 'm3', term: 'Конъюнкция (A ∧ B)', def: 'Екі пікір де ақиқат болғанда ғана ақиқат болатын амал' },
+            { id: 'm4', term: 'Импликация (A → B)', def: 'Тек 1-ден 0 шыққан жағдайда ғана жалған болатын амал' }
+        ];
+
+        let selectedMatchTerm = null;
+        let matchedPairs = {};
+
+        function initMatchingExercise() {
+            const termsCol = document.getElementById('match-terms-col');
+            const defsCol = document.getElementById('match-defs-col');
+            termsCol.innerHTML = '';
+            defsCol.innerHTML = '';
+
+            // Shuffle defs
+            const shuffledDefs = [...MATCH_DATA].sort(() => Math.random() - 0.5);
+
+            MATCH_DATA.forEach(item => {
+                termsCol.innerHTML += `
+                    <div onclick="selectMatchTerm('${item.id}')" id="term-${item.id}" class="p-4 bg-[#FDF2F7] border border-[#D5CED2] rounded-xl font-bold cursor-pointer hover:border-[#D90368] transition-all">
+                        ${item.term}
+                    </div>
+                `;
+            });
+
+            shuffledDefs.forEach(item => {
+                defsCol.innerHTML += `
+                    <div onclick="selectMatchDef('${item.id}')" id="def-${item.id}" class="p-4 bg-white border border-[#D5CED2] rounded-xl text-sm font-semibold cursor-pointer hover:border-[#2766A5] transition-all">
+                        ${item.def}
+                    </div>
+                `;
+            });
+        }
+
+        function selectMatchTerm(id) {
+            selectedMatchTerm = id;
+            MATCH_DATA.forEach(item => {
+                const el = document.getElementById(`term-${item.id}`);
+                if (el) {
+                    if (item.id === id) {
+                        el.className = 'p-4 bg-[#D90368] text-white border-2 border-[#D90368] rounded-xl font-bold cursor-pointer';
+                    } else if (!matchedPairs[item.id]) {
+                        el.className = 'p-4 bg-[#FDF2F7] border border-[#D5CED2] rounded-xl font-bold cursor-pointer hover:border-[#D90368]';
+                    }
+                }
+            });
+        }
+
+        function selectMatchDef(defId) {
+            if (!selectedMatchTerm) {
+                showHelpModal('Алдымен сол жақтан логикалық амалды таңдаңыз!');
+                return;
+            }
+
+            if (selectedMatchTerm === defId) {
+                // Correct match
+                matchedPairs[selectedMatchTerm] = true;
+                
+                const termEl = document.getElementById(`term-${selectedMatchTerm}`);
+                const defEl = document.getElementById(`def-${defId}`);
+
+                termEl.className = 'p-4 bg-green-100 text-[#2C6E49] border-2 border-[#2C6E49] rounded-xl font-bold pointer-events-none';
+                defEl.className = 'p-4 bg-green-100 text-[#2C6E49] border-2 border-[#2C6E49] rounded-xl text-sm font-bold pointer-events-none';
+
+                selectedMatchTerm = null;
+
+                if (Object.keys(matchedPairs).length === MATCH_DATA.length) {
+                    const fb = document.getElementById('matching-feedback');
+                    fb.classList.remove('hidden');
+                    fb.className = 'p-4 rounded-xl bg-green-100 text-[#2C6E49] border border-green-400 font-bold text-center';
+                    fb.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Барлық амалдар дұрыс сәйкестендірілді! (+20 ұпай)`;
+                    addScore('matching_exercise', 20);
+                }
+            } else {
+                showHelpModal('Сәйкес келмейді. Анықтаманы қайтадан оқып көріңіз.');
+            }
+        }
+
+        /* STEP 8: QUIZ */
+        const QUIZ_QUESTIONS = [
+            {
+                q: '1. Егер p = 0 және q = 1 болса, p → q (импликация) амалының мәні қандай болады?',
+                options: ['0 (жалған)', '1 (ақиқат)', 'Анықталмайды', 'Әрқашан p-ға тең'],
+                correct: 1,
+                explain: 'Импликация тек 1 → 0 жағдайында ғана жалған (0) болады. Ал 0 → 1 жағдайында нәтиже 1 (ақиқат).'
+            },
+            {
+                q: '2. Тек екі пікір де бірдей ақиқат (1) болғанда ғана 1 мәнін беретін логикалық амал:',
+                options: ['Дизъюнкция', 'Инверсия', 'Конъюнкция (ЖӘНЕ)', 'Эквиваленттілік'],
+                correct: 2,
+                explain: 'Конъюнкция (ЖӘНЕ) екі шарт та қатар орындалғанда ғана ақиқат болады.'
+            },
+            {
+                q: '3. A = 1 болғанда, ¬A (инверсия) мәні неге тең?',
+                options: ['1', '0', '-1', 'Анықталмайды'],
+                correct: 1,
+                explain: 'Инверсия мәнді қарама-қарсыға ауыстырады: 1-ден 0 шығады.'
+            },
+            {
+                q: '4. Екі пікірдің мәндері әртүрлі болғанда (1 және 0) 1 мәнін беретін амал:',
+                options: ['XOR (Айрықша НЕМЕСЕ)', 'Эквиваленттілік', 'Конъюнкция', 'Импликация'],
+                correct: 0,
+                explain: 'XOR (айрықша немесе) тек кіріс мәндері әртүрлі болғанда 1 береді.'
+            },
+            {
+                q: '5. Екі тәуелсіз айнымалы үшін ақиқаттық кестесінде қанша комбинация (қатар) болады?',
+                options: ['2', '4', '8', '16'],
+                correct: 1,
+                explain: 'Мүмкін комбинациялар саны 2^n = 2^2 = 4 формуласымен есептеледі.'
+            },
+            {
+                q: '6. (1 ∨ 0) ∧ ¬0 өрнегінің соңғы мәні неге тең?',
+                options: ['0', '1', 'Анықталмайды', 'Екеуі де'],
+                correct: 1,
+                explain: '1-қадам: (1 ∨ 0) = 1. 2-қадам: ¬0 = 1. 3-қадам: 1 ∧ 1 = 1.'
+            }
+        ];
+
+        let quizUserAnswers = {};
+
+        function initQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+
+            QUIZ_QUESTIONS.forEach((qObj, qIdx) => {
+                let optionsHtml = '';
+                qObj.options.forEach((opt, optIdx) => {
+                    optionsHtml += `
+                        <button onclick="selectQuizOption(${qIdx}, ${optIdx})" id="q-opt-${qIdx}-${optIdx}" class="w-full text-left p-3.5 rounded-xl border border-[#D5CED2] bg-white font-semibold hover:bg-pink-50 transition-all text-sm md:text-base">
+                            ${opt}
+                        </button>
+                    `;
+                });
+
+                container.innerHTML += `
+                    <div class="bg-[#FDF2F7] p-5 rounded-2xl border border-[#D5CED2] space-y-3">
+                        <h3 class="font-bold text-lg text-[#040F0F]">${qObj.q}</h3>
+                        <div class="space-y-2">
+                            ${optionsHtml}
+                        </div>
+                        <div id="quiz-explain-${qIdx}" class="hidden p-3 rounded-lg bg-white border border-[#D5CED2] text-sm text-gray-700 font-semibold mt-2"></div>
+                    </div>
+                `;
+            });
+        }
+
+        function selectQuizOption(qIdx, optIdx) {
+            quizUserAnswers[qIdx] = optIdx;
+
+            QUIZ_QUESTIONS[qIdx].options.forEach((_, i) => {
+                const btn = document.getElementById(`q-opt-${qIdx}-${i}`);
+                if (btn) {
+                    if (i === optIdx) {
+                        btn.className = 'w-full text-left p-3.5 rounded-xl border-2 border-[#D90368] bg-[#FDF2F7] font-bold text-[#D90368] text-sm md:text-base';
+                    } else {
+                        btn.className = 'w-full text-left p-3.5 rounded-xl border border-[#D5CED2] bg-white font-semibold text-sm md:text-base';
+                    }
+                }
+            });
+        }
+
+        function finishQuiz() {
+            if (Object.keys(quizUserAnswers).length < QUIZ_QUESTIONS.length) {
+                showHelpModal('Алдымен барлық сұраққа жауап беріңіз!');
+                return;
+            }
+            let correctCount = 0;
+
+            QUIZ_QUESTIONS.forEach((qObj, qIdx) => {
+                const userAns = quizUserAnswers[qIdx];
+                const explainBox = document.getElementById(`quiz-explain-${qIdx}`);
+                explainBox.classList.remove('hidden');
+                QUIZ_QUESTIONS[qIdx].options.forEach((_, i) => {
+                    const b = document.getElementById(`q-opt-${qIdx}-${i}`);
+                    if (b) b.classList.add('pointer-events-none');
+                });
+
+                if (userAns === qObj.correct) {
+                    correctCount++;
+                    explainBox.className = 'p-3 rounded-lg bg-green-100 text-[#2C6E49] border border-green-300 text-sm font-semibold mt-2';
+                    explainBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Дұрыс! ${qObj.explain}`;
+                } else {
+                    explainBox.className = 'p-3 rounded-lg bg-red-100 text-red-700 border border-red-300 text-sm font-semibold mt-2';
+                    explainBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Қате. Дұрыс жауап: "${qObj.options[qObj.correct]}". ${qObj.explain}`;
+                }
+            });
+
+            const quizScore = correctCount * 3; // Max 18 points
+            addScore('exit_quiz', quizScore);
+
+            document.getElementById('finish-quiz-btn').innerText = 'Нәтижелер экранына өту';
+            document.getElementById('finish-quiz-btn').onclick = () => goToStep(totalSteps + 1);
+        }
+
+        /* FINAL RESULTS */
+        function renderFinalResults() {
+            document.getElementById('final-score-val').innerText = `${totalScore} / 100`;
+            
+            const ratingText = document.getElementById('final-rating-text');
+            const recs = document.getElementById('recommendations-list');
+            recs.innerHTML = '';
+
+            if (totalScore >= 80) {
+                ratingText.innerText = 'Тамаша! Барлық тақырыпты өте жақсы меңгердіңіз!';
+                recs.innerHTML += `<li>Логикалық амалдарды, кестелерді және модельдеуді толық меңгердіңіз.</li>`;
+            } else if (totalScore >= 50) {
+                ratingText.innerText = 'Жақсы нәтиже! Бірақ қайталайтын тұстар бар.';
+                recs.innerHTML += `<li>Импликация мен XOR амалдарының ережелерін қайталап өтіңіз.</li>`;
+                recs.innerHTML += `<li>Электрондық кестеде формула құрастыруды қайта жаттығыңыз.</li>`;
+            } else {
+                ratingText.innerText = 'Тақырыпты қайта қарап шығу ұсынылады.';
+                recs.innerHTML += `<li>«Алты амал» бөліміндегі интерактивті микро-үлгілерді қайта зерттеңіз.</li>`;
+            }
+        }
+    </script>
+</body>
+</html>
