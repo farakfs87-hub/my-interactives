@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сұрыптау алгоритмдері · Информатика 10-сынып</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,600;0,700;1,400&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #FFFFFF;
+            --bg-card: #CED8E6;
+            --bg-surface: #F1F4F8;
+            --primary: #1F4E8C;
+            --primary-dark: #143560;
+            --text-main: #14253A;
+            --text-muted: #46566B;
+            --accent-green: #DDEBDD;
+            --accent-green-dark: #2D6A2E;
+            --accent-rose: #EED6D2;
+            --accent-rose-dark: #8C2A20;
+            --accent-yellow: #FEF3C7;
+            --accent-yellow-dark: #92400E;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            background-color: #F8FAFC;
+        }
+
+        .font-serif-title {
+            font-family: 'Source Serif 4', Georgia, serif;
+        }
+
+        .font-mono-code {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F4F8;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 4px;
+        }
+
+        /* Number Card Styling */
+        .num-card {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            box-shadow: 0 4px 6px -1px rgba(31, 78, 140, 0.1), 0 2px 4px -1px rgba(31, 78, 140, 0.06);
+        }
+
+        .num-card.selected {
+            border-color: #1F4E8C;
+            box-shadow: 0 0 0 3px rgba(31, 78, 140, 0.35), 0 8px 12px -2px rgba(31, 78, 140, 0.25);
+            transform: translateY(-4px);
+            background-color: #93C5FD;
+        }
+
+        .num-card.compare-active {
+            background-color: #FDE047;
+            transform: scale(1.05);
+            border-color: #D97706;
+            box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.3);
+        }
+
+        .num-card.sorted-done {
+            background-color: var(--accent-green);
+            color: var(--accent-green-dark);
+            border-color: #86EFAC;
+        }
+
+        .num-card.key-card {
+            background-color: var(--accent-rose);
+            color: var(--accent-rose-dark);
+            border-color: #FCA5A5;
+        }
+
+        .num-card.min-card {
+            background-color: #FFE4E6;
+            color: #881337;
+            border-color: #FB7185;
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.45);
+        }
+
+        .num-card.empty-slot {
+            background-color: #E2E8F0;
+            border: 2px dashed #94A3B8;
+            color: transparent;
+        }
+
+        /* Code Highlight */
+        .code-line {
+            transition: background-color 0.2s ease;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .code-line.active {
+            background-color: #1F4E8C;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+
+        /* Custom Hand Illustration SVG Styles */
+        .hand-icon {
+            filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        /* Button Hover & Tap */
+        .btn-action {
+            transition: all 0.15s ease;
+        }
+        .btn-action:active {
+            transform: scale(0.97);
+        }
+
+        /* Drag and Drop Visual Feedback */
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        .drag-over {
+            border: 2px dashed #1F4E8C !important;
+            background-color: #DBEAFE !important;
+        }
+        button:disabled { cursor: not-allowed; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- Header / Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="goToMission(0)">
+                <div class="w-10 h-10 rounded-lg bg-[#1F4E8C] flex items-center justify-center text-white font-serif-title font-bold text-xl shadow-md">
+                    С
+                </div>
+                <div>
+                    <h1 class="font-serif-title font-bold text-lg sm:text-xl text-[#14253A] leading-tight">Сұрыптау алгоритмдері</h1>
+                    <p class="text-xs text-[#46566B]">Информатика · 10-сынып · Сұрыптау зертханасы</p>
+                </div>
+            </div>
+
+            <!-- Global Control & Score -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <div class="hidden md:flex items-center gap-2 text-xs font-semibold bg-[#F1F4F8] text-[#1F4E8C] px-3 py-1.5 rounded-full border border-blue-100">
+                    <span>Оқу мақсаты: 10.2.2.1 & 10.2.2.2</span>
+                </div>
+                <button onclick="toggleGlobalHelp()" class="p-2 text-slate-600 hover:text-[#1F4E8C] hover:bg-slate-100 rounded-lg text-sm flex items-center gap-1 font-medium transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span class="hidden sm:inline">Көмек</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col">
+        
+        <!-- Mission Navigation Tabs -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-1.5 mb-6 overflow-x-auto">
+            <div class="flex items-center min-w-max gap-1" id="mission-tabs">
+                <!-- Dynamic tabs generated by JS -->
+            </div>
+        </div>
+
+        <!-- Dynamic Game Content Area -->
+        <div id="app-content" class="flex-grow flex flex-col">
+            <!-- Content will be injected here via JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Global Help Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 items-center justify-center p-4 hidden" onclick="if (event.target === this) toggleGlobalHelp()">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="font-serif-title text-xl font-bold text-[#14253A]">«Сұрыптау зертханасы» бойынша анықтама</h3>
+                <button onclick="toggleGlobalHelp()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="space-y-3 text-sm text-[#46566B] leading-relaxed">
+                <p><strong>Сұрыптау (Sorting)</strong> — деректерді белгілі бір ретпен (өсуі немесе кемуі бойынша) жүйелеу процедурасы.</p>
+                <div class="bg-[#F1F4F8] p-3 rounded-lg border border-slate-200 space-y-2">
+                    <p class="font-semibold text-[#1F4E8C]">Үш негізгі алгоритм:</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><strong class="text-[#14253A]">Көпіршікті (Bubble Sort):</strong> Көршілес элементтерді салыстырып, егер реті қате болса ауыстырады. Итерация сайын ең үлкен мән оң жаққа «қалқып» шығады.</li>
+                        <li><strong class="text-[#14253A]">Таңдау (Selection Sort):</strong> Реттелмеген бөліктен ең кіші элементті (минимумды) тауып, оны сол бөліктің басына қояды.</li>
+                        <li><strong class="text-[#14253A]">Кірістіру (Insertion Sort):</strong> Элементті <code>key</code> айнымалысына сақтап, реттелген сол жақ бөліктегі өзінен үлкен элементтерді оңға жылжытып, орнына қояды.</li>
+                    </ul>
+                </div>
+                <p>Басқару тетіктерін пайдаланып, «Үйрену» режимінде алгоритмнің жүруін қадамдап бақылаңыз. Көпіршікті және Таңдау миссияларында «Өзің орында» режимін қосып, тапсырманы өз бетіңізбен орындай аласыз.</p>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button onclick="toggleGlobalHelp()" class="bg-[#1F4E8C] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#143560] transition">
+                    Түсінікті
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-[#46566B]">
+            Информатика · 10-сынып · Презентация материалдары бойынша интерактивті оқу құралы
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Global State Management
+        const STATE = {
+            currentMissionIndex: 0,
+            mode: 'learn', // 'learn' or 'practice'
+            speed: 1000,   // ms per auto step
+            autoPlaying: false,
+            autoTimer: null,
+            autoFn: null,
+            score: {
+                completedMissions: new Set()
+            }
+        };
+
+        // Separate step history for each algorithm (they used to share one array)
+        const HISTORY = { bubble: [], selection: [], insertion: [] };
+
+        // Mission Definitions
+        const MISSIONS = [
+            { id: 'welcome', title: '0. Киріспе', label: 'Бастау' },
+            { id: 'order', title: '1. Реттілік', label: 'Реттілікті анықта' },
+            { id: 'bubble', title: '2. Көпіршікті', label: 'Көпіршікті сұрыптау' },
+            { id: 'selection', title: '3. Таңдау', label: 'Таңдау арқылы' },
+            { id: 'insertion', title: '4. Кірістіру', label: 'Кірістіру арқылы' },
+            { id: 'code', title: '5. Python коды', label: 'Python кодын құрастыр' },
+            { id: 'compare', title: '6. Салыстыру', label: 'Алгоритмдерді салыстыру' },
+            { id: 'practice', title: '7. Практика', label: 'Қорытынды практика' }
+        ];
+
+        // Shared Illustration SVG Templates
+        const SVG_ILLUST = {
+            students: `
+                <svg viewBox="0 0 400 240" class="w-full h-auto max-h-56 mx-auto rounded-xl">
+                    <rect width="400" height="240" fill="#F1F4F8" rx="12"/>
+                    <!-- Board / Wall -->
+                    <rect x="120" y="20" width="160" height="70" fill="#2D6A2E" rx="6"/>
+                    <rect x="130" y="30" width="40" height="2" fill="#86EFAC" opacity="0.6"/>
+                    <!-- Clock -->
+                    <circle cx="200" cy="15" r="10" fill="#FFFFFF" stroke="#1F4E8C" stroke-width="2"/>
+                    <path d="M200 15 L200 10 M200 15 L204 15" stroke="#1F4E8C" stroke-width="1.5" stroke-linecap="round"/>
+                    <!-- Table -->
+                    <path d="M20 180 L380 180 L350 230 L50 230 Z" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+                    <!-- Students Cartoon Characters -->
+                    <!-- Student 1 (Left) -->
+                    <circle cx="80" cy="110" r="22" fill="#FCA5A5"/>
+                    <path d="M60 160 C60 135 100 135 100 160 Z" fill="#1F4E8C"/>
+                    <!-- Student 2 (Middle Left) -->
+                    <circle cx="150" cy="100" r="22" fill="#FDBA74"/>
+                    <path d="M130 155 C130 125 170 125 170 155 Z" fill="#3B82F6"/>
+                    <!-- Student 3 (Middle Right) -->
+                    <circle cx="250" cy="100" r="22" fill="#FCD34D"/>
+                    <path d="M230 155 C230 125 270 125 270 155 Z" fill="#EAB308"/>
+                    <!-- Student 4 (Right) -->
+                    <circle cx="320" cy="110" r="22" fill="#FCA5A5"/>
+                    <path d="M300 160 C300 135 340 135 340 160 Z" fill="#2563EB"/>
+                    <!-- Cards on Desk -->
+                    <rect x="100" y="170" width="35" height="24" fill="#EED6D2" rx="4" stroke="#8C2A20" stroke-width="1"/>
+                    <rect x="145" y="170" width="35" height="24" fill="#FEF3C7" rx="4" stroke="#92400E" stroke-width="1"/>
+                    <rect x="190" y="170" width="35" height="24" fill="#93C5FD" rx="4" stroke="#1F4E8C" stroke-width="1"/>
+                    <rect x="235" y="170" width="35" height="24" fill="#DDEBDD" rx="4" stroke="#2D6A2E" stroke-width="1"/>
+                    <rect x="280" y="170" width="35" height="24" fill="#EED6D2" rx="4" stroke="#8C2A20" stroke-width="1"/>
+                </svg>`,
+            hands: `
+                <svg viewBox="0 0 300 140" class="w-full h-auto max-h-36 mx-auto">
+                    <!-- Desk surface -->
+                    <rect x="10" y="90" width="280" height="40" fill="#E2E8F0" rx="6"/>
+                    <!-- Interactive Hands sorting cards -->
+                    <g class="hand-icon">
+                        <!-- Left Hand -->
+                        <path d="M 60 130 C 60 90, 80 80, 95 90 C 100 95, 100 105, 85 120 Z" fill="#FDBA74" stroke="#EA580C" stroke-width="1.5"/>
+                        <!-- Right Hand -->
+                        <path d="M 240 130 C 240 90, 220 80, 205 90 C 200 95, 200 105, 215 120 Z" fill="#FDBA74" stroke="#EA580C" stroke-width="1.5"/>
+                    </g>
+                </svg>`
+        };
+
+        // Render Tabs
+        function renderTabs() {
+            const container = document.getElementById('mission-tabs');
+            container.innerHTML = MISSIONS.map((m, idx) => {
+                const isActive = idx === STATE.currentMissionIndex;
+                const isCompleted = STATE.score.completedMissions.has(m.id);
+                return `
+                    <button onclick="goToMission(${idx})" 
+                        class="px-3.5 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5 ${
+                            isActive 
+                            ? 'bg-[#1F4E8C] text-white shadow-sm font-semibold' 
+                            : 'bg-transparent text-[#46566B] hover:bg-slate-100 hover:text-[#14253A]'
+                        }">
+                        ${isCompleted ? '<span class="text-green-400 font-bold">✓</span>' : ''}
+                        <span>${m.title}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function goToMission(index) {
+            stopAutoPlay();
+            pSelectedIdx = null;
+            selectedOrderIndex = null;
+            STATE.currentMissionIndex = index;
+            renderTabs();
+            renderContent();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleGlobalHelp() {
+            const modal = document.getElementById('help-modal');
+            const willOpen = modal.classList.contains('hidden');
+            modal.classList.toggle('hidden', !willOpen);
+            modal.classList.toggle('flex', willOpen);
+        }
+
+        // Main Router/Render Logic
+        function renderContent() {
+            const app = document.getElementById('app-content');
+            const mission = MISSIONS[STATE.currentMissionIndex];
+
+            switch(mission.id) {
+                case 'welcome': renderWelcome(app); break;
+                case 'order': renderOrderMission(app); break;
+                case 'bubble': renderBubbleMission(app); break;
+                case 'selection': renderSelectionMission(app); break;
+                case 'insertion': renderInsertionMission(app); break;
+                case 'code': renderCodeMission(app); break;
+                case 'compare': renderCompareMission(app); break;
+                case 'practice': renderPracticeMission(app); break;
+                default: app.innerHTML = `<div>Мұндай миссия табылмады.</div>`;
+            }
+        }
+
+        // ==========================================
+        // MISSION 0: WELCOME SCREEN
+        // ==========================================
+        function renderWelcome(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-10 flex flex-col items-center text-center max-w-4xl mx-auto my-auto">
+                    <div class="w-full max-w-md mb-6">
+                        ${SVG_ILLUST.students}
+                    </div>
+
+                    <span class="inline-block px-3 py-1 bg-[#F1F4F8] text-[#1F4E8C] text-xs font-semibold rounded-full mb-3 border border-blue-100">
+                        Информатика · 10-сынып
+                    </span>
+
+                    <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#14253A] mb-4">
+                        Сұрыптау алгоритмдері
+                    </h2>
+
+                    <p class="text-[#46566B] text-sm sm:text-base max-w-2xl leading-relaxed mb-8">
+                        «Сұрыптау зертханасы» интерактивті оқу ортасына қош келдіңіз! Мұнда сіз 
+                        <span class="font-semibold text-[#1F4E8C]">Көпіршікті (Bubble)</span>, 
+                        <span class="font-semibold text-[#1F4E8C]">Таңдау (Selection)</span> және 
+                        <span class="font-semibold text-[#1F4E8C]">Кірістіру (Insertion)</span> 
+                        алгоритмдерінің жұмыс істеу принципін практикалық түрде меңгеріп, олардың тиімділігін Python коды арқылы салыстырасыз.
+                    </p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg mb-8 text-left text-xs text-[#46566B]">
+                        <div class="bg-[#F1F4F8] p-3.5 rounded-xl border border-slate-200 flex items-start gap-3">
+                            <span class="bg-[#1F4E8C] text-white rounded-md w-6 h-6 flex items-center justify-center font-bold text-xs shrink-0">1</span>
+                            <div>
+                                <strong class="text-[#14253A] block mb-0.5">10.2.2.1 Оқу мақсаты</strong>
+                                Алгоритмдердің тиімділігін салыстыру арқылы жұмыс істеу принципін түсіндіру.
+                            </div>
+                        </div>
+                        <div class="bg-[#F1F4F8] p-3.5 rounded-xl border border-slate-200 flex items-start gap-3">
+                            <span class="bg-[#1F4E8C] text-white rounded-md w-6 h-6 flex items-center justify-center font-bold text-xs shrink-0">2</span>
+                            <div>
+                                <strong class="text-[#14253A] block mb-0.5">10.2.2.2 Оқу мақсаты</strong>
+                                Деректерді өңдеу үшін сұрыптау алгоритмдерін Python тілінде іске асыру.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="goToMission(1)" class="btn-action bg-[#1F4E8C] hover:bg-[#143560] text-white text-base font-semibold px-8 py-3.5 rounded-xl shadow-lg shadow-blue-900/20 flex items-center gap-2">
+                        <span>Зертхананы бастау</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </button>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // MISSION 1: ORDER SELECTION (Өсу / Кему)
+        // ==========================================
+        let orderState = {
+            currentAsc: [5, 2, 8, 5],
+            targetAsc: [2, 5, 5, 8],
+            currentDesc: [5, 8, 2, 5],
+            targetDesc: [8, 5, 5, 2],
+            activeTab: 'asc' // 'asc' or 'desc'
+        };
+
+        function renderOrderMission(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="border-b border-slate-100 pb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <div>
+                            <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">1-миссия: Реттілікті анықта</h2>
+                            <p class="text-xs text-[#46566B] mt-1">Сандарды өсу және кему ретімен орналастыру ережелерін меңгеріңіз.</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-[#F1F4F8] p-1 rounded-xl">
+                            <button onclick="setOrderTab('asc')" class="px-4 py-1.5 rounded-lg text-xs font-semibold ${orderState.activeTab === 'asc' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Өсу реті (Ascending)</button>
+                            <button onclick="setOrderTab('desc')" class="px-4 py-1.5 rounded-lg text-xs font-semibold ${orderState.activeTab === 'desc' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Кему реті (Descending)</button>
+                        </div>
+                    </div>
+
+                    <!-- Rule Explanation Banner -->
+                    <div class="bg-[#F1F4F8] p-4 rounded-xl border border-slate-200 text-sm text-[#14253A] flex items-start gap-3">
+                        <div class="p-2 bg-blue-100 text-[#1F4E8C] rounded-lg font-bold">!</div>
+                        <div>
+                            ${orderState.activeTab === 'asc' 
+                                ? '<strong>Өсу реті:</strong> Келесі мән алдыңғысынан кем болмайды. Мысалы: <code class="bg-white px-2 py-0.5 rounded font-mono font-bold text-[#1F4E8C]">2, 5, 5, 8</code>. Бірдей мәндер қатар тұра береді.' 
+                                : '<strong>Кему реті:</strong> Келесі мән алдыңғысынан артық болмайды. Мысалы: <code class="bg-white px-2 py-0.5 rounded font-mono font-bold text-[#1F4E8C]">8, 5, 5, 2</code>. Бірдей мәндер қатар тұра береді.'
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Interactive Drag/Sort Area -->
+                    <div class="my-6 text-center">
+                        <p class="text-xs font-semibold text-[#46566B] uppercase tracking-wider mb-4">
+                            Карточкаларды шерткіш арқылы таңдап немесе сүйреп, тізімді дұрыс ретке келтіріңіз:
+                        </p>
+                        
+                        <div id="order-cards-container" class="flex flex-wrap items-center justify-center gap-3 sm:gap-4 min-h-[100px]">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback & Controls -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-slate-100 pt-4">
+                        <div id="order-feedback" class="text-sm font-semibold"></div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="resetOrderMission()" class="px-4 py-2 bg-slate-100 text-[#46566B] rounded-xl text-xs font-medium hover:bg-slate-200">Қайта бастау</button>
+                            <button onclick="checkOrderMission()" class="px-6 py-2.5 bg-[#1F4E8C] text-white rounded-xl text-xs font-semibold hover:bg-[#143560] shadow-sm">Тексеру</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            renderOrderCards();
+        }
+
+        function setOrderTab(tab) {
+            orderState.activeTab = tab;
+            selectedOrderIndex = null;
+            renderOrderMission(document.getElementById('app-content'));
+        }
+
+        let selectedOrderIndex = null;
+        function renderOrderCards() {
+            const container = document.getElementById('order-cards-container');
+            const arr = orderState.activeTab === 'asc' ? orderState.currentAsc : orderState.currentDesc;
+            
+            container.innerHTML = arr.map((val, idx) => `
+                <div onclick="handleOrderCardClick(${idx})"
+                     draggable="true"
+                     ondragstart="handleOrderDragStart(event, ${idx})"
+                     ondragover="event.preventDefault()"
+                     ondrop="handleOrderDrop(event, ${idx})"
+                     ondragend="draggedOrderIdx = null"
+                     class="num-card w-16 h-20 sm:w-20 sm:h-24 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 font-bold text-2xl sm:text-3xl ${selectedOrderIndex === idx ? 'selected' : 'border-slate-300 hover:border-blue-400'}">
+                    <span>${val}</span>
+                    <span class="text-[10px] text-slate-400 font-normal mt-1">i=${idx}</span>
+                </div>
+            `).join('');
+        }
+
+        function handleOrderCardClick(idx) {
+            if (selectedOrderIndex === null) {
+                selectedOrderIndex = idx;
+            } else if (selectedOrderIndex === idx) {
+                selectedOrderIndex = null;
+            } else {
+                // Swap
+                const arr = orderState.activeTab === 'asc' ? orderState.currentAsc : orderState.currentDesc;
+                const temp = arr[selectedOrderIndex];
+                arr[selectedOrderIndex] = arr[idx];
+                arr[idx] = temp;
+                selectedOrderIndex = null;
+            }
+            renderOrderCards();
+        }
+
+        let draggedOrderIdx = null;
+        function handleOrderDragStart(e, idx) {
+            draggedOrderIdx = idx;
+        }
+        function handleOrderDrop(e, targetIdx) {
+            e.preventDefault();
+            if (draggedOrderIdx !== null && draggedOrderIdx !== targetIdx) {
+                const arr = orderState.activeTab === 'asc' ? orderState.currentAsc : orderState.currentDesc;
+                const temp = arr[draggedOrderIdx];
+                arr[draggedOrderIdx] = arr[targetIdx];
+                arr[targetIdx] = temp;
+                draggedOrderIdx = null;
+                renderOrderCards();
+            }
+        }
+
+        function resetOrderMission() {
+            orderState.currentAsc = [5, 2, 8, 5];
+            orderState.currentDesc = [5, 8, 2, 5];
+            selectedOrderIndex = null;
+            document.getElementById('order-feedback').innerHTML = '';
+            renderOrderCards();
+        }
+
+        function checkOrderMission() {
+            const arr = orderState.activeTab === 'asc' ? orderState.currentAsc : orderState.currentDesc;
+            const target = orderState.activeTab === 'asc' ? orderState.targetAsc : orderState.targetDesc;
+            const fb = document.getElementById('order-feedback');
+
+            let isCorrect = JSON.stringify(arr) === JSON.stringify(target);
+            if (isCorrect) {
+                fb.className = 'text-sm font-bold text-green-700 bg-[#DDEBDD] px-4 py-2 rounded-xl border border-green-200';
+                fb.innerHTML = 'Өте жақсы! Тапсырма дұрыс орындалды. Барлық сандар өз орнында.';
+                STATE.score.completedMissions.add('order');
+                renderTabs();
+            } else {
+                fb.className = 'text-sm font-bold text-red-700 bg-[#EED6D2] px-4 py-2 rounded-xl border border-red-200';
+                fb.innerHTML = 'Реттілік қате! Қайтадан тексеріп, карточкалар орнын ауыстырыңыз.';
+            }
+        }
+
+        // ==========================================
+        // MISSION 2: BUBBLE SORT (Көпіршікті)
+        // ==========================================
+        let bubbleState = {
+            array: [5, 2, 4, 1],
+            i: 0,
+            j: 0,
+            changed: false,
+            sortedBoundary: 4, // Elements at & right are sorted
+            comparisons: 0,
+            swaps: 0,
+            finished: false,
+            selectedCard: null,
+            pythonLine: 1,
+            message: 'Сұрыптауды бастау үшін «Келесі қадам» немесе көршілес карточканы басыңыз.'
+        };
+
+        function renderBubbleMission(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <!-- Title & Header Controls -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-4 gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">2-миссия: Көпіршікті сұрыптау</h2>
+                                <span class="bg-[#F1F4F8] text-[#1F4E8C] text-xs font-bold px-2.5 py-1 rounded-md">Bubble Sort</span>
+                            </div>
+                            <p class="text-xs text-[#46566B] mt-1">Бастапқы тізім: [5, 2, 4, 1]. Көршілес элементтерді салыстыру.</p>
+                        </div>
+                        
+                        <!-- Mode Switcher -->
+                        <div class="flex items-center bg-[#F1F4F8] p-1 rounded-xl">
+                            <button onclick="setAlgorithmMode('learn')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${STATE.mode === 'learn' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Үйрену (Демо)</button>
+                            <button onclick="setAlgorithmMode('practice')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${STATE.mode === 'practice' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Өзің орында</button>
+                        </div>
+                    </div>
+
+                    <!-- Main Workspace Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left/Center: Visualizer Area -->
+                        <div class="lg:col-span-2 bg-[#F8FAFC] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between items-center relative min-h-[320px]">
+                            
+                            <!-- Variable Status Bar -->
+                            <div class="w-full flex flex-wrap justify-between items-center text-xs font-semibold bg-white p-3 rounded-xl border border-slate-200 shadow-sm gap-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#46566B]">Өту (i): <strong class="text-[#14253A]">${bubbleState.i}</strong></span>
+                                    <span class="text-[#46566B]">Индекс (j): <strong class="text-[#14253A]">${bubbleState.j}</strong></span>
+                                    <span class="text-[#46566B]">Өзгеріс (changed): <strong class="text-[#14253A]">${bubbleState.changed}</strong></span>
+                                </div>
+                                <div class="flex items-center gap-3 text-slate-500">
+                                    <span>Салыстырулар: <strong class="text-[#1F4E8C]">${bubbleState.comparisons}</strong></span>
+                                    <span>Ауыстырулар: <strong class="text-[#1F4E8C]">${bubbleState.swaps}</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Cards Container -->
+                            <div class="my-8 flex items-center justify-center gap-3 sm:gap-6 w-full">
+                                ${renderBubbleCardsHTML()}
+                            </div>
+
+                            <!-- Live Instruction / Feedback Box -->
+                            <div class="w-full bg-white p-4 rounded-xl border border-slate-200 text-xs sm:text-sm text-[#14253A] flex items-center gap-3 shadow-sm">
+                                <div class="w-2.5 h-2.5 rounded-full ${bubbleState.finished ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}"></div>
+                                <div id="bubble-instruction-text" class="flex-grow">${bubbleState.message}</div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Python Code & Trace -->
+                        <div class="bg-[#14253A] text-slate-200 rounded-2xl p-5 font-mono-code text-xs leading-relaxed flex flex-col justify-between shadow-md">
+                            <div>
+                                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700 text-slate-400">
+                                    <span class="text-xs uppercase tracking-wider font-semibold">Python іске асыру</span>
+                                    <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-blue-400">bubble_sort.py</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="code-line ${bubbleState.pythonLine === 1 ? 'active' : ''}">def bubble_sort(arr):</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 2 ? 'active' : ''}">    n = len(arr)</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 3 ? 'active' : ''}">    for i in range(n):</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 4 ? 'active' : ''}">        changed = False</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 5 ? 'active' : ''}">        for j in range(0, n - i - 1):</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 6 ? 'active' : ''}">            if arr[j] > arr[j + 1]:</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 7 ? 'active' : ''}">                arr[j], arr[j+1] = arr[j+1], arr[j]</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 8 ? 'active' : ''}">                changed = True</div>
+                                    <div class="code-line ${bubbleState.pythonLine === 9 ? 'active' : ''}">        if not changed: break</div>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-400 font-sans">
+                                💡 <strong class="text-slate-200">Ескерту:</strong> Итерация аяқталғанда <code>changed == False</code> болса, алгоритм ерте тоқтайды.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Toolbar & Action Controls -->
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                        <!-- Playback Controls -->
+                        <div class="flex items-center flex-wrap gap-2">
+                            <button onclick="stepBubbleBack()" ${HISTORY.bubble.length === 0 ? 'disabled' : ''} class="btn-action bg-slate-100 hover:bg-slate-200 text-[#46566B] disabled:opacity-50 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1">
+                                ◄ Алдыңғы қадам
+                            </button>
+                            <button onclick="stepBubbleNext()" ${(bubbleState.finished || STATE.mode === 'practice') ? 'disabled' : ''} class="btn-action bg-[#1F4E8C] hover:bg-[#143560] text-white disabled:opacity-50 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-sm">
+                                Келесі қадам ►
+                            </button>
+                            <button onclick="toggleAutoPlay(stepBubbleNext)" ${STATE.mode === 'practice' ? 'disabled' : ''} class="disabled:opacity-50 btn-action bg-blue-50 hover:bg-blue-100 text-[#1F4E8C] px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1">
+                                ${STATE.autoPlaying ? '⏸ Кідірту' : '▶ Автоматты көрсету'}
+                            </button>
+                            <button onclick="resetBubbleState()" class="btn-action bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-xs font-semibold">
+                                ↻ Қайта бастау
+                            </button>
+                        </div>
+
+                        <!-- Speed Controls -->
+                        ${speedSelectHTML()}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBubbleCardsHTML() {
+            return bubbleState.array.map((val, idx) => {
+                const isComparing = STATE.mode === 'learn' && (idx === bubbleState.j || idx === bubbleState.j + 1) && !bubbleState.finished;
+                const isSorted = idx >= bubbleState.sortedBoundary;
+                const isSelected = bubbleState.selectedCard === idx;
+
+                let extraClass = '';
+                if (isSorted) extraClass = 'sorted-done';
+                else if (isSelected) extraClass = 'selected';
+                else if (isComparing) extraClass = 'compare-active';
+
+                return `
+                    <div onclick="handleBubbleCardClick(${idx})"
+                         class="num-card w-16 h-24 sm:w-20 sm:h-28 rounded-2xl flex flex-col items-center justify-center cursor-pointer border-2 font-bold text-2xl sm:text-3xl ${extraClass}">
+                        <span>${val}</span>
+                        <span class="text-[10px] opacity-60 font-normal mt-1">i=${idx}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveBubbleHistory() {
+            HISTORY.bubble.push(JSON.parse(JSON.stringify(bubbleState)));
+        }
+
+        function stepBubbleBack() {
+            if (HISTORY.bubble.length > 0) {
+                stopAutoPlay();
+                bubbleState = HISTORY.bubble.pop();
+                renderBubbleMission(document.getElementById('app-content'));
+            }
+        }
+
+        function resetBubbleState(msg) {
+            stopAutoPlay();
+            HISTORY.bubble = [];
+            bubbleState = {
+                array: [5, 2, 4, 1],
+                i: 0,
+                j: 0,
+                changed: false,
+                sortedBoundary: 4,
+                comparisons: 0,
+                swaps: 0,
+                finished: false,
+                selectedCard: null,
+                pythonLine: 1,
+                message: (typeof msg === 'string' && msg) || 'Сұрыптау бастапқы қалпына келтірілді.'
+            };
+            renderBubbleMission(document.getElementById('app-content'));
+        }
+
+        function stepBubbleNext() {
+            if (bubbleState.finished) return;
+            saveBubbleHistory();
+
+            const n = bubbleState.array.length;
+
+            // Algorithm step machine
+            if (bubbleState.j < n - bubbleState.i - 1) {
+                bubbleState.comparisons++;
+                bubbleState.pythonLine = 6;
+                const left = bubbleState.array[bubbleState.j];
+                const right = bubbleState.array[bubbleState.j + 1];
+
+                if (left > right) {
+                    // Swap needed
+                    bubbleState.array[bubbleState.j] = right;
+                    bubbleState.array[bubbleState.j + 1] = left;
+                    bubbleState.swaps++;
+                    bubbleState.changed = true;
+                    bubbleState.pythonLine = 7;
+                    bubbleState.message = `Салыстыру: ${left} > ${right}. Реті бұзылған, орындары ауыстырылды!`;
+                } else {
+                    bubbleState.message = `Салыстыру: ${left} <= ${right}. Реті дұрыс, ауыстыру қажет емес.`;
+                }
+
+                bubbleState.j++;
+            } else {
+                // End of one pass
+                bubbleState.sortedBoundary--;
+                bubbleState.i++;
+                bubbleState.j = 0;
+
+                if (!bubbleState.changed && bubbleState.i > 0) {
+                    // Early exit
+                    bubbleState.finished = true;
+                    bubbleState.sortedBoundary = 0;
+                    bubbleState.pythonLine = 9;
+                    bubbleState.message = 'Бұл өтуде ауыстыру болған жоқ! Алгоритм ерте тоқтатылды. Тізім толық реттелді!';
+                    STATE.score.completedMissions.add('bubble');
+                    stopAutoPlay();
+                } else if (bubbleState.i >= n - 1) {
+                    bubbleState.finished = true;
+                    bubbleState.sortedBoundary = 0;
+                    bubbleState.message = 'Барлық өтулер аяқталды! Тізім толық реттелді.';
+                    STATE.score.completedMissions.add('bubble');
+                    stopAutoPlay();
+                } else {
+                    bubbleState.changed = false;
+                    bubbleState.pythonLine = 4;
+                    bubbleState.message = `Өту ${bubbleState.i} аяқталды. Оң жақтағы элемент соңғы орнына орнықты.`;
+                }
+            }
+
+            renderBubbleMission(document.getElementById('app-content'));
+        }
+
+        function handleBubbleCardClick(idx) {
+            if (STATE.mode === 'learn' || bubbleState.finished) return;
+            const b = bubbleState;
+            const app = document.getElementById('app-content');
+
+            if (b.selectedCard === null) {
+                b.selectedCard = idx;
+                b.message = `Таңдалды: [${idx}] = ${b.array[idx]}. Енді көрші карточканы таңдаңыз.`;
+            } else if (b.selectedCard === idx) {
+                b.selectedCard = null;
+                b.message = 'Таңдау болдырылмады. Қайтадан екі көрші карточканы таңдаңыз.';
+            } else if (Math.abs(b.selectedCard - idx) !== 1) {
+                b.selectedCard = null;
+                b.message = 'Қате! Тек көршілес элементтерді салыстыруға болады.';
+            } else {
+                const a = Math.min(b.selectedCard, idx);
+                b.selectedCard = null;
+                saveBubbleHistory();
+                b.comparisons++;
+                if (b.array[a] > b.array[a + 1]) {
+                    const left = b.array[a], right = b.array[a + 1];
+                    b.array[a] = right;
+                    b.array[a + 1] = left;
+                    b.swaps++;
+                    b.message = `${left} > ${right}: реті бұзылған, орындары ауыстырылды. Дұрыс!`;
+                    if (b.array.every((v, k) => k === 0 || b.array[k - 1] <= v)) {
+                        b.finished = true;
+                        b.sortedBoundary = 0;
+                        b.message += ' Тізім толық реттелді!';
+                        STATE.score.completedMissions.add('bubble');
+                        renderTabs();
+                    }
+                } else {
+                    b.message = `${b.array[a]} <= ${b.array[a + 1]}: реті дұрыс, ауыстыру қажет емес. (Салыстыру саналды, ауыстыру жоқ.)`;
+                }
+            }
+            renderBubbleMission(app);
+        }
+
+        // ==========================================
+        // MISSION 3: SELECTION SORT (Таңдау арқылы)
+        // ==========================================
+        let selectState = {
+            array: [6, 2, 5, 1],
+            i: 0,
+            j: 1,
+            minIdx: 0,
+            sortedBoundary: 0,
+            comparisons: 0,
+            swaps: 0,
+            phase: 'find_min', // 'find_min' or 'swap'
+            finished: false,
+            pythonLine: 1,
+            message: 'Сұрыптауды бастау үшін «Келесі қадамды» басыңыз.'
+        };
+
+        function renderSelectionMission(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-4 gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">3-миссия: Таңдау арқылы сұрыптау</h2>
+                                <span class="bg-[#F1F4F8] text-[#1F4E8C] text-xs font-bold px-2.5 py-1 rounded-md">Selection Sort</span>
+                            </div>
+                            <p class="text-xs text-[#46566B] mt-1">Бастапқы тізім: [6, 2, 5, 1]. Реттелмеген бөліктен минимумды іздеу.</p>
+                        </div>
+                        
+                        <div class="flex items-center bg-[#F1F4F8] p-1 rounded-xl">
+                            <button onclick="setAlgorithmMode('learn')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${STATE.mode === 'learn' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Үйрену (Демо)</button>
+                            <button onclick="setAlgorithmMode('practice')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${STATE.mode === 'practice' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Өзің орында</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-[#F8FAFC] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between items-center relative min-h-[320px]">
+                            <div class="w-full flex flex-wrap justify-between items-center text-xs font-semibold bg-white p-3 rounded-xl border border-slate-200 shadow-sm gap-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#46566B]">Реттелген шекара (i): <strong class="text-[#14253A]">${selectState.i}</strong></span>
+                                    <span class="text-[#46566B]">Тексеру (j): <strong class="text-[#14253A]">${selectState.j}</strong></span>
+                                    <span class="text-[#1F4E8C] font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Ағымдағы минимум (min_i): ${selectState.minIdx} (${selectState.array[selectState.minIdx]})</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-slate-500">
+                                    <span>Салыстырулар: <strong class="text-[#1F4E8C]">${selectState.comparisons}</strong></span>
+                                    <span>Ауыстырулар: <strong class="text-[#1F4E8C]">${selectState.swaps}</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="my-8 flex items-center justify-center gap-3 sm:gap-6 w-full">
+                                ${renderSelectCardsHTML()}
+                            </div>
+
+                            <div class="w-full bg-white p-4 rounded-xl border border-slate-200 text-xs sm:text-sm text-[#14253A] flex items-center gap-3 shadow-sm">
+                                <div class="w-2.5 h-2.5 rounded-full ${selectState.finished ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}"></div>
+                                <div class="flex-grow">${selectState.message}</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#14253A] text-slate-200 rounded-2xl p-5 font-mono-code text-xs leading-relaxed flex flex-col justify-between shadow-md">
+                            <div>
+                                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700 text-slate-400">
+                                    <span class="text-xs uppercase tracking-wider font-semibold">Python іске асыру</span>
+                                    <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-blue-400">selection_sort.py</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="code-line ${selectState.pythonLine === 1 ? 'active' : ''}">def selection_sort(arr):</div>
+                                    <div class="code-line ${selectState.pythonLine === 2 ? 'active' : ''}">    n = len(arr)</div>
+                                    <div class="code-line ${selectState.pythonLine === 3 ? 'active' : ''}">    for i in range(n - 1):</div>
+                                    <div class="code-line ${selectState.pythonLine === 4 ? 'active' : ''}">        min_i = i</div>
+                                    <div class="code-line ${selectState.pythonLine === 5 ? 'active' : ''}">        for j in range(i + 1, n):</div>
+                                    <div class="code-line ${selectState.pythonLine === 6 ? 'active' : ''}">            if arr[j] < arr[min_i]:</div>
+                                    <div class="code-line ${selectState.pythonLine === 7 ? 'active' : ''}">                min_i = j</div>
+                                    <div class="code-line ${selectState.pythonLine === 8 ? 'active' : ''}">        if min_i != i:</div>
+                                    <div class="code-line ${selectState.pythonLine === 9 ? 'active' : ''}">            arr[i], arr[min_i] = arr[min_i], arr[i]</div>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-400 font-sans">
+                                💡 <strong class="text-slate-200">Ескерту:</strong> Егер минимумы <code>min_i == i</code> болып шықса, өзімен-өзі ауыстыру орындалмайды және санауға кірмейді!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                        <div class="flex items-center flex-wrap gap-2">
+                            <button onclick="stepSelectBack()" ${HISTORY.selection.length === 0 ? 'disabled' : ''} class="btn-action bg-slate-100 hover:bg-slate-200 text-[#46566B] disabled:opacity-50 px-3.5 py-2 rounded-xl text-xs font-semibold">◄ Алдыңғы қадам</button>
+                            <button onclick="stepSelectNext()" ${(selectState.finished || STATE.mode === 'practice') ? 'disabled' : ''} class="btn-action bg-[#1F4E8C] hover:bg-[#143560] text-white disabled:opacity-50 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-sm">Келесі қадам ►</button>
+                            <button onclick="toggleAutoPlay(stepSelectNext)" ${STATE.mode === 'practice' ? 'disabled' : ''} class="disabled:opacity-50 btn-action bg-blue-50 hover:bg-blue-100 text-[#1F4E8C] px-3.5 py-2 rounded-xl text-xs font-semibold">${STATE.autoPlaying ? '⏸ Кідірту' : '▶ Автоматты көрсету'}</button>
+                            <button onclick="resetSelectState()" class="btn-action bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-xs font-semibold">↻ Қайта бастау</button>
+                        </div>
+                        ${speedSelectHTML()}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSelectCardsHTML() {
+            return selectState.array.map((val, idx) => {
+                const isSorted = idx < selectState.sortedBoundary;
+                const isMin = idx === selectState.minIdx && !selectState.finished;
+                const isChecking = STATE.mode === 'learn' && idx === selectState.j && selectState.phase === 'find_min' && !selectState.finished;
+
+                let extraClass = '';
+                if (isSorted) extraClass = 'sorted-done';
+                else if (isMin) extraClass = 'min-card';
+                else if (isChecking) extraClass = 'compare-active';
+
+                return `
+                    <div onclick="handleSelectCardClick(${idx})"
+                         class="num-card w-16 h-24 sm:w-20 sm:h-28 rounded-2xl flex flex-col items-center justify-center border-2 font-bold text-2xl sm:text-3xl ${STATE.mode === 'practice' && !isSorted ? 'cursor-pointer' : ''} ${extraClass}">
+                        <span>${val}</span>
+                        <span class="text-[10px] opacity-60 font-normal mt-1">i=${idx}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleSelectCardClick(idx) {
+            if (STATE.mode !== 'practice' || selectState.finished) return;
+            const s = selectState;
+            const n = s.array.length;
+            if (idx < s.i) return; // already sorted part
+
+            // true (first) minimum of the unsorted part
+            let m = s.i;
+            for (let k = s.i + 1; k < n; k++) {
+                if (s.array[k] < s.array[m]) m = k;
+            }
+
+            if (s.array[idx] !== s.array[m]) {
+                s.message = `Қате: ${s.array[idx]} ең кіші емес. [${s.i}]–[${n - 1}] аралығындағы минимумды табыңыз.`;
+                renderSelectionMission(document.getElementById('app-content'));
+                return;
+            }
+
+            saveSelectHistory();
+            s.comparisons += n - 1 - s.i;
+            if (m !== s.i) {
+                const t = s.array[s.i];
+                s.array[s.i] = s.array[m];
+                s.array[m] = t;
+                s.swaps++;
+                s.message = `Дұрыс! Минимум ${s.array[s.i]} [${s.i}] орнына қойылды.`;
+            } else {
+                s.message = `Дұрыс! Минимум ${s.array[s.i]} өз орнында тұр, ауыстыру қажет емес.`;
+            }
+            s.i++;
+            s.sortedBoundary = s.i;
+            s.minIdx = s.i;
+            s.j = s.i + 1;
+            s.phase = 'find_min';
+            if (s.i >= n - 1) {
+                s.finished = true;
+                s.sortedBoundary = n;
+                s.message += ' Тізім толық реттелді!';
+                STATE.score.completedMissions.add('selection');
+                renderTabs();
+            }
+            renderSelectionMission(document.getElementById('app-content'));
+        }
+
+        function saveSelectHistory() {
+            HISTORY.selection.push(JSON.parse(JSON.stringify(selectState)));
+        }
+        function stepSelectBack() {
+            if (HISTORY.selection.length > 0) {
+                stopAutoPlay();
+                selectState = HISTORY.selection.pop();
+                renderSelectionMission(document.getElementById('app-content'));
+            }
+        }
+        function resetSelectState(msg) {
+            stopAutoPlay();
+            HISTORY.selection = [];
+            selectState = {
+                array: [6, 2, 5, 1],
+                i: 0,
+                j: 1,
+                minIdx: 0,
+                sortedBoundary: 0,
+                comparisons: 0,
+                swaps: 0,
+                phase: 'find_min',
+                finished: false,
+                pythonLine: 1,
+                message: (typeof msg === 'string' && msg) || 'Сұрыптау бастапқы қалпына келтірілді.'
+            };
+            renderSelectionMission(document.getElementById('app-content'));
+        }
+
+        function stepSelectNext() {
+            if (selectState.finished) return;
+            saveSelectHistory();
+
+            const n = selectState.array.length;
+
+            if (selectState.phase === 'find_min') {
+                if (selectState.j < n) {
+                    selectState.comparisons++;
+                    selectState.pythonLine = 6;
+                    if (selectState.array[selectState.j] < selectState.array[selectState.minIdx]) {
+                        selectState.minIdx = selectState.j;
+                        selectState.pythonLine = 7;
+                        selectState.message = `Жаңа минимум табылды! min_i = ${selectState.j} (мәні ${selectState.array[selectState.j]}).`;
+                    } else {
+                        selectState.message = `${selectState.array[selectState.j]} мәні ағымдағы минимумнан (${selectState.array[selectState.minIdx]}) кіші емес. Минимум өзгермейді, келесі элементке өтеміз.`;
+                    }
+                    selectState.j++;
+                } else {
+                    // Finished pass min search
+                    selectState.phase = 'swap';
+                    selectState.pythonLine = 8;
+                    selectState.message = `Минимум табылды: ${selectState.array[selectState.minIdx]}. Енді оны [${selectState.i}] орнындағы элементпен ауыстыру керек.`;
+                }
+            } else if (selectState.phase === 'swap') {
+                if (selectState.minIdx !== selectState.i) {
+                    const temp = selectState.array[selectState.i];
+                    selectState.array[selectState.i] = selectState.array[selectState.minIdx];
+                    selectState.array[selectState.minIdx] = temp;
+                    selectState.swaps++;
+                    selectState.pythonLine = 9;
+                    selectState.message = `Ауыстырылды: ${selectState.array[selectState.i]} сұрыпталған бөліктің басына қойылды.`;
+                } else {
+                    selectState.message = `Минимум өзінің орнында (min_i == i). Ауыстыру орындалмайды.`;
+                }
+
+                selectState.i++;
+                selectState.sortedBoundary = selectState.i;
+                selectState.minIdx = selectState.i;
+                selectState.j = selectState.i + 1;
+                selectState.phase = 'find_min';
+
+                if (selectState.i >= n - 1) {
+                    selectState.finished = true;
+                    selectState.sortedBoundary = n;
+                    selectState.message += ' Барлық өтулер аяқталды! Тізім толық реттелді.';
+                    STATE.score.completedMissions.add('selection');
+                    stopAutoPlay();
+                }
+            }
+
+            renderSelectionMission(document.getElementById('app-content'));
+        }
+
+        // ==========================================
+        // MISSION 4: INSERTION SORT (Кірістіру арқылы)
+        // ==========================================
+        let insertState = {
+            array: [5, 2, 4, 1],
+            i: 1,
+            j: 0,
+            key: null,
+            sortedBoundary: 1, // Array[0] is initial sorted part
+            comparisons: 0,
+            shifts: 0,
+            keyWrites: 0,
+            phase: 'pick_key', // 'pick_key', 'shift', 'insert_key'
+            finished: false,
+            pythonLine: 1,
+            message: 'Сұрыптауды бастау үшін «Келесі қадамды» басыңыз.'
+        };
+
+        function renderInsertionMission(container) {
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-100 pb-4 gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">4-миссия: Кірістіру арқылы сұрыптау</h2>
+                                <span class="bg-[#F1F4F8] text-[#1F4E8C] text-xs font-bold px-2.5 py-1 rounded-md">Insertion Sort</span>
+                            </div>
+                            <p class="text-xs text-[#46566B] mt-1">Бастапқы тізім: [5, 2, 4, 1]. Сол жақ бөлік реттелген деп алынады, key сақталады.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-[#F8FAFC] rounded-2xl p-6 border border-slate-200 flex flex-col justify-between items-center relative min-h-[340px]">
+                            <div class="w-full flex flex-wrap justify-between items-center text-xs font-semibold bg-white p-3 rounded-xl border border-slate-200 shadow-sm gap-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-[#46566B]">Итерация (i): <strong class="text-[#14253A]">${insertState.i}</strong></span>
+                                    <span class="text-[#46566B]">Тексеру (j): <strong class="text-[#14253A]">${insertState.j}</strong></span>
+                                </div>
+                                <div class="flex items-center gap-3 text-slate-500">
+                                    <span>Салыстырулар: <strong class="text-[#1F4E8C]">${insertState.comparisons}</strong></span>
+                                    <span>Жылжытулар: <strong class="text-[#1F4E8C]">${insertState.shifts}</strong></span>
+                                    <span>Key жазулары: <strong class="text-[#1F4E8C]">${insertState.keyWrites}</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- Dedicated Key Slot & Card visual -->
+                            <div class="flex items-center gap-6 my-4">
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[11px] font-bold text-rose-700 uppercase tracking-wider mb-1">key айнымалысы</span>
+                                    <div class="w-16 h-20 sm:w-20 sm:h-24 rounded-2xl border-2 border-rose-300 bg-rose-50 flex items-center justify-center font-bold text-2xl text-rose-900 shadow-inner">
+                                        ${insertState.key !== null ? insertState.key : '<span class="text-xs text-rose-300 font-normal">Бос</span>'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="my-4 flex items-center justify-center gap-3 sm:gap-6 w-full">
+                                ${renderInsertCardsHTML()}
+                            </div>
+
+                            <div class="w-full bg-white p-4 rounded-xl border border-slate-200 text-xs sm:text-sm text-[#14253A] flex items-center gap-3 shadow-sm">
+                                <div class="w-2.5 h-2.5 rounded-full ${insertState.finished ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}"></div>
+                                <div class="flex-grow">${insertState.message}</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#14253A] text-slate-200 rounded-2xl p-5 font-mono-code text-xs leading-relaxed flex flex-col justify-between shadow-md">
+                            <div>
+                                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-700 text-slate-400">
+                                    <span class="text-xs uppercase tracking-wider font-semibold">Python іске асыру</span>
+                                    <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-blue-400">insertion_sort.py</span>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="code-line ${insertState.pythonLine === 1 ? 'active' : ''}">def insertion_sort(arr):</div>
+                                    <div class="code-line ${insertState.pythonLine === 2 ? 'active' : ''}">    for i in range(1, len(arr)):</div>
+                                    <div class="code-line ${insertState.pythonLine === 3 ? 'active' : ''}">        key = arr[i]</div>
+                                    <div class="code-line ${insertState.pythonLine === 4 ? 'active' : ''}">        j = i - 1</div>
+                                    <div class="code-line ${insertState.pythonLine === 5 ? 'active' : ''}">        while j >= 0 and arr[j] > key:</div>
+                                    <div class="code-line ${insertState.pythonLine === 6 ? 'active' : ''}">            arr[j + 1] = arr[j]</div>
+                                    <div class="code-line ${insertState.pythonLine === 7 ? 'active' : ''}">            j -= 1</div>
+                                    <div class="code-line ${insertState.pythonLine === 8 ? 'active' : ''}">        arr[j + 1] = key</div>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-400 font-sans">
+                                📢 <strong class="text-slate-200">Нұсқау:</strong> «Келесі мәнді key айнымалысына сақтаймыз». Үлкен мәндер оңға жылжып, key бос орынға қойылады.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                        <div class="flex items-center flex-wrap gap-2">
+                            <button onclick="stepInsertBack()" ${HISTORY.insertion.length === 0 ? 'disabled' : ''} class="btn-action bg-slate-100 hover:bg-slate-200 text-[#46566B] disabled:opacity-50 px-3.5 py-2 rounded-xl text-xs font-semibold">◄ Алдыңғы қадам</button>
+                            <button onclick="stepInsertNext()" ${insertState.finished ? 'disabled' : ''} class="btn-action bg-[#1F4E8C] hover:bg-[#143560] text-white disabled:opacity-50 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-sm">Келесі қадам ►</button>
+                            <button onclick="toggleAutoPlay(stepInsertNext)" class="btn-action bg-blue-50 hover:bg-blue-100 text-[#1F4E8C] px-3.5 py-2 rounded-xl text-xs font-semibold">${STATE.autoPlaying ? '⏸ Кідірту' : '▶ Автоматты көрсету'}</button>
+                            <button onclick="resetInsertState()" class="btn-action bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl text-xs font-semibold">↻ Қайта бастау</button>
+                        </div>
+                        ${speedSelectHTML()}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderInsertCardsHTML() {
+            return insertState.array.map((val, idx) => {
+                const isSortedPart = idx < insertState.sortedBoundary;
+                const isKeyHole = (val === null);
+
+                let extraClass = '';
+                if (isKeyHole) extraClass = 'empty-slot';
+                else if (isSortedPart) extraClass = 'sorted-done';
+
+                return `
+                    <div class="num-card w-16 h-24 sm:w-20 sm:h-28 rounded-2xl flex flex-col items-center justify-center border-2 font-bold text-2xl sm:text-3xl ${extraClass}">
+                        <span>${val !== null ? val : '_'}</span>
+                        <span class="text-[10px] opacity-60 font-normal mt-1">i=${idx}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function saveInsertHistory() {
+            HISTORY.insertion.push(JSON.parse(JSON.stringify(insertState)));
+        }
+        function stepInsertBack() {
+            if (HISTORY.insertion.length > 0) {
+                stopAutoPlay();
+                insertState = HISTORY.insertion.pop();
+                renderInsertionMission(document.getElementById('app-content'));
+            }
+        }
+        function resetInsertState() {
+            stopAutoPlay();
+            HISTORY.insertion = [];
+            insertState = {
+                array: [5, 2, 4, 1],
+                i: 1,
+                j: 0,
+                key: null,
+                sortedBoundary: 1,
+                comparisons: 0,
+                shifts: 0,
+                keyWrites: 0,
+                phase: 'pick_key',
+                finished: false,
+                pythonLine: 1,
+                message: 'Сұрыптау бастапқы қалпына келтірілді.'
+            };
+            renderInsertionMission(document.getElementById('app-content'));
+        }
+
+        function stepInsertNext() {
+            if (insertState.finished) return;
+            saveInsertHistory();
+
+            const n = insertState.array.length;
+
+            if (insertState.phase === 'pick_key') {
+                insertState.key = insertState.array[insertState.i];
+                insertState.array[insertState.i] = null; // empty slot
+                insertState.j = insertState.i - 1;
+                insertState.phase = 'shift';
+                insertState.pythonLine = 3;
+                insertState.message = `Келесі мәнді key = ${insertState.key} айнымалысына сақтаймыз. Орны босатылды.`;
+            } else if (insertState.phase === 'shift') {
+                if (insertState.j >= 0) {
+                    insertState.comparisons++;
+                    insertState.pythonLine = 5;
+                    if (insertState.array[insertState.j] > insertState.key) {
+                        insertState.array[insertState.j + 1] = insertState.array[insertState.j];
+                        insertState.array[insertState.j] = null;
+                        insertState.shifts++;
+                        insertState.pythonLine = 6;
+                        insertState.message = `Мән ${insertState.array[insertState.j + 1]} > key (${insertState.key}). Үлкен мән оңға жылжытылды.`;
+                        insertState.j--;
+                    } else {
+                        // key is larger or equal, stop shifting
+                        insertState.phase = 'insert_key';
+                        insertState.message = `Мән ${insertState.array[insertState.j]} <= key (${insertState.key}). Жылжыту тоқтатылды.`;
+                    }
+                } else {
+                    insertState.phase = 'insert_key';
+                    insertState.message = `Реттелген бөліктің басына жеттік (j < 0). Жылжыту тоқтатылды, key бос орынға қойылады.`;
+                }
+            } else if (insertState.phase === 'insert_key') {
+                insertState.array[insertState.j + 1] = insertState.key;
+                insertState.keyWrites++;
+                insertState.pythonLine = 8;
+                insertState.message = `key = ${insertState.key} мәні бос қалған [${insertState.j + 1}] орынға жазылды!`;
+                
+                insertState.i++;
+                insertState.sortedBoundary = insertState.i;
+                insertState.key = null;
+                insertState.phase = 'pick_key';
+
+                if (insertState.i >= n) {
+                    insertState.finished = true;
+                    insertState.sortedBoundary = n;
+                    insertState.message += ' Барлық элементтер кірістірілді! Тізім толық реттелді.';
+                    STATE.score.completedMissions.add('insertion');
+                    stopAutoPlay();
+                }
+            }
+
+            renderInsertionMission(document.getElementById('app-content'));
+        }
+
+        // AutoPlay Engine Toggle
+        function toggleAutoPlay(stepFunc) {
+            if (STATE.autoPlaying) {
+                stopAutoPlay();
+            } else {
+                STATE.autoPlaying = true;
+                STATE.autoFn = stepFunc;
+                STATE.autoTimer = setInterval(stepFunc, STATE.speed);
+            }
+            renderContent();
+        }
+
+        function stopAutoPlay() {
+            STATE.autoPlaying = false;
+            if (STATE.autoTimer) {
+                clearInterval(STATE.autoTimer);
+                STATE.autoTimer = null;
+            }
+        }
+
+        function setSpeed(v) {
+            STATE.speed = Number(v);
+            // Apply the new speed immediately if the demo is running
+            if (STATE.autoPlaying && STATE.autoFn) {
+                clearInterval(STATE.autoTimer);
+                STATE.autoTimer = setInterval(STATE.autoFn, STATE.speed);
+            }
+        }
+
+        function speedSelectHTML() {
+            const opt = (v, label) => `<option value="${v}" ${STATE.speed === v ? 'selected' : ''}>${label}</option>`;
+            return `
+                <div class="flex items-center gap-2 text-xs text-[#46566B]">
+                    <span>Жылдамдық:</span>
+                    <select onchange="setSpeed(this.value)" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold">
+                        ${opt(1500, 'Баяу (1.5с)')}
+                        ${opt(1000, 'Қалыпты (1с)')}
+                        ${opt(500, 'Жылдам (0.5с)')}
+                    </select>
+                </div>`;
+        }
+
+        function setAlgorithmMode(m) {
+            stopAutoPlay();
+            STATE.mode = m;
+            const id = MISSIONS[STATE.currentMissionIndex].id;
+            // Switching mode restarts the algorithm so the demo and manual states never mix
+            if (id === 'bubble') {
+                resetBubbleState(m === 'practice'
+                    ? 'Өзің орында: екі көрші карточканы таңдаңыз. Сол жақ мән үлкен болса, олар ауысады.'
+                    : 'Демо режимі: алгоритмнің жүруін «Келесі қадам» батырмасымен бақылаңыз.');
+            } else if (id === 'selection') {
+                resetSelectState(m === 'practice'
+                    ? 'Өзің орында: реттелмеген бөліктегі ең кіші санды басыңыз, ол [i] орнына қойылады.'
+                    : 'Демо режимі: алгоритмнің жүруін «Келесі қадам» батырмасымен бақылаңыз.');
+            } else {
+                renderContent();
+            }
+        }
+
+        // ==========================================
+        // MISSION 5: PYTHON CODE ASSEMBLY
+        // ==========================================
+        let codeMissionState = {
+            selectedAlgo: 'bubble',
+            userLines: [],
+            poolLines: [],
+            feedback: ''
+        };
+
+        const CODE_PARTS = {
+            bubble: {
+                title: 'Bubble Sort (Көпіршікті)',
+                correct: [
+                    'def bubble_sort(arr):',
+                    '    n = len(arr)',
+                    '    for i in range(n):',
+                    '        changed = False',
+                    '        for j in range(0, n - i - 1):',
+                    '            if arr[j] > arr[j + 1]:',
+                    '                arr[j], arr[j+1] = arr[j+1], arr[j]',
+                    '                changed = True',
+                    '        if not changed: break'
+                ]
+            },
+            selection: {
+                title: 'Selection Sort (Таңдау арқылы)',
+                correct: [
+                    'def selection_sort(arr):',
+                    '    n = len(arr)',
+                    '    for i in range(n - 1):',
+                    '        min_i = i',
+                    '        for j in range(i + 1, n):',
+                    '            if arr[j] < arr[min_i]:',
+                    '                min_i = j',
+                    '        if min_i != i:',
+                    '            arr[i], arr[min_i] = arr[min_i], arr[i]'
+                ]
+            },
+            insertion: {
+                title: 'Insertion Sort (Кірістіру арқылы)',
+                correct: [
+                    'def insertion_sort(arr):',
+                    '    for i in range(1, len(arr)):',
+                    '        key = arr[i]',
+                    '        j = i - 1',
+                    '        while j >= 0 and arr[j] > key:',
+                    '            arr[j + 1] = arr[j]',
+                    '            j -= 1',
+                    '        arr[j + 1] = key'
+                ]
+            }
+        };
+
+        function initCodeMission() {
+            const algo = CODE_PARTS[codeMissionState.selectedAlgo];
+            // Shuffle correct lines for pool
+            codeMissionState.poolLines = [...algo.correct].sort(() => Math.random() - 0.5);
+            codeMissionState.userLines = [];
+            codeMissionState.feedback = '';
+        }
+
+        function renderCodeMission(container) {
+            if (codeMissionState.poolLines.length === 0 && codeMissionState.userLines.length === 0) {
+                initCodeMission();
+            }
+
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-4 gap-4">
+                        <div>
+                            <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">5-миссия: Python кодын құрастыр</h2>
+                            <p class="text-xs text-[#46566B] mt-1">Оқу мақсаты 10.2.2.2: Функция жолдарын дұрыс ретпен және шегіністермен жинаңыз.</p>
+                        </div>
+                        <div class="flex items-center gap-2 bg-[#F1F4F8] p-1 rounded-xl">
+                            <button onclick="selectCodeAlgo('bubble')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${codeMissionState.selectedAlgo === 'bubble' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Bubble</button>
+                            <button onclick="selectCodeAlgo('selection')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${codeMissionState.selectedAlgo === 'selection' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Selection</button>
+                            <button onclick="selectCodeAlgo('insertion')" class="px-3 py-1.5 rounded-lg text-xs font-semibold ${codeMissionState.selectedAlgo === 'insertion' ? 'bg-[#1F4E8C] text-white' : 'text-[#46566B]'}">Insertion</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Available Lines Pool -->
+                        <div class="bg-[#F8FAFC] p-4 rounded-xl border border-slate-200 flex flex-col">
+                            <span class="text-xs font-semibold text-[#46566B] uppercase tracking-wider mb-3">Қолжетімді код жолдары (шертіп жылжытыңыз):</span>
+                            <div class="space-y-2 flex-grow overflow-y-auto max-h-[360px]">
+                                ${codeMissionState.poolLines.map((line, idx) => `
+                                    <div onclick="moveLineToUser(${idx})" class="p-2.5 bg-white border border-slate-200 rounded-lg text-xs font-mono-code cursor-pointer hover:border-[#1F4E8C] hover:shadow-sm transition text-[#14253A]">
+                                        ${escapeHTML(line)}
+                                    </div>
+                                `).join('')}
+                                ${codeMissionState.poolLines.length === 0 ? '<p class="text-xs text-slate-400 italic">Барлық жолдар пайдаланылды</p>' : ''}
+                            </div>
+                        </div>
+
+                        <!-- User Code Canvas -->
+                        <div class="bg-[#14253A] text-slate-100 p-4 rounded-xl border border-slate-800 font-mono-code text-xs flex flex-col">
+                            <div class="flex justify-between items-center pb-2 mb-3 border-b border-slate-700 text-slate-400">
+                                <span>Жинақталған функция коды:</span>
+                                <button onclick="clearUserLines()" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded">Тазалау</button>
+                            </div>
+                            <div class="space-y-1.5 flex-grow overflow-y-auto max-h-[360px]">
+                                ${codeMissionState.userLines.map((line, idx) => `
+                                    <div onclick="moveLineToPool(${idx})" class="p-2 bg-slate-800/80 border border-slate-700 rounded text-slate-200 cursor-pointer hover:border-red-400 transition">
+                                        <pre class="m-0">${escapeHTML(line)}</pre>
+                                    </div>
+                                `).join('')}
+                                ${codeMissionState.userLines.length === 0 ? '<p class="text-xs text-slate-500 italic">Жолдарды таңдап осы жерге жинаңыз...</p>' : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-slate-100 pt-4">
+                        <div id="code-feedback" class="text-sm font-semibold">${codeMissionState.feedback}</div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="initCodeMission(); renderCodeMission(document.getElementById('app-content'));" class="px-4 py-2 bg-slate-100 text-[#46566B] rounded-xl text-xs font-medium hover:bg-slate-200">Араластыру</button>
+                            <button onclick="checkCodeAssembly()" class="px-6 py-2.5 bg-[#1F4E8C] text-white rounded-xl text-xs font-semibold hover:bg-[#143560] shadow-sm">Кодты тексеру</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
+        }
+
+        function selectCodeAlgo(algoKey) {
+            codeMissionState.selectedAlgo = algoKey;
+            initCodeMission();
+            renderCodeMission(document.getElementById('app-content'));
+        }
+
+        function moveLineToUser(poolIdx) {
+            const line = codeMissionState.poolLines.splice(poolIdx, 1)[0];
+            codeMissionState.userLines.push(line);
+            renderCodeMission(document.getElementById('app-content'));
+        }
+
+        function moveLineToPool(userIdx) {
+            const line = codeMissionState.userLines.splice(userIdx, 1)[0];
+            codeMissionState.poolLines.push(line);
+            renderCodeMission(document.getElementById('app-content'));
+        }
+
+        function clearUserLines() {
+            initCodeMission();
+            renderCodeMission(document.getElementById('app-content'));
+        }
+
+        function checkCodeAssembly() {
+            const algo = CODE_PARTS[codeMissionState.selectedAlgo];
+            const isCorrect = JSON.stringify(codeMissionState.userLines) === JSON.stringify(algo.correct);
+
+            if (isCorrect) {
+                codeMissionState.feedback = `<span class="text-green-700 bg-[#DDEBDD] px-4 py-2 rounded-xl border border-green-200 block">Тамаша! ${algo.title} синтаксисі мен логикасы толықтай дұрыс!</span>`;
+                STATE.score.completedMissions.add('code');
+                renderTabs();
+            } else {
+                codeMissionState.feedback = `<span class="text-red-700 bg-[#EED6D2] px-4 py-2 rounded-xl border border-red-200 block">Кодта қате бар! Табылуы мүмкін қателер: шегіністер (indents) немесе жолдар реті бұзылған. Қайта тексеріңіз.</span>`;
+            }
+            renderCodeMission(document.getElementById('app-content'));
+        }
+
+        // ==========================================
+        // MISSION 6: COMPARISON & TRACE BENCHMARK
+        // ==========================================
+        let compareState = {
+            selectedDatasetKey: 'default',
+            prediction: null,
+            results: null
+        };
+
+        const DATASETS = {
+            'default': { label: '[5, 2, 4, 1] (Презентациядағы мысал)', data: [5, 2, 4, 1] },
+            'sorted': { label: '[1, 2, 4, 5] (Өсу ретімен реттелген)', data: [1, 2, 4, 5] },
+            'reversed': { label: '[5, 4, 2, 1] (Кері реттелген)', data: [5, 4, 2, 1] },
+            'nearly': { label: '[1, 2, 5, 4] (Дерлік реттелген)', data: [1, 2, 5, 4] },
+            'duplicates': { label: '[3, 1, 3, 2] (Қайталанатын мәндер)', data: [3, 1, 3, 2] }
+        };
+
+        function runTraceEngine(arrInput) {
+            // Bubble Trace
+            let bArr = [...arrInput];
+            let bComp = 0, bSwaps = 0;
+            let bn = bArr.length;
+            for(let i=0; i<bn; i++) {
+                let changed = false;
+                for(let j=0; j<bn-i-1; j++) {
+                    bComp++;
+                    if(bArr[j] > bArr[j+1]) {
+                        let t = bArr[j]; bArr[j] = bArr[j+1]; bArr[j+1] = t;
+                        bSwaps++;
+                        changed = true;
+                    }
+                }
+                if(!changed) break;
+            }
+
+            // Selection Trace
+            let sArr = [...arrInput];
+            let sComp = 0, sSwaps = 0;
+            let sn = sArr.length;
+            for(let i=0; i<sn-1; i++) {
+                let min_i = i;
+                for(let j=i+1; j<sn; j++) {
+                    sComp++;
+                    if(sArr[j] < sArr[min_i]) {
+                        min_i = j;
+                    }
+                }
+                if(min_i !== i) {
+                    let t = sArr[i]; sArr[i] = sArr[min_i]; sArr[min_i] = t;
+                    sSwaps++;
+                }
+            }
+
+            // Insertion Trace
+            let iArr = [...arrInput];
+            let iComp = 0, iShifts = 0, iKeys = 0;
+            for(let i=1; i<iArr.length; i++) {
+                let key = iArr[i];
+                let j = i - 1;
+                while(j >= 0) {
+                    iComp++;
+                    if(iArr[j] > key) {
+                        iArr[j+1] = iArr[j];
+                        iShifts++;
+                        j--;
+                    } else {
+                        break;
+                    }
+                }
+                iArr[j+1] = key;
+                iKeys++;
+            }
+
+            return {
+                bubble: { comparisons: bComp, swaps: bSwaps, shifts: 0, keys: 0 },
+                selection: { comparisons: sComp, swaps: sSwaps, shifts: 0, keys: 0 },
+                insertion: { comparisons: iComp, swaps: 0, shifts: iShifts, keys: iKeys }
+            };
+        }
+
+        function renderCompareMission(container) {
+            const currentDataset = DATASETS[compareState.selectedDatasetKey];
+
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">6-миссия: Алгоритмдерді салыстыру</h2>
+                        <p class="text-xs text-[#46566B] mt-1">Оқу мақсаты 10.2.2.1: Тізімнің бастапқы күйіне байланысты алгоритмдердің операциялар санын бағалау. «Барлығы» = салыстырулар + орын ауыстыру / жылжыту / key жазу.</p>
+                    </div>
+
+                    <!-- Dataset Selector & Forecast -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#F8FAFC] p-5 rounded-2xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-semibold text-[#46566B] uppercase tracking-wider mb-2">1. Тізім жинағын таңдаңыз:</label>
+                            <select onchange="changeCompareDataset(this.value)" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold text-[#14253A]">
+                                ${Object.keys(DATASETS).map(k => `
+                                    <option value="${k}" ${compareState.selectedDatasetKey === k ? 'selected' : ''}>${DATASETS[k].label}</option>
+                                `).join('')}
+                            </select>
+                            <p class="text-xs text-slate-500 mt-2">Ағымдағы тізім: <code class="font-bold text-[#1F4E8C]">[${currentDataset.data.join(', ')}]</code></p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-[#46566B] uppercase tracking-wider mb-2">2. Болжам жасаңыз (Қайсысы ең аз операция жасайды?):</label>
+                            <div class="flex items-center gap-2">
+                                <button onclick="setComparePrediction('bubble')" class="flex-1 py-2 rounded-xl border text-xs font-semibold ${compareState.prediction === 'bubble' ? 'bg-[#1F4E8C] text-white border-[#1F4E8C]' : 'bg-white text-slate-700 border-slate-300'}">Көпіршікті</button>
+                                <button onclick="setComparePrediction('selection')" class="flex-1 py-2 rounded-xl border text-xs font-semibold ${compareState.prediction === 'selection' ? 'bg-[#1F4E8C] text-white border-[#1F4E8C]' : 'bg-white text-slate-700 border-slate-300'}">Таңдау</button>
+                                <button onclick="setComparePrediction('insertion')" class="flex-1 py-2 rounded-xl border text-xs font-semibold ${compareState.prediction === 'insertion' ? 'bg-[#1F4E8C] text-white border-[#1F4E8C]' : 'bg-white text-slate-700 border-slate-300'}">Кірістіру</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button onclick="runComparisonBenchmark()" class="btn-action bg-[#1F4E8C] hover:bg-[#143560] text-white px-8 py-3 rounded-xl font-semibold text-sm shadow-md flex items-center gap-2">
+                            <span>Трассировка мен Талдауды іске қосу</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Comparison Table Results -->
+                    ${compareState.results ? renderBenchmarkResultsHTML() : '<div class="text-center text-xs text-slate-400 py-6">Нәтижелерді көру үшін жоғарыдағы батырманы басыңыз.</div>'}
+
+                    <!-- Complexity Theory Summary -->
+                    <div class="bg-[#F1F4F8] p-5 rounded-2xl border border-slate-200 space-y-3">
+                        <h3 class="font-serif-title font-bold text-base text-[#14253A]">Уақыт пен жад күрделілігі анықтамасы</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-300 text-[#46566B]">
+                                        <th class="py-2">Алгоритм</th>
+                                        <th class="py-2">Ең жақсы (Best)</th>
+                                        <th class="py-2">Орташа (Average)</th>
+                                        <th class="py-2">Ең нашар (Worst)</th>
+                                        <th class="py-2">Қосымша жад</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 text-[#14253A]">
+                                    <tr>
+                                        <td class="py-2 font-bold">Көпіршікті (Bubble)</td>
+                                        <td class="py-2 text-green-700 font-bold">O(n)</td>
+                                        <td class="py-2">O(n²)</td>
+                                        <td class="py-2">O(n²)</td>
+                                        <td class="py-2">O(1)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 font-bold">Таңдау (Selection)</td>
+                                        <td class="py-2 text-amber-700">O(n²)</td>
+                                        <td class="py-2">O(n²)</td>
+                                        <td class="py-2">O(n²)</td>
+                                        <td class="py-2">O(1)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 font-bold">Кірістіру (Insertion)</td>
+                                        <td class="py-2 text-green-700 font-bold">O(n)</td>
+                                        <td class="py-2">O(n²)</td>
+                                        <td class="py-2">O(n²)</td>
+                                        <td class="py-2">O(1)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-[11px] text-[#46566B] leading-relaxed">
+                            <strong>Ескерту:</strong> Үшеуі де <code>O(1)</code> қосымша жад жұмсайды (in-place). Тізім көшірмесін жасау үшін <code>copy()</code> қолданылса, қосымша <code>O(n)</code> жад қажет.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function changeCompareDataset(val) {
+            compareState.selectedDatasetKey = val;
+            compareState.results = null;
+            renderCompareMission(document.getElementById('app-content'));
+        }
+
+        function setComparePrediction(algo) {
+            compareState.prediction = algo;
+            renderCompareMission(document.getElementById('app-content'));
+        }
+
+        function runComparisonBenchmark() {
+            const ds = DATASETS[compareState.selectedDatasetKey].data;
+            compareState.results = runTraceEngine(ds);
+            STATE.score.completedMissions.add('compare');
+            renderTabs();
+            renderCompareMission(document.getElementById('app-content'));
+        }
+
+        function renderBenchmarkResultsHTML() {
+            const r = compareState.results;
+            // Total operations = comparisons + element moves (swaps / shifts / key writes)
+            const tot = {
+                bubble: r.bubble.comparisons + r.bubble.swaps,
+                selection: r.selection.comparisons + r.selection.swaps,
+                insertion: r.insertion.comparisons + r.insertion.shifts + r.insertion.keys
+            };
+            const names = { bubble: 'Көпіршікті', selection: 'Таңдау', insertion: 'Кірістіру' };
+            const minTotal = Math.min(tot.bubble, tot.selection, tot.insertion);
+            const winners = Object.keys(tot).filter(k => tot[k] === minTotal);
+            const winnersText = winners.map(k => names[k]).join(' және ');
+            let predictionFeedback;
+            if (!compareState.prediction) {
+                predictionFeedback = `<div class="bg-[#F1F4F8] border border-slate-200 rounded-xl p-4 text-sm text-[#14253A]">Болжам жасамадыңыз. Ең аз операция (${minTotal}) жасаған алгоритм: <strong>${winnersText}</strong>.</div>`;
+            } else if (winners.includes(compareState.prediction)) {
+                predictionFeedback = `<div class="bg-[#DDEBDD] border border-green-200 rounded-xl p-4 text-sm text-green-800 font-semibold">Болжамыңыз дұрыс! Ең аз операция (${minTotal}) жасаған: ${winnersText}.</div>`;
+            } else {
+                predictionFeedback = `<div class="bg-[#EED6D2] border border-red-200 rounded-xl p-4 text-sm text-red-800 font-semibold">Болжамыңыз (${names[compareState.prediction]}: ${tot[compareState.prediction]} операция) дәл емес. Ең аз операция (${minTotal}) жасаған: ${winnersText}.</div>`;
+            }
+            return `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-[#1F4E8C] text-white">
+                                <th class="p-3 rounded-tl-xl">Алгоритм</th>
+                                <th class="p-3">Мәндерді салыстыру</th>
+                                <th class="p-3">Орын ауыстыру</th>
+                                <th class="p-3">Оңға жылжыту</th>
+                                <th class="p-3">key мәнін жазу</th>
+                                <th class="p-3 rounded-tr-xl">Барлығы</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200 border-b border-slate-200 text-[#14253A]">
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Көпіршікті сұрыптау</td>
+                                <td class="p-3 font-semibold text-[#1F4E8C]">${r.bubble.comparisons}</td>
+                                <td class="p-3">${r.bubble.swaps}</td>
+                                <td class="p-3 text-slate-400">0</td>
+                                <td class="p-3 text-slate-400">0</td>
+                                <td class="p-3 font-bold">${tot.bubble}</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Таңдау арқылы сұрыптау</td>
+                                <td class="p-3 font-semibold text-[#1F4E8C]">${r.selection.comparisons}</td>
+                                <td class="p-3">${r.selection.swaps}</td>
+                                <td class="p-3 text-slate-400">0</td>
+                                <td class="p-3 text-slate-400">0</td>
+                                <td class="p-3 font-bold">${tot.selection}</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 font-bold">Кірістіру арқылы сұрыптау</td>
+                                <td class="p-3 font-semibold text-[#1F4E8C]">${r.insertion.comparisons}</td>
+                                <td class="p-3 text-slate-400">0</td>
+                                <td class="p-3">${r.insertion.shifts}</td>
+                                <td class="p-3">${r.insertion.keys}</td>
+                                <td class="p-3 font-bold">${tot.insertion}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                ${predictionFeedback}
+            `;
+        }
+
+        // ==========================================
+        // MISSION 7: FINAL PRACTICE & EVALUATION
+        // ==========================================
+        let practiceState = {
+            task2Desc: [78, 95, 62, 95, 84],
+            task2Target: [95, 95, 84, 78, 62],
+            task3Choice: null,
+            submitted: false
+        };
+        let pSelectedIdx = null;
+
+        const PRACTICE_ALGOS = [
+            { id: 'bubble', label: 'Көпіршікті сұрыптау' },
+            { id: 'selection', label: 'Таңдау арқылы сұрыптау' },
+            { id: 'insertion', label: 'Кірістіру арқылы сұрыптау' }
+        ];
+
+        function evaluatePractice() {
+            return {
+                t1: PRACTICE_ALGOS.every(a => STATE.score.completedMissions.has(a.id)),
+                t2: JSON.stringify(practiceState.task2Desc) === JSON.stringify(practiceState.task2Target),
+                t3: practiceState.task3Choice === 'insertion' || practiceState.task3Choice === 'bubble'
+            };
+        }
+
+        function renderPracticeResultHTML() {
+            const r = evaluatePractice();
+            const all = r.t1 && r.t2 && r.t3;
+            const cell = (title, ok, okText, badText) => `
+                <div class="bg-white p-3 rounded-xl border border-slate-200">
+                    <span class="text-slate-400 block mb-1">${title}</span>
+                    <strong class="${ok ? 'text-green-700' : 'text-red-600'} font-bold">${ok ? okText : badText}</strong>
+                </div>`;
+            return `
+                <div class="bg-[#F1F4F8] p-6 rounded-2xl border border-slate-300 text-center space-y-4">
+                    <h3 class="font-serif-title text-2xl font-bold text-[#14253A]">${all ? '🎉 Зертханалық жұмыс аяқталды!' : 'Нәтиже: кейбір тапсырмаларды қайта қараңыз'}</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-xl mx-auto text-xs">
+                        ${cell('1-тапсырма', r.t1, 'Орындалды', 'Орындалмады: 2–4 миссияларды аяқтаңыз')}
+                        ${cell('2-тапсырма (Кему реті)', r.t2, 'Дұрыс [95, 95, 84, 78, 62]', 'Қателері бар')}
+                        ${cell('3-тапсырма (Таңдау)', r.t3, 'Кірістіру / Көпіршікті (O(n))', practiceState.task3Choice ? 'Қате таңдау' : 'Жауап таңдалмады')}
+                    </div>
+                    <p class="text-xs text-[#46566B] max-w-lg mx-auto">
+                        <strong>Қорытынды түсіндірме:</strong> Реттелуге жақын тізімдер үшін <strong>Кірістіру (Insertion Sort)</strong> немесе ерте тоқтауы бар <strong>Көпіршікті сұрыптау</strong> ең тиімді болып табылады (ең жақсы жағдайда сызықтық уақыт O(n)). Таңдау арқылы сұрыптау тізім қалай тұрса да O(n²) салыстыру жасайды.
+                    </p>
+                </div>`;
+        }
+
+        function renderPracticeMission(container) {
+            const r = evaluatePractice();
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h2 class="font-serif-title text-2xl font-bold text-[#14253A]">7-миссия: Қорытынды практика</h2>
+                        <p class="text-xs text-[#46566B] mt-1">Презентациядағы есептерді орындап, біліміңізді бекітіңіз.</p>
+                    </div>
+
+                    <!-- Task 1 -->
+                    <div class="bg-[#F8FAFC] p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-sm text-[#14253A]">1-тапсырма: Үш алгоритмді де өзіңіз аяқтаңыз</h3>
+                        <p class="text-xs text-[#46566B]">2, 3 және 4-миссиялардағы тізімдерді толық реттеп шығу керек. Орындалуы автоматты тексеріледі:</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${PRACTICE_ALGOS.map(a => {
+                                const done = STATE.score.completedMissions.has(a.id);
+                                return `<span class="px-3 py-1.5 rounded-lg text-xs font-semibold border ${done ? 'bg-[#DDEBDD] text-green-800 border-green-200' : 'bg-white text-slate-500 border-slate-300'}">${done ? '✓' : '○'} ${a.label}</span>`;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Task 2 -->
+                    <div class="bg-[#F8FAFC] p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-sm text-[#14253A]">2-тапсырма: Ұпайларды кему ретімен орналастырыңыз</h3>
+                        <p class="text-xs text-[#46566B]">Бастапқы ұпайлар: [78, 95, 62, 95, 84]. Екі карточканы кезекпен басып, орындарын ауыстырыңыз:</p>
+                        <div class="flex flex-wrap items-center justify-center gap-3 my-3">
+                            ${practiceState.task2Desc.map((val, idx) => `
+                                <div onclick="swapPracticeTask2(${idx})" class="num-card w-14 h-16 sm:w-16 sm:h-20 rounded-xl flex items-center justify-center font-bold text-xl cursor-pointer border-2 border-transparent ${pSelectedIdx === idx ? 'selected' : ''}">
+                                    ${val}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="text-center">
+                            <button onclick="resetPracticeTask2()" class="px-3 py-1.5 bg-slate-100 text-[#46566B] rounded-lg text-xs font-medium hover:bg-slate-200">Қайта бастау</button>
+                        </div>
+                    </div>
+
+                    <!-- Task 3 -->
+                    <div class="bg-[#F8FAFC] p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-sm text-[#14253A]">3-тапсырма: Реттелуге жақын тізімге тиімді әдісті таңдаңыз</h3>
+                        <div class="space-y-2">
+                            ${[
+                                ['bubble', 'Көпіршікті сұрыптау (Bubble Sort, ерте тоқтауымен)'],
+                                ['insertion', 'Кірістіру арқылы сұрыптау (Insertion Sort)'],
+                                ['selection', 'Таңдау арқылы сұрыптау (Selection Sort)']
+                            ].map(([v, label]) => `
+                                <label class="flex items-center gap-2 text-xs font-medium text-[#14253A] cursor-pointer">
+                                    <input type="radio" name="algo_choice" value="${v}" ${practiceState.task3Choice === v ? 'checked' : ''} onchange="setPracticeTask3(this.value)">
+                                    <span>${label}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 flex flex-col items-center">
+                        <button onclick="submitFinalPractice()" class="btn-action bg-green-700 hover:bg-green-800 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md">
+                            Практиканы тапсыру және Қорытындыны көру
+                        </button>
+                        <div id="practice-result-box" class="w-full mt-6">${practiceState.submitted ? renderPracticeResultHTML() : ''}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function swapPracticeTask2(idx) {
+            if (pSelectedIdx === null) {
+                pSelectedIdx = idx;
+            } else {
+                if (pSelectedIdx !== idx) {
+                    const a = practiceState.task2Desc;
+                    [a[pSelectedIdx], a[idx]] = [a[idx], a[pSelectedIdx]];
+                    practiceState.submitted = false;
+                }
+                pSelectedIdx = null;
+            }
+            renderPracticeMission(document.getElementById('app-content'));
+        }
+
+        function resetPracticeTask2() {
+            practiceState.task2Desc = [78, 95, 62, 95, 84];
+            pSelectedIdx = null;
+            practiceState.submitted = false;
+            renderPracticeMission(document.getElementById('app-content'));
+        }
+
+        function setPracticeTask3(v) {
+            practiceState.task3Choice = v;
+            practiceState.submitted = false;
+            renderPracticeMission(document.getElementById('app-content'));
+        }
+
+        function submitFinalPractice() {
+            practiceState.submitted = true;
+            const r = evaluatePractice();
+            if (r.t1 && r.t2 && r.t3) STATE.score.completedMissions.add('practice');
+            renderTabs();
+            renderPracticeMission(document.getElementById('app-content'));
+            const box = document.getElementById('practice-result-box');
+            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Initialize Application
+        window.onload = function() {
+            renderTabs();
+            renderContent();
+        };
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !document.getElementById('help-modal').classList.contains('hidden')) {
+                toggleGlobalHelp();
+            }
+        });
+    </script>
+</body>
+</html>
